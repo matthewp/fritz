@@ -1,0 +1,13 @@
+<!doctype html>
+<html>
+<head>
+  <title>Worker framework</title>
+</head>
+<body>
+  <script src="https://ajax.googleapis.com/ajax/libs/incrementaldom/0.5.1/incremental-dom.js"></script>
+  <script src="./window.js"></script>
+  <script>
+    framework.router = new Worker('./router.js');
+  </script>
+</body>
+</html>
