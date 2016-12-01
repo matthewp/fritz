@@ -31,32 +31,36 @@
     }
 
     handle(msg) {
-      var bc = [[1,'html'],
-        [1,'body'],
-        [1,'h1'],
-        [4,'Hello world'],
-        [2,'h1'],
-        [2,'body'],
-        [2,'html']];
+      var ev = msg.data;
+      var bc = ev.bc;
+      var start = ev.start;
+
+      var received = new Date();
+      console.log('serialize+postMessage', received - start);
+
 
       var render = function(){
-        bc.forEach(function(i){
-          switch(i[0]) {
+        var n;
+        for(var i = 0, len = bc.length; i < len; i++) {
+          n = bc[i];
+          switch(n[0]) {
             // Open
             case 1:
-              IncrementalDOM.elementOpen(i[1]);
+              IncrementalDOM.elementOpen(n[1], '', n[2]);
               break;
             case 2:
-              IncrementalDOM.elementClose(i[1]);
+              IncrementalDOM.elementClose(n[1]);
               break;
             case 4:
-              IncrementalDOM.text(i[1]);
+              IncrementalDOM.text(n[1]);
               break;
           }
-        });
+        }
       };
 
       IncrementalDOM.patch(document.documentElement, render);
+
+      console.log('patch', new Date() - received);
 
     }
   }

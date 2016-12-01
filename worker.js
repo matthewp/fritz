@@ -1,21 +1,8 @@
-importScripts('./parser.js');
-importScripts('./dom-diff.js');
+importScripts('./test.js');
 
-class Differ {
+class Messenger {
   constructor(router) {
     this.router = router;
-    this.state = {
-      tagName: 'HTML',
-      nodeType: 1,
-      childNodes: [
-        {
-          tagName: 'BODY',
-          nodeType: 1,
-          childNodes: [
-          ]
-        }
-      ]
-    };
     this._listen();
   }
 
@@ -26,9 +13,10 @@ class Differ {
 
   handle(e) {
     let msg = e.data;
+
     switch(msg.type) {
       case 'initial':
-        var parser = new HTMLParser();
+        //var parser = new HTMLParser();
         //this.state = parser.parse(msg.state);
 
         this.router.baseURI = msg.baseURI;
@@ -55,36 +43,12 @@ class Differ {
 }
 
 class Response {
-  constructor(request, differ) {
+  constructor(request, messenger) {
     this.request = request;
-    this.differ = differ;
+    this.messenger = messenger;
   }
 
-  write(chunk) {
-    var tree = {
-      tagName: 'HTML',
-      nodeType: 1,
-      childNodes: [
-        {
-          tagName: 'BODY',
-          nodeType: 1,
-          childNodes: [
-            {
-              tagName: 'H1',
-              nodeType: 1,
-              childNodes: [
-                {
-                  nodeType: 3,
-                  textContent: 'Hello world!'
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    };
-
-    this.differ.diff(tree);
+  write() {
 
   }
 
@@ -95,13 +59,13 @@ class Response {
 
 class FrameworkRouter {
   constructor() {
-    this.differ = new Differ(this);
+    this.messenger = new Messenger(this);
     this.baseURI = '/';
     this.routes = [];
   }
 
   handle(request) {
-    var response = new Response(request, this.differ);
+    var response = new Response(request, this.messenger);
 
     // For now we're just doing the first one
     var first = this.routes[0];
