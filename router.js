@@ -1,17 +1,11 @@
 importScripts('./worker.js');
+importScripts('./hyperscript.js');
 
 router.get('/foo', function(request, response){
-  let html = `
-    <html>
-      <head>
-        <title>It worked!</title>
-      </head>
-      <body>
-        <h1>Hello world!</h1>
-      </body>
-    </html>
-  `;
+  let vdom = h('html',
+    h('head', h('title', 'A test page')),
+    h('body', h('h1', 'Hello World!'),
+      h('p', 'look at me now!')));
 
-  response.write(html);
-  response.end();
+  response.end(vdom);
 });

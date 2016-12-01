@@ -1,5 +1,3 @@
-importScripts('./test.js');
-
 class Messenger {
   constructor(router) {
     this.router = router;
@@ -16,9 +14,6 @@ class Messenger {
 
     switch(msg.type) {
       case 'initial':
-        //var parser = new HTMLParser();
-        //this.state = parser.parse(msg.state);
-
         this.router.baseURI = msg.baseURI;
         var request = {
           method: 'GET',
@@ -29,16 +24,8 @@ class Messenger {
     }
   }
 
-  diff(newTree) {
-    var patches = skatejsDomDiff.default.diff({
-      destination: newTree,
-      source: this.state
-    });
-    // this.state = newTree;
-    postMessage({
-      type: 'patch',
-      patches: patches
-    });
+  send(tree) {
+    postMessage({tree});
   }
 }
 
@@ -48,12 +35,14 @@ class Response {
     this.messenger = messenger;
   }
 
-  write() {
-
-  }
-
-  end() {
-
+  end(tree) {
+    if(tree[0][1] === 'html') {
+      tree.shift();
+    }
+    if(tree[tree.length - 1][1] === 'html') {
+      tree.pop();
+    }
+    this.messenger.send(tree);
   }
 }
 

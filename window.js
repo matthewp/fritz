@@ -25,19 +25,13 @@
         url: location.pathname
       });
 
-      this._router.onmessage = function(ev){
-        this.handle(ev);
-      }.bind(this);
+      this._router.addEventListener('message',
+        ev => this.handle(ev));
     }
 
     handle(msg) {
       var ev = msg.data;
-      var bc = ev.bc;
-      var start = ev.start;
-
-      var received = new Date();
-      console.log('serialize+postMessage', received - start);
-
+      var bc = ev.tree;
 
       var render = function(){
         var n;
@@ -59,9 +53,6 @@
       };
 
       IncrementalDOM.patch(document.documentElement, render);
-
-      console.log('patch', new Date() - received);
-
     }
   }
 
