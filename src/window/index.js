@@ -11,6 +11,17 @@ class Framework {
     this._started = false;
   }
 
+  eventHandler(data) {
+    var self = this;
+    return function(ev){
+      ev.preventDefault();
+
+      var attrName = data[2];
+      var url = ev.target.getAttribute(attrName);
+      self.request({ url, method: 'POST' });
+    };
+  }
+
   get router() {
     return this._router;
   }
@@ -34,9 +45,15 @@ class Framework {
       ev => this.handle(ev));
   }
 
+  request(request) {
+    request.type = 'request';
+    this._router.postMessage(request);
+  }
+
   handle(msg) {
     var ev = msg.data;
     var bc = ev.tree;
+    var self = this;
 
     var render = function(){
       var n;
@@ -45,7 +62,14 @@ class Framework {
         switch(n[0]) {
           // Open
           case 1:
-            elementOpen(n[1], '', n[2]);
+            if(n[3]) {
+              for(var j = 0, jlen = n[3].length; j < jlen; j++) {
+                n[2].push(n[3][j][1], self.eventHandler(n[3][j]));
+              }
+            }
+
+            var openArgs = [n[1], '', null].concat(n[2]);
+            elementOpen.apply(null, openArgs);
             break;
           case 2:
             elementClose(n[1]);

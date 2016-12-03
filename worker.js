@@ -27,6 +27,8 @@ var Messenger = class {
         };
         this.router.handle(request);
         break;
+      case 'request':
+        this.router.handle(msg);
     }
   }
 
@@ -36,12 +38,20 @@ var Messenger = class {
 };
 
 var Response = class {
-  constructor(request, messenger) {
+  constructor(request, app) {
     this.request = request;
-    this.messenger = messenger;
+    this.app = app;
+    this.messenger = app.messenger;
   }
 
-  end(tree) {
+  redirect(route) {
+    this.app.handle({
+      method: 'GET',
+      url: route
+    });
+  }
+
+  push(tree) {
     if(tree[0][1] === 'html') {
       tree.shift();
     }
@@ -69,32 +79,71 @@ class App {
   }
 
   handle(request) {
-    var response = new Response(request, this.messenger);
+    var response = new Response(request, this);
 
-    // For now we're just doing the first one
-    var first = this.routes[0];
-    first[1](request, response);
+    var found;
+    for(var i = 0, len = this.routes.length; i < len; i++) {
+      if(this.routes[i][0] === request.url) {
+        found = this.routes[i];
+        break;
+      }
+    }
+
+    if(found) {
+      found[1](request, response);
+    } else {
+      this.routes[0][1](request, response);
+    }
+  }
+
+  use(cb) {
+    // TODO not sure what
   }
 
   get(route, cb){
     this.routes.push([route, cb]);
   }
+
+  post(route, cb) {
+    this.routes.push([route, cb]);
+  }
 }
+
+var signal = function(tagName, attrName, attrValue) {
+  if(tagName === 'form' && attrName === 'action') {
+    return [1, 'onsubmit', attrName];
+  }
+};
 
 var h = function(tag /* children, attrs */){
   var children = Array.prototype.slice.call(arguments, 1);
   var last = children[children.length - 1];
-  var attrs;
+  var attrs, evs;
   if(typeof last !== "string" && !Array.isArray(last)) {
     attrs = children.pop();
     attrs = Object.keys(attrs).reduce(function(acc, key){
+      var value = attrs[key];
       acc.push(key);
-      acc.push(attrs[key]);
+      acc.push(value);
+
+      var eventInfo = signal(tag, key, value);
+      if(eventInfo) {
+        if(!evs) evs = [];
+        evs.push(eventInfo);
+      }
+
       return acc;
     }, []);
   }
 
-  var tree = [[1, tag, attrs]];
+  var open = [1, tag];
+  if(attrs) {
+    open.push(attrs);
+  }
+  if(evs) {
+    open.push(evs);
+  }
+  var tree = [open];
 
   children.forEach(function(child){
     if(typeof child === "string") {

@@ -21,6 +21,8 @@ export default class {
         };
         this.router.handle(request);
         break;
+      case 'request':
+        this.router.handle(msg);
     }
   }
 

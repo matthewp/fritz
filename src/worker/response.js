@@ -1,10 +1,18 @@
 export default class {
-  constructor(request, messenger) {
+  constructor(request, app) {
     this.request = request;
-    this.messenger = messenger;
+    this.app = app;
+    this.messenger = app.messenger;
   }
 
-  end(tree) {
+  redirect(route) {
+    this.app.handle({
+      method: 'GET',
+      url: route
+    });
+  }
+
+  push(tree) {
     if(tree[0][1] === 'html') {
       tree.shift();
     }
