@@ -18,8 +18,12 @@
   "homepage": "https://github.com/matthewp/crazy-webworker-framework#readme",
   "devDependencies": {
     "incremental-dom": "^0.5.1",
+    "lodash.isplainobject": "^4.0.6",
     "rollup": "^0.36.4",
+    "rollup-plugin-commonjs": "^5.0.5",
     "rollup-plugin-node-resolve": "^2.0.0",
-    "rollup-plugin-replace": "^1.1.1"
+    "rollup-plugin-replace": "^1.1.1",
+    "vdom-serialized-patch": "^1.0.7",
+    "virtual-dom": "^2.1.1"
   }
 }

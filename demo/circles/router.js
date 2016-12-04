@@ -5,9 +5,9 @@ const { makeApp, h } = framework;
 const app = makeApp();
 
 function StartButton() {
-  return h('form',
-      h('button', 'Start'),
-      {action:'/start'})
+  return h('form', {action:'/start'}, [
+    h('button', 'Start')
+  ]);
 }
 
 app.get('/', function(req, res){
@@ -22,11 +22,11 @@ function Box(num, count) {
   var content = ""+(count % 100);
   var style = `top: ${top}px; left: ${left}px; background: rgb(0,0,${color});`;
 
-  return h('div',
-    h('div',
-    content,
-    {id:`box-${num}`,'class':'box',style:style}),
-    {'class':'box-view'})
+  return h('div', {'className':'box-view'}, [
+    h('div', {id:`box-${num}`,'className':'box',style:style}, [
+      content
+    ])
+  ]);
 }
 
 app.post('/start', function(req, res){
@@ -34,14 +34,14 @@ app.post('/start', function(req, res){
   function render() {
     count++;
     var boxes = [];
-    for(var i = 0; i < 100; i++) {
+    for(var i = 0; i < 500; i++) {
       boxes.push(Box(i, count));
     }
 
-    var boxContainer = h.apply(null, ['div'].concat(boxes));
-    var vdom = App(
-      h('div', StartButton(), boxContainer)
-    );
+    var vdom = App((h('div', [
+      StartButton(),
+      h('div', boxes)
+    ])));
 
     res.push(vdom);
 
