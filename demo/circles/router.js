@@ -34,7 +34,7 @@ app.post('/start', function(req, res){
   function render() {
     count++;
     var boxes = [];
-    for(var i = 0; i < 500; i++) {
+    for(var i = 0; i < 100; i++) {
       boxes.push(Box(i, count));
     }
 
