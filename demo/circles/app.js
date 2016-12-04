@@ -1,6 +1,7 @@
 function App(contents) {
-  return h('html',
-    h('head',
+  return h('html', [
+
+    h('head', [
       h('style',`
           p {
           font: 12px/16px Arial;
@@ -31,8 +32,11 @@ function App(contents) {
           font: 10px/10px Arial;
           text-align: center;
           position: absolute;
-        }`)),
-    h('body',
+        }`)
+    ]),
+    h('body', [
       h('div', {id:'timing'}),
-      contents));
+      contents
+    ])
+  ]);
 }
