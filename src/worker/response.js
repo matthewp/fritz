@@ -3,6 +3,7 @@ export default class {
     this.request = request;
     this.app = app;
     this.messenger = app.messenger;
+    this.isEnded = false;
   }
 
   redirect(route) {
@@ -20,5 +21,12 @@ export default class {
       tree.pop();
     }
     this.messenger.send(tree);
+  }
+
+  end(tree) {
+    if(!this.isEnded) {
+      this.push(tree);
+      this.isEnded = true;
+    }
   }
 }

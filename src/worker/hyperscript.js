@@ -1,16 +1,26 @@
 import signal from './signal.js';
 
-export default function(tag, attrs, children){
-  const isStringChild = typeof attrs === 'string';
-  if(Array.isArray(attrs)|| isStringChild) {
-    children = attrs;
-    attrs = null;
+class Tree extends Array {}
 
-    if(isStringChild) {
-      children = [children];
+export default function(tag, attrs, children){
+  const argsLen = arguments.length;
+  if(argsLen === 2) {
+    if(typeof attrs !== 'object') {
+      children = attrs;
+      attrs = null;
     }
+  } else if(argsLen > 3 || (children instanceof Tree) ||
+    typeof children === 'string') {
+    children = Array.prototype.slice.call(arguments, 2);
   }
 
+  var isFn = typeof tag === 'function';
+
+  if(isFn) {
+    return tag(attrs, children);
+  }
+
+  var tree = new Tree();
   if(attrs) {
     var evs;
     attrs = Object.keys(attrs).reduce(function(acc, key){
@@ -18,7 +28,7 @@ export default function(tag, attrs, children){
       acc.push(key);
       acc.push(value);
 
-      var eventInfo = signal(tag, key, value)
+      var eventInfo = signal(tag, key, value, attrs)
       if(eventInfo) {
         if(!evs) evs = [];
         evs.push(eventInfo);
@@ -35,7 +45,7 @@ export default function(tag, attrs, children){
   if(evs) {
     open.push(evs);
   }
-  var tree = [open];
+  tree.push(open);
 
   if(children) {
     children.forEach(function(child){
@@ -44,12 +54,13 @@ export default function(tag, attrs, children){
         return;
       }
 
-      while(child.length) {
+      while(child && child.length) {
         tree.push(child.shift());
       }
     });
   }
 
   tree.push([2, tag]);
+
   return tree;
 };

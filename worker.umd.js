@@ -1,3 +1,9 @@
+(function (global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+  typeof define === 'function' && define.amd ? define(['exports'], factory) :
+  (factory((global.framework = global.framework || {})));
+}(this, (function (exports) { 'use strict';
+
 var Messenger = class {
   constructor(router) {
     this.router = router;
@@ -206,4 +212,9 @@ function makeApp() {
   return new App();
 }
 
-export { makeApp, hyperscript as h };
+exports.makeApp = makeApp;
+exports.h = hyperscript;
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+})));

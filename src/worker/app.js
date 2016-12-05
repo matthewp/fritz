@@ -28,10 +28,16 @@ class App {
       }
     }
 
+    let cb;
     if(found) {
-      found[1](request, response);
+      cb = found[1];
     } else {
-      this.routes[0][1](request, response);
+      cb = this.routes[0][1];
+    }
+    let tree = cb(request, response);
+
+    if(tree) {
+      response.end(tree);
     }
   }
 

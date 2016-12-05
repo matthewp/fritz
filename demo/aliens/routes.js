@@ -1,3 +1,6 @@
+(function () {
+'use strict';
+
 var Messenger = class {
   constructor(router) {
     this.router = router;
@@ -5,14 +8,13 @@ var Messenger = class {
   }
 
   _listen() {
-    self.addEventListener('message',
-      e => this.handle(e));
+    self.addEventListener('message', e => this.handle(e));
   }
 
   handle(e) {
     let msg = e.data;
 
-    switch(msg.type) {
+    switch (msg.type) {
       case 'initial':
         this.router.baseURI = msg.baseURI;
         var request = {
@@ -27,7 +29,7 @@ var Messenger = class {
   }
 
   send(tree) {
-    postMessage({tree});
+    postMessage({ tree });
   }
 };
 
@@ -47,17 +49,17 @@ var Response = class {
   }
 
   push(tree) {
-    if(tree[0][1] === 'html') {
+    if (tree[0][1] === 'html') {
       tree.shift();
     }
-    if(tree[tree.length - 1][1] === 'html') {
+    if (tree[tree.length - 1][1] === 'html') {
       tree.pop();
     }
     this.messenger.send(tree);
   }
 
   end(tree) {
-    if(!this.isEnded) {
+    if (!this.isEnded) {
       this.push(tree);
       this.isEnded = true;
     }
@@ -84,22 +86,22 @@ class App {
     var response = new Response(request, this);
 
     var found;
-    for(var i = 0, len = this.routes.length; i < len; i++) {
-      if(this.routes[i][0] === request.url) {
+    for (var i = 0, len = this.routes.length; i < len; i++) {
+      if (this.routes[i][0] === request.url) {
         found = this.routes[i];
         break;
       }
     }
 
     let cb;
-    if(found) {
+    if (found) {
       cb = found[1];
     } else {
       cb = this.routes[0][1];
     }
     let tree = cb(request, response);
 
-    if(tree) {
+    if (tree) {
       response.end(tree);
     }
   }
@@ -108,7 +110,7 @@ class App {
     // TODO not sure what
   }
 
-  get(route, cb){
+  get(route, cb) {
     this.routes.push([route, cb]);
   }
 
@@ -117,12 +119,12 @@ class App {
   }
 }
 
-var signal = function(tagName, attrName, attrValue, attrs) {
-  switch(attrName) {
+var signal = function (tagName, attrName, attrValue, attrs) {
+  switch (attrName) {
     case 'fritz-event':
       return [1, 'on' + attrValue, getUrl(attrs), getMethod(attrs)];
     case 'action':
-      if(tagName === 'form') {
+      if (tagName === 'form') {
         return [1, 'onsubmit', attrName];
       }
       break;
@@ -139,35 +141,34 @@ function getMethod(attrs) {
 
 class Tree extends Array {}
 
-var hyperscript = function(tag, attrs, children){
+var hyperscript = function (tag, attrs, children) {
   const argsLen = arguments.length;
-  if(argsLen === 2) {
-    if(typeof attrs !== 'object') {
+  if (argsLen === 2) {
+    if (typeof attrs !== 'object') {
       children = attrs;
       attrs = null;
     }
-  } else if(argsLen > 3 || (children instanceof Tree) ||
-    typeof children === 'string') {
+  } else if (argsLen > 3 || children instanceof Tree || typeof children === 'string') {
     children = Array.prototype.slice.call(arguments, 2);
   }
 
   var isFn = typeof tag === 'function';
 
-  if(isFn) {
+  if (isFn) {
     return tag(attrs, children);
   }
 
   var tree = new Tree();
-  if(attrs) {
+  if (attrs) {
     var evs;
-    attrs = Object.keys(attrs).reduce(function(acc, key){
+    attrs = Object.keys(attrs).reduce(function (acc, key) {
       var value = attrs[key];
       acc.push(key);
       acc.push(value);
 
       var eventInfo = signal(tag, key, value, attrs);
-      if(eventInfo) {
-        if(!evs) evs = [];
+      if (eventInfo) {
+        if (!evs) evs = [];
         evs.push(eventInfo);
       }
 
@@ -176,22 +177,22 @@ var hyperscript = function(tag, attrs, children){
   }
 
   var open = [1, tag];
-  if(attrs) {
+  if (attrs) {
     open.push(attrs);
   }
-  if(evs) {
+  if (evs) {
     open.push(evs);
   }
   tree.push(open);
 
-  if(children) {
-    children.forEach(function(child){
-      if(typeof child === "string") {
+  if (children) {
+    children.forEach(function (child) {
+      if (typeof child === "string") {
         tree.push([4, child]);
         return;
       }
 
-      while(child && child.length) {
+      while (child && child.length) {
         tree.push(child.shift());
       }
     });
@@ -206,4 +207,66 @@ function makeApp() {
   return new App();
 }
 
-export { makeApp, hyperscript as h };
+var Layout = function (props, children) {
+  return hyperscript(
+    "html",
+    null,
+    hyperscript(
+      "head",
+      null,
+      hyperscript(
+        "title",
+        null,
+        "Aliens app!"
+      ),
+      hyperscript("link", { rel: "stylesheet", href: "./styles.css" })
+    ),
+    hyperscript(
+      "body",
+      null,
+      hyperscript(
+        "h1",
+        null,
+        "Aliens"
+      ),
+      hyperscript(
+        "main",
+        null,
+        children
+      )
+    )
+  );
+};
+
+var indexRoute = function (app) {
+  let species = ['xenomorph', 'predator'];
+
+  app.get('/', function (req, res) {
+    return hyperscript(
+      Layout,
+      null,
+      hyperscript(
+        'form',
+        { 'fritz-event': 'keyup', 'fritz-url': '/search', 'fritz-method': 'GET' },
+        hyperscript('input', { type: 'text', value: '', name: 'q', placeholder: 'Search species' })
+      ),
+      hyperscript(
+        'ul',
+        null,
+        species.map(name => {
+          return hyperscript(
+            'li',
+            null,
+            name
+          );
+        })
+      )
+    );
+  });
+};
+
+const app = makeApp();
+
+indexRoute(app);
+
+}());

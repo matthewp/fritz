@@ -5,7 +5,4 @@ function makeApp() {
   return new App();
 }
 
-export default {
-  h,
-  makeApp
-};
+export { makeApp, h };
