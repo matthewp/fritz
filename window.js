@@ -1374,6 +1374,45 @@ const text$1 = function(value, var_args) {
  * limitations under the License.
  */
 
+var makeRequest = function(url, method = 'GET', el){
+  let body;
+  let toQueryParams = method === 'GET';
+
+  switch(el.tagName) {
+    case 'FORM':
+      let result = serializeForm(el, toQueryParams);
+      if(toQueryParams) {
+        url += '?' + result;
+      } else {
+        body = result;
+      }
+      break;
+    default:
+      break;
+  }
+  url = new URL(url, location);
+
+  return {
+    url: url+"",
+    method,
+    body
+  };
+};
+
+function serializeForm(form, toQueryParams){
+  var out = toQueryParams ? '' : Object.create(null);
+  var el;
+  for(var i = 0, len = form.elements.length; i < len; i++) {
+    el = form.elements[i];
+    if(toQueryParams) {
+      out += (out.length ? '&' : '') + el.name + '=' + el.value;
+    } else {
+      out[el.name] = el.value;
+    }
+  }
+  return out;
+}
+
 class Framework {
   constructor() {
     this._router = null;
@@ -1385,9 +1424,15 @@ class Framework {
     return function(ev){
       ev.preventDefault();
 
-      var attrName = data[2];
-      var url = ev.target.getAttribute(attrName);
-      self.request({ url, method: 'POST' });
+      let ct = ev.currentTarget;
+      let request = makeRequest(data[2], data[3], ct);
+      let push = !ct.dataset.noPush && request.method === 'GET';
+
+      if(push) {
+        history.pushState(request, null, request.url);
+      }
+
+      self.request(request);
     };
   }
 
@@ -1404,14 +1449,19 @@ class Framework {
 
   start() {
     var initialState = document.documentElement.outerHTML;
+    let url = "" + location;
     this._router.postMessage({
       type: 'initial',
       state: initialState,
-      url: location.pathname
+      url
     });
+    history.replaceState({ url, method: 'GET' }, document.title, url);
 
     this._router.addEventListener('message',
       ev => this.handle(ev));
+
+    window.addEventListener('popstate',
+      ev => this.popstate(ev));
   }
 
   request(request) {
@@ -1451,6 +1501,12 @@ class Framework {
     };
 
     patchInner(document.documentElement, render);
+  }
+
+  popstate(ev) {
+    if(ev.state) {
+      this.request(ev.state);
+    }
   }
 }
 

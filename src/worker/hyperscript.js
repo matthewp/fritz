@@ -17,7 +17,7 @@ export default function(tag, attrs, children){
   var isFn = typeof tag === 'function';
 
   if(isFn) {
-    return tag(attrs, children);
+    return tag(attrs || {}, children);
   }
 
   var tree = new Tree();

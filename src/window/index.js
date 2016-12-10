@@ -5,6 +5,8 @@ import {
   patch
 } from 'incremental-dom/index.js';
 
+import makeRequest from './make-request.js';
+
 class Framework {
   constructor() {
     this._router = null;
@@ -16,9 +18,15 @@ class Framework {
     return function(ev){
       ev.preventDefault();
 
-      var attrName = data[2];
-      var url = ev.target.getAttribute(attrName);
-      self.request({ url, method: 'POST' });
+      let ct = ev.currentTarget;
+      let request = makeRequest(data[2], data[3], ct);
+      let push = !ct.dataset.noPush && request.method === 'GET';
+
+      if(push) {
+        history.pushState(request, null, request.url);
+      }
+
+      self.request(request);
     };
   }
 
@@ -35,14 +43,19 @@ class Framework {
 
   start() {
     var initialState = document.documentElement.outerHTML;
+    let url = "" + location;
     this._router.postMessage({
       type: 'initial',
       state: initialState,
-      url: location.pathname
+      url
     });
+    history.replaceState({ url, method: 'GET' }, document.title, url);
 
     this._router.addEventListener('message',
       ev => this.handle(ev));
+
+    window.addEventListener('popstate',
+      ev => this.popstate(ev));
   }
 
   request(request) {
@@ -82,6 +95,12 @@ class Framework {
     };
 
     patch(document.documentElement, render);
+  }
+
+  popstate(ev) {
+    if(ev.state) {
+      this.request(ev.state);
+    }
   }
 }
 

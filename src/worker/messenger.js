@@ -19,10 +19,10 @@ export default class {
           method: 'GET',
           url: msg.url
         };
-        this.router.handle(request);
+        this.router.dispatch(request);
         break;
       case 'request':
-        this.router.handle(msg);
+        this.router.dispatch(msg);
     }
   }
 

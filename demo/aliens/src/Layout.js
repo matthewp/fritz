@@ -1,15 +1,20 @@
-import { h } from '../../../worker.js';
+import { h } from 'cwf/worker.js';
 
 export default function(props, children) {
   return <html>
     <head>
       <title>Aliens app!</title>
-      <link rel="stylesheet" href="./styles.css"/>
+      <link rel="stylesheet" href="/styles.css"/>
+      <meta name="viewport" content="width=device-width, initial-scale=1"/>
     </head>
     <body>
-      <h1>Aliens</h1>
+      <header></header>
 
-      <main>{children}</main>
+      <main>
+        <h1>Aliens</h1>
+
+        <section>{children}</section>
+      </main>
     </body>
   </html>
 };
