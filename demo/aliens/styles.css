@@ -45,3 +45,13 @@ main {
   right: 0;
   text-align: center;
 }
+
+.loading {
+  display: flex;
+  justify-content: center;
+}
+
+.loading svg {
+  height: 150px;
+  width: 150px;
+}

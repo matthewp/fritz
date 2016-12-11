@@ -1,4 +1,4 @@
-import { makeApp } from 'cwf/worker.js';
+import { makeApp } from '../../../worker.js';
 import indexRoute from './index.js';
 import articleRoute from './article.js';
 

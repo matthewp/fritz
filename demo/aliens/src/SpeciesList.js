@@ -1,4 +1,4 @@
-import { h } from 'cwf/worker.js';
+import { h } from '../../../worker.js';
 
 function Specie({specie}) {
   let url = `/article/${specie.id}`;
@@ -20,8 +20,10 @@ export default function({ filter, species }, children) {
 
   return (
     <div>
+      <h1>Aliens</h1>
+
       <form action="/search" data-event="keyup" data-no-push>
-        <input type="text" value="" name="q" placeholder="Search species" class="alien-search" />
+        <input type="text" value={ filter ? filter : '' } name="q" placeholder="Search species" class="alien-search" />
       </form>
       <ul class="species">
         {items.map(specie => {

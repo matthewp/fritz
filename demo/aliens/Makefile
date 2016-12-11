@@ -1,16 +1,15 @@
-.PHONY: app watch serve link
+.PHONY: app watch serve template all
+
+all: app templates
 
 app:
 	./node_modules/.bin/rollup -c rollup.config.js -o routes.js src/routes.js
 
+templates:
+	./node_modules/.bin/rollup src/server/index.js -c rollup.config.js -o server/templates.js -f cjs
+
 serve:
 	node server/index.js
-
-link:
-	mkdir -p node_modules/cwf
-	cd node_modules/cwf
-	ln -s ../../../../worker.js worker.js
-	ln -s ../../../../window.js window.js
 
 watch:
 	find src -name "*.js" | entr make app

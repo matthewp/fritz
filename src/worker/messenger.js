@@ -19,6 +19,9 @@ export default class {
           method: 'GET',
           url: msg.url
         };
+        if(msg.state) {
+          this.router.state = msg.state;
+        }
         this.router.dispatch(request);
         break;
       case 'request':

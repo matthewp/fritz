@@ -1,7 +1,8 @@
 import App from './app.js';
 
+const isNode = typeof process === 'object' && {}.toString.call(process) === '[object process]';
 
-export default function(tagName, attrName, attrValue, attrs) {
+function signal(tagName, attrName, attrValue, attrs) {
   switch(attrName) {
     /*case 'fritz-event':
       return [1, 'on' + attrValue, s.url(attrs), s.url(attrs)];*/
@@ -27,3 +28,5 @@ const s = ['event', 'url', 'method'].reduce(function(o, n){
   };
   return o;
 }, {});
+
+export default isNode ? function(){} : signal;

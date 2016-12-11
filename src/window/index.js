@@ -42,11 +42,10 @@ class Framework {
   }
 
   start() {
-    var initialState = document.documentElement.outerHTML;
     let url = "" + location;
     this._router.postMessage({
       type: 'initial',
-      state: initialState,
+      state: this.state,
       url
     });
     history.replaceState({ url, method: 'GET' }, document.title, url);

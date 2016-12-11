@@ -1,4 +1,4 @@
-import { h } from 'cwf/worker.js';
+import { h } from '../../../worker.js';
 import Layout from './Layout.js';
 import SpeciesList from './SpeciesList.js';
 import { details } from './api.js';

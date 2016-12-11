@@ -1,5 +1,6 @@
-(function () {
 'use strict';
+
+Object.defineProperty(exports, '__esModule', { value: true });
 
 var Messenger = class {
   constructor(router) {
@@ -45,7 +46,7 @@ var isarray = index$1;
 /**
  * Expose `pathToRegexp`.
  */
-var index = pathToRegexp;
+var index$1$1 = pathToRegexp;
 var parse_1 = parse;
 var compile_1 = compile;
 var tokensToFunction_1 = tokensToFunction;
@@ -466,10 +467,10 @@ function pathToRegexp(path, keys, options) {
   return stringToRegexp( /** @type {string} */path, /** @type {!Array} */keys, options);
 }
 
-index.parse = parse_1;
-index.compile = compile_1;
-index.tokensToFunction = tokensToFunction_1;
-index.tokensToRegExp = tokensToRegExp_1;
+index$1$1.parse = parse_1;
+index$1$1.compile = compile_1;
+index$1$1.tokensToFunction = tokensToFunction_1;
+index$1$1.tokensToRegExp = tokensToRegExp_1;
 
 var decodeURLComponents = true;
 function decodeURLEncodedURIComponent(val) {
@@ -484,7 +485,7 @@ class Route {
     options = options || {};
     this.path = path === '*' ? '(.*)' : path;
     this.method = options.method === undefined ? 'GET' : options.method;
-    this.regexp = index(this.path, this.keys = []
+    this.regexp = index$1$1(this.path, this.keys = []
     /*options*/);
   }
 
@@ -728,172 +729,12 @@ var hyperscript = function (tag, attrs, children) {
   return tree;
 };
 
-function makeApp() {
-  return new App();
-}
-
 const isNode$1 = typeof process === 'object' && {}.toString.call(process) === '[object process]';
 
 var Layout = function (props, children) {
   let state = props.state;
 
   const scripts = !isNode$1 ? '' : hyperscript(
-    'div',
-    null,
-    hyperscript('script', { src: '/cwf.js' }),
-    hyperscript(
-      'script',
-      null,
-      state ? `framework.state = ${ JSON.stringify(state) };\n` : '',
-      'framework.router = new Worker(\'/routes.js\');'
-    )
-  );
-
-  return hyperscript(
-    'html',
-    null,
-    hyperscript(
-      'head',
-      null,
-      hyperscript(
-        'title',
-        null,
-        'Aliens app!'
-      ),
-      hyperscript('link', { rel: 'stylesheet', href: '/styles.css' }),
-      hyperscript('meta', { name: 'viewport', content: 'width=device-width, initial-scale=1' })
-    ),
-    hyperscript(
-      'body',
-      null,
-      hyperscript('header', null),
-      hyperscript(
-        'main',
-        null,
-        hyperscript(
-          'section',
-          null,
-          children
-        )
-      ),
-      scripts
-    )
-  );
-};
-
-function Specie({ specie }) {
-  let url = `/article/${ specie.id }`;
-
-  return hyperscript(
-    "li",
-    { "class": "specie" },
-    hyperscript(
-      "a",
-      { href: url },
-      hyperscript(
-        "figure",
-        null,
-        hyperscript("img", { src: specie.thumbnail })
-      ),
-      hyperscript(
-        "span",
-        { "class": "specie-title" },
-        specie.title
-      )
-    )
-  );
-}
-
-var SpeciesList = function ({ filter, species }, children) {
-  let items = filter ? filterSpecies(species, filter) : species;
-
-  return hyperscript(
-    "div",
-    null,
-    hyperscript(
-      "h1",
-      null,
-      "Aliens"
-    ),
-    hyperscript(
-      "form",
-      { action: "/search", "data-event": "keyup", "data-no-push": true },
-      hyperscript("input", { type: "text", value: filter ? filter : '', name: "q", placeholder: "Search species", "class": "alien-search" })
-    ),
-    hyperscript(
-      "ul",
-      { "class": "species" },
-      items.map(specie => {
-        return hyperscript(Specie, { specie: specie });
-      })
-    )
-  );
-};
-
-function filterSpecies(species, query) {
-  query = query.toLowerCase();
-  return species.filter(specie => specie.title.toLowerCase().indexOf(query) === 0);
-}
-
-function details(ids) {
-  return fetch(`/api/details/${ ids.join(',') }`).then(res => res.json()).then(data => {
-    let species = Object.keys(data.items).map(id => data.items[id]);
-    return species;
-  });
-}
-
-function article(id) {
-  return fetch(`/api/article/${ id }`).then(res => res.json());
-}
-
-const ids = [1443, // xenomorph
-8459, // predator
-1758, // engineer
-1754, // facehugger
-11254 // predalien
-];
-
-var indexRoute = function () {
-  const app = this;
-
-  function allSpecies(req, res, next) {
-    if (!app.state.species) {
-      details(ids).then(species => {
-        app.state.species = species;
-        next();
-      });
-      return;
-    }
-    next();
-  }
-
-  app.get('/', allSpecies, function (req, res) {
-    let species = app.state.species;
-    res.push(hyperscript(
-      Layout,
-      null,
-      hyperscript(SpeciesList, { species: species })
-    ));
-  });
-
-  app.get('/search', allSpecies, function (req, res) {
-    let query = req.url.searchParams.get('q');
-    let species = app.state.species;
-
-    res.push(hyperscript(
-      Layout,
-      null,
-      hyperscript(SpeciesList, { species: species, filter: query })
-    ));
-  });
-};
-
-const isNode$2 = typeof process === 'object' && {}.toString.call(process) === '[object process]';
-
-var Layout$1 = function (props, children) {
-  let state = props.state;
-
-  const scripts = !isNode$2 ? '' : hyperscript(
     'div',
     null,
     hyperscript('script', { src: '/cwf.js' }),
@@ -963,69 +804,105 @@ var Loading = function () {
   );
 };
 
-var articleRoute = function () {
-  const app = this;
+function Specie({ specie }) {
+  let url = `/article/${ specie.id }`;
 
-  function details$$1(req, res, next) {
-    if (!req.articleData) {
-      article(req.params.id).then(data => {
-        req.articleData = data;
-        next();
-      }, next);
-    } else {
-      next();
-    }
-  }
-
-  app.get('/article/:id', function (req, res, next) {
-    if (app.state.articleData) {
-      req.articleData = app.state.articleData;
-      delete app.state.articleData;
-    }
-    next();
-  }, function (req, res, next) {
-    if (!req.articleData) {
-      res.push(hyperscript(
-        Layout$1,
-        null,
-        hyperscript(Loading, null)
-      ));
-    }
-    next();
-  }, details$$1, function (req, res) {
-    let data = req.articleData;
-    let intro = data.article.sections[0];
-
-    res.push(hyperscript(
-      Layout$1,
-      null,
+  return hyperscript(
+    "li",
+    { "class": "specie" },
+    hyperscript(
+      "a",
+      { href: url },
       hyperscript(
-        'h1',
+        "figure",
         null,
-        intro.title
+        hyperscript("img", { src: specie.thumbnail })
       ),
       hyperscript(
-        'article',
-        null,
-        intro.content.map(content => {
-          return hyperscript(
-            'p',
-            null,
-            content.text
-          );
-        })
+        "span",
+        { "class": "specie-title" },
+        specie.title
       )
-    ));
-  });
+    )
+  );
+}
+
+var SpeciesList = function ({ filter, species }, children) {
+  let items = filter ? filterSpecies(species, filter) : species;
+
+  return hyperscript(
+    "div",
+    null,
+    hyperscript(
+      "h1",
+      null,
+      "Aliens"
+    ),
+    hyperscript(
+      "form",
+      { action: "/search", "data-event": "keyup", "data-no-push": true },
+      hyperscript("input", { type: "text", value: filter ? filter : '', name: "q", placeholder: "Search species", "class": "alien-search" })
+    ),
+    hyperscript(
+      "ul",
+      { "class": "species" },
+      items.map(specie => {
+        return hyperscript(Specie, { specie: specie });
+      })
+    )
+  );
 };
 
-const app = makeApp();
+function filterSpecies(species, query) {
+  query = query.toLowerCase();
+  return species.filter(specie => specie.title.toLowerCase().indexOf(query) === 0);
+}
 
-app.configure(indexRoute).configure(articleRoute);
+function index(species, state) {
+  return hyperscript(
+    Layout,
+    { state: state },
+    hyperscript(SpeciesList, { species: species })
+  );
+}
 
-/**
- * Color scheme
- * https://coolors.co/fefffe-e5fcf5-b3dec1-210124-750d37
- */
+function search(species, query, state) {
+  return hyperscript(
+    Layout,
+    { state: state },
+    hyperscript(SpeciesList, { species: species, filter: query })
+  );
+}
 
-}());
+function article(articleData, state) {
+  let data = articleData;
+  let intro = data.article.sections[0];
+
+  return hyperscript(
+    Layout,
+    { state: state },
+    hyperscript(
+      'h1',
+      null,
+      intro.title
+    ),
+    hyperscript(
+      'article',
+      null,
+      intro.content.map(content => {
+        return hyperscript(
+          'p',
+          null,
+          content.text
+        );
+      })
+    )
+  );
+}
+
+exports.Layout = Layout;
+exports.Loading = Loading;
+exports.SpeciesList = SpeciesList;
+exports.index = index;
+exports.search = search;
+exports.article = article;

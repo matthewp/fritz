@@ -6,3 +6,7 @@ export function details(ids) {
       return species;
     });
 }
+
+export function article(id) {
+  return fetch(`/api/article/${id}`).then(res => res.json());
+}

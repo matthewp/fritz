@@ -25,6 +25,9 @@ var Messenger = class {
           method: 'GET',
           url: msg.url
         };
+        if(msg.state) {
+          this.router.state = msg.state;
+        }
         this.router.dispatch(request);
         break;
       case 'request':
@@ -634,7 +637,9 @@ class App {
   }
 }
 
-var signal = function(tagName, attrName, attrValue, attrs) {
+const isNode = typeof process === 'object' && {}.toString.call(process) === '[object process]';
+
+function signal(tagName, attrName, attrValue, attrs) {
   switch(attrName) {
     /*case 'fritz-event':
       return [1, 'on' + attrValue, s.url(attrs), s.url(attrs)];*/
@@ -651,7 +656,7 @@ var signal = function(tagName, attrName, attrValue, attrs) {
       }
       break;
   }
-};
+}
 
 const s = ['event', 'url', 'method'].reduce(function(o, n){
   var prop = 'data-' + n;
@@ -660,6 +665,8 @@ const s = ['event', 'url', 'method'].reduce(function(o, n){
   };
   return o;
 }, {});
+
+var signal$1 = isNode ? function(){} : signal;
 
 class Tree extends Array {}
 
@@ -689,7 +696,7 @@ var hyperscript = function(tag, attrs, children){
       acc.push(key);
       acc.push(value);
 
-      var eventInfo = signal(tag, key, value, attrs);
+      var eventInfo = signal$1(tag, key, value, attrs);
       if(eventInfo) {
         if(!evs) evs = [];
         evs.push(eventInfo);

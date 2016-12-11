@@ -1,6 +1,22 @@
-import { h } from 'cwf/worker.js';
+import { h } from '../../../worker.js';
+
+const isNode = typeof process === 'object' && {}.toString.call(process) === '[object process]';
 
 export default function(props, children) {
+  let state = props.state;
+
+  const scripts = !isNode ? '' : (
+    <div>
+      <script src="/cwf.js"></script>
+      <script>
+        {
+          state ? `framework.state = ${JSON.stringify(state)};\n` : ''
+        }
+        framework.router = new Worker('/routes.js');
+      </script>
+    </div>
+  );
+
   return <html>
     <head>
       <title>Aliens app!</title>
@@ -11,10 +27,9 @@ export default function(props, children) {
       <header></header>
 
       <main>
-        <h1>Aliens</h1>
-
         <section>{children}</section>
       </main>
+      {scripts}
     </body>
   </html>
 };
