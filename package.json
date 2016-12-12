@@ -9,14 +9,20 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/matthewp/crazy-webworker-framework.git"
+    "url": "git+https://github.com/matthewp/fritz.git"
   },
   "author": "Matthew Phillips",
   "license": "BSD-2-Clause",
   "bugs": {
-    "url": "https://github.com/matthewp/crazy-webworker-framework/issues"
+    "url": "https://github.com/matthewp/fritz/issues"
   },
-  "homepage": "https://github.com/matthewp/crazy-webworker-framework#readme",
+  "files": [
+    "window.js",
+    "worker.js",
+    "worker.umd.js",
+    "to-string.js"
+  ],
+  "homepage": "https://github.com/matthewp/fritz#readme",
   "devDependencies": {
     "incremental-dom": "^0.5.1",
     "is-promise": "^2.1.0",
