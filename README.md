@@ -21,7 +21,7 @@ app.get('/', function(req, res){
         <button type="submit">Increment</button>
       </form>
       
-      <strong>{count}<strong>
+      <strong>{count}</strong>
     </Layout>
   );
 });
@@ -37,7 +37,7 @@ app.post('/click', function(req, res){
         <button type="submit">Increment</button>
       </form>
       
-      <strong>{count}<strong>
+      <strong>{count}</strong>
     </Layout>
   );
 });
