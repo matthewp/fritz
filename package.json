@@ -2,9 +2,10 @@
   "name": "unnamed",
   "version": "0.0.1",
   "description": "A crazy webworker framework",
-  "main": "window.js",
+  "main": "worker.umd.js",
+  "jsnext:main": "worker.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "testee test/basics.html --browsers chrome"
   },
   "repository": {
     "type": "git",
@@ -19,10 +20,12 @@
   "devDependencies": {
     "incremental-dom": "^0.5.1",
     "is-promise": "^2.1.0",
+    "mocha-test": "^2.0.2",
     "path-to-regexp": "^1.7.0",
     "rollup": "^0.36.4",
     "rollup-plugin-commonjs": "^5.0.5",
     "rollup-plugin-node-resolve": "^2.0.0",
-    "rollup-plugin-replace": "^1.1.1"
+    "rollup-plugin-replace": "^1.1.1",
+    "testee": "^0.3.0"
   }
 }

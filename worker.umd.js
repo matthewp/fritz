@@ -1,8 +1,8 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-  typeof define === 'function' && define.amd ? define(['exports'], factory) :
-  (factory((global.framework = global.framework || {})));
-}(this, (function (exports) { 'use strict';
+  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+  typeof define === 'function' && define.amd ? define(factory) :
+  (global.fritz = factory());
+}(this, (function () { 'use strict';
 
 var Messenger = class {
   constructor(router) {
@@ -670,10 +670,10 @@ var signal$1 = isNode ? function(){} : signal;
 
 class Tree extends Array {}
 
-var hyperscript = function(tag, attrs, children){
+var h = function(tag, attrs, children){
   const argsLen = arguments.length;
   if(argsLen === 2) {
-    if(typeof attrs !== 'object') {
+    if(typeof attrs !== 'object' || Array.isArray(attrs)) {
       children = attrs;
       attrs = null;
     }
@@ -733,13 +733,12 @@ var hyperscript = function(tag, attrs, children){
   return tree;
 };
 
-function makeApp() {
+function fritz$1() {
   return new App();
 }
 
-exports.makeApp = makeApp;
-exports.h = hyperscript;
+fritz$1.h = h;
 
-Object.defineProperty(exports, '__esModule', { value: true });
+return fritz$1;
 
 })));

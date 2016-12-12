@@ -1,8 +1,10 @@
 import App from './app.js';
 import h from './hyperscript.js';
 
-function makeApp() {
+function fritz() {
   return new App();
 }
 
-export { makeApp, h };
+fritz.h = h;
+
+export { fritz as default, h };

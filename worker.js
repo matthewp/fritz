@@ -664,10 +664,10 @@ var signal$1 = isNode ? function(){} : signal;
 
 class Tree extends Array {}
 
-var hyperscript = function(tag, attrs, children){
+var h = function(tag, attrs, children){
   const argsLen = arguments.length;
   if(argsLen === 2) {
-    if(typeof attrs !== 'object') {
+    if(typeof attrs !== 'object' || Array.isArray(attrs)) {
       children = attrs;
       attrs = null;
     }
@@ -727,8 +727,10 @@ var hyperscript = function(tag, attrs, children){
   return tree;
 };
 
-function makeApp() {
+function fritz() {
   return new App();
 }
 
-export { makeApp, hyperscript as h };
+fritz.h = h;
+
+export { h };export default fritz;

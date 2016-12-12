@@ -5,7 +5,7 @@ class Tree extends Array {}
 export default function(tag, attrs, children){
   const argsLen = arguments.length;
   if(argsLen === 2) {
-    if(typeof attrs !== 'object') {
+    if(typeof attrs !== 'object' || Array.isArray(attrs)) {
       children = attrs;
       attrs = null;
     }
