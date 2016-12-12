@@ -1,6 +1,6 @@
 {
-  "name": "unnamed",
-  "version": "0.0.1",
+  "name": "fritz",
+  "version": "2.0.0",
   "description": "A crazy webworker framework",
   "main": "worker.umd.js",
   "jsnext:main": "worker.js",
