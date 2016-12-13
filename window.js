@@ -1486,7 +1486,7 @@ class Framework {
               }
             }
 
-            var openArgs = [n[1], '', null].concat(n[2]);
+            var openArgs = [n[1], null, null].concat(n[2]);
             elementOpen$1.apply(null, openArgs);
             break;
           case 2:
