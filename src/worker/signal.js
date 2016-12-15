@@ -4,8 +4,6 @@ const isNode = typeof process === 'object' && {}.toString.call(process) === '[ob
 
 function signal(tagName, attrName, attrValue, attrs) {
   switch(attrName) {
-    /*case 'fritz-event':
-      return [1, 'on' + attrValue, s.url(attrs), s.url(attrs)];*/
     case 'action':
       if(tagName === 'form') {
         let eventName = s.event(attrs) || 'submit';
@@ -16,6 +14,12 @@ function signal(tagName, attrName, attrValue, attrs) {
     case 'href':
       if(tagName === 'a' && App.hasMatchingRoute('GET', attrValue)) {
         return [1, 'onclick', attrValue, 'GET'];
+      }
+      break;
+    case 'data-url':
+      if(App.hasMatchingRoute('GET', attrValue)) {
+        let eventName = s.event(attrs) || 'click';
+        return [1, 'on' + eventName, attrValue, 'GET'];
       }
       break;
   }

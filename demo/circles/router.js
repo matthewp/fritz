@@ -1,19 +1,14 @@
-importScripts('../../worker.js');
+importScripts('../../worker.umd.js');
 importScripts('./app.js');
 
-const { makeApp, h } = framework;
-const app = makeApp();
+const { h } = fritz;
+const app = fritz();
 
 function StartButton() {
-  return h('form', {action:'/start'}, [
-    h('button', 'Start')
+  return h('form', {action:'/start', method: 'POST'}, [
+    h('button', ['Start'])
   ]);
 }
-
-app.get('/', function(req, res){
-  let vdom = App(StartButton());
-  res.push(vdom);
-});
 
 function Box(num, count) {
   var top = Math.sin(count / 10) * 10;
@@ -51,4 +46,9 @@ app.post('/start', function(req, res){
   }
 
   render();
+});
+
+app.get('*', function(req, res){
+  let vdom = App(StartButton());
+  res.push(vdom);
 });

@@ -531,7 +531,7 @@ var Response = class {
   }
 
   redirect(route) {
-    this.app.handle({
+    this.app.dispatch({
       method: 'GET',
       url: route
     });
@@ -578,7 +578,8 @@ class App {
   }
 
   dispatch(request) {
-    let url = request.url = new URL(request.url);
+    let url = request.url = new URL(request.url, this.currentURL);
+    this.currentURL = url;
     request.params = {};
     let response = new Response(request, this);
     let i = 0;
@@ -626,7 +627,7 @@ class App {
     this._addRoute('GET', path, fns);
   }
 
-  post(route, ...fns) {
+  post(path, ...fns) {
     this._addRoute('POST', path, fns);
   }
 }
@@ -635,8 +636,6 @@ const isNode = typeof process === 'object' && {}.toString.call(process) === '[ob
 
 function signal(tagName, attrName, attrValue, attrs) {
   switch(attrName) {
-    /*case 'fritz-event':
-      return [1, 'on' + attrValue, s.url(attrs), s.url(attrs)];*/
     case 'action':
       if(tagName === 'form') {
         let eventName = s.event(attrs) || 'submit';
@@ -647,6 +646,12 @@ function signal(tagName, attrName, attrValue, attrs) {
     case 'href':
       if(tagName === 'a' && App.hasMatchingRoute('GET', attrValue)) {
         return [1, 'onclick', attrValue, 'GET'];
+      }
+      break;
+    case 'data-url':
+      if(App.hasMatchingRoute('GET', attrValue)) {
+        let eventName = s.event(attrs) || 'click';
+        return [1, 'on' + eventName, attrValue, 'GET'];
       }
       break;
   }

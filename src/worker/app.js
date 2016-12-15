@@ -26,7 +26,8 @@ class App {
   }
 
   dispatch(request) {
-    let url = request.url = new URL(request.url);
+    let url = request.url = new URL(request.url, this.currentURL);
+    this.currentURL = url;
     request.params = {};
     let response = new Response(request, this);
     let i = 0;
@@ -74,7 +75,7 @@ class App {
     this._addRoute('GET', path, fns);
   }
 
-  post(route, ...fns) {
+  post(path, ...fns) {
     this._addRoute('POST', path, fns);
   }
 }

@@ -7,7 +7,7 @@ export default class {
   }
 
   redirect(route) {
-    this.app.handle({
+    this.app.dispatch({
       method: 'GET',
       url: route
     });

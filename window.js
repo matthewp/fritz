@@ -1420,7 +1420,8 @@ class Framework {
   }
 
   eventHandler(data) {
-    var self = this;
+    let self = this;
+
     return function(ev){
       ev.preventDefault();
 
