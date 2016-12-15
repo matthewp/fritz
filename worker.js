@@ -630,6 +630,14 @@ class App {
   post(path, ...fns) {
     this._addRoute('POST', path, fns);
   }
+
+  put(path, ...fns) {
+    this._addRoute('PUT', path, fns);
+  }
+
+  delete(path, ...fns) {
+    this._addRoute('DELETE', path, fns);
+  }
 }
 
 const isNode = typeof process === 'object' && {}.toString.call(process) === '[object process]';

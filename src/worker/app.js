@@ -78,6 +78,14 @@ class App {
   post(path, ...fns) {
     this._addRoute('POST', path, fns);
   }
+
+  put(path, ...fns) {
+    this._addRoute('PUT', path, fns);
+  }
+
+  delete(path, ...fns) {
+    this._addRoute('DELETE', path, fns);
+  }
 }
 
 export default App;
