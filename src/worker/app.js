@@ -1,7 +1,6 @@
 import Messenger from './messenger.js';
 import Route from './route.js';
 import Response from './response.js';
-import isPromise from './is-promise.js';
 
 class App {
   static get app() {
