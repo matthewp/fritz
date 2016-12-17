@@ -1,38 +1,48 @@
-export default function(url, method = 'GET', el){
+export default function(url, method = 'GET', el, ev){
   let body;
   let toQueryParams = method === 'GET';
 
   switch(el.tagName) {
     case 'FORM':
-      let result = serializeForm(el, toQueryParams);
-      if(toQueryParams) {
-        url += '?' + result;
-      } else {
-        body = result;
-      }
+      body = serializeForm(el, toQueryParams);
       break;
     default:
       break;
   }
+
+  if(toQueryParams && body) {
+    url += body;
+    body = undefined;
+  }
+
   url = new URL(url, location);
 
   return {
-    url: url+"",
+    url: url+'',
     method,
     body
   };
 };
 
 function serializeForm(form, toQueryParams){
-  var out = toQueryParams ? '' : Object.create(null);
   var el;
-  for(var i = 0, len = form.elements.length; i < len; i++) {
-    el = form.elements[i];
+  return serializeBody(toQueryParams, function(cb){
+    for(var i = 0, len = form.elements.length; i < len; i++) {
+      el = form.elements[i];
+      cb(el.name, el.value);
+    }
+  });
+}
+
+function serializeBody(toQueryParams, fn) {
+  let body = toQueryParams ? '?' : Object.create(null);
+  function addToBody(key, val) {
     if(toQueryParams) {
-      out += (out.length ? '&' : '') + el.name + '=' + el.value;
+      body += (body.length > 1 ? '&' : '') + key + '=' + val;
     } else {
-      out[el.name] = el.value;
+      body[key] = val;
     }
   }
-  return out;
+  fn(addToBody);
+  return body;
 }

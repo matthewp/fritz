@@ -15,7 +15,10 @@ app.get('/foo', function(req, res){
 app.get('*', function(req, res){
   let vdom = h('html', [
     h('body', [
-      h('div', {'data-url': '/foo', 'data-event': 'click'}, ['Click me'])
+      h('div', {
+        'data-url': '/foo',
+        'data-event': 'click'
+      }, ['Click me'])
     ])
   ]);
 

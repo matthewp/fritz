@@ -663,9 +663,10 @@ function signal(tagName, attrName, attrValue, attrs) {
       }
       break;
     case 'data-url':
-      if(App.hasMatchingRoute('GET', attrValue)) {
+      let method = s.method(attrs) || 'GET';
+      if(App.hasMatchingRoute(method, attrValue)) {
         let eventName = s.event(attrs) || 'click';
-        return [1, 'on' + eventName, attrValue, 'GET'];
+        return [1, 'on' + eventName, attrValue, method];
       }
       break;
   }

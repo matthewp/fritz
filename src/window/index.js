@@ -20,7 +20,7 @@ class Framework {
       ev.preventDefault();
 
       let ct = ev.currentTarget;
-      let request = makeRequest(data[2], data[3], ct);
+      let request = makeRequest(data[2], data[3], ct, ev);
       let push = !ct.dataset.noPush && request.method === 'GET';
 
       if(push) {
