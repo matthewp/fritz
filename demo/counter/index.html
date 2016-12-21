@@ -4,9 +4,12 @@
   <title>Worker framework</title>
 </head>
 <body>
+  <h1>Number of clicks</h1>
+  <click-counter></click-counter>
+
   <script src="../../window.js"></script>
   <script>
-    fritz.router = new Worker('./router.js');
+    fritz.app = new Worker('./router.js');
   </script>
 </body>
 </html>

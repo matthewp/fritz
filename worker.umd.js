@@ -5,8 +5,8 @@
 }(this, (function () { 'use strict';
 
 var Messenger = class {
-  constructor(router) {
-    this.router = router;
+  constructor(app) {
+    this.app = app;
     this._listen();
   }
 
@@ -19,24 +19,22 @@ var Messenger = class {
     let msg = e.data;
 
     switch(msg.type) {
-      case 'initial':
-        this.router.baseURI = msg.baseURI;
-        var request = {
-          method: 'GET',
-          url: msg.url
-        };
-        if(msg.state) {
-          this.router.state = msg.state;
-        }
-        this.router.dispatch(request);
+      case 'render':
+        this.app.render(msg);
         break;
-      case 'request':
-        this.router.dispatch(msg);
+      case 'event':
+        this.app.handleEvent(msg);
+        break;
     }
   }
 
-  send(tree) {
-    postMessage({tree});
+  define(tag) {
+    postMessage({ type: 'tag', tag });
+  }
+
+  send(id, response) {
+    let msg = Object.assign({ id, type: 'render' }, response);
+    postMessage(msg);
   }
 };
 
@@ -482,167 +480,46 @@ function decodeURLEncodedURIComponent(val) {
   return decodeURLComponents ? decodeURIComponent(val.replace(/\+/g, ' ')) : val;
 }
 
-class Route {
-  constructor(path, options) {
-    options = options || {};
-    this.path = (path === '*') ? '(.*)' : path;
-    this.method = options.method === undefined ? 'GET' : options.method;
-    this.regexp = index(this.path,
-      this.keys = []
-      /*options*/);
-  }
-
-  isMatch(method, path) {
-    if(this.method !== method) return false;
-
-    var qsIndex = path.indexOf('?'),
-      pathname = ~qsIndex ? path.slice(0, qsIndex) : path,
-      m = this.regexp.exec(decodeURIComponent(pathname));
-
-    return m;
-  }
-
-  match(method, path, params) {
-    let m = this.isMatch(method, path);
-    if(!m) return false;
-
-    var keys = this.keys;
-    for (var i = 1, len = m.length; i < len; ++i) {
-      var key = keys[i - 1];
-      var val = decodeURLEncodedURIComponent(m[i]);
-      if (val !== undefined || !(hasOwnProperty.call(params, key.name))) {
-        params[key.name] = val;
-      }
-    }
-
-    return true;
-  }
-
-  middleware(fn) {
-    return (req, res, next) => {
-      if (this.match(req.method, req.url.pathname, req.params)) {
-        return fn(req, res, next);
-      }
-      next();
-    };
-  }
-}
-
-var Response = class {
-  constructor(request, app) {
-    this.request = request;
-    this.app = app;
-    this.messenger = app.messenger;
-    this.isEnded = false;
-  }
-
-  redirect(route) {
-    this.app.dispatch({
-      method: 'GET',
-      url: route
-    });
-  }
-
-  push(tree) {
-    if(tree[0][1] === 'html') {
-      tree.shift();
-    }
-    if(tree[tree.length - 1][1] === 'html') {
-      tree.pop();
-    }
-    this.messenger.send(tree);
-  }
-
-  end(tree) {
-    if(!this.isEnded) {
-      this.push(tree);
-      this.isEnded = true;
-    }
-  }
-};
-
 class App {
-  static get app() {
-    return this._val;
-  }
-
-  static set app(val) {
-    this._app = val;
-  }
-
-  static hasMatchingRoute(method, path) {
-    return this._app.hasMatchingRoute(method, path);
-  }
-
   constructor() {
     this.messenger = new Messenger(this);
-    this.baseURI = '/';
-    this.routes = [];
-    this.callbacks = [];
-    this.state = {};
-    App.app = this;
+    this.componentMap = new Map();
+    this.idMap = new Map();
   }
 
-  dispatch(request) {
-    let url = request.url = new URL(request.url, this.currentURL);
-    this.currentURL = url;
-    request.params = {};
-    let response = new Response(request, this);
-    let i = 0;
-    let self = this;
-
-    function next() {
-      let fn = self.callbacks[i++];
-      if(!fn) return; // TODO this should do a unhandled
-      fn(request, response, next);
-    }
-
-    next();
+  define(tag, constr) {
+    this.componentMap.set(tag, constr);
+    this.messenger.define(tag);
   }
 
-  hasMatchingRoute(method, path) {
-    for(var i = 0, len = this.routes.length; i < len; i++) {
-      if(this.routes[i].isMatch(method, path)) return true;
-    }
-    return false;
-  }
-
-  _addRoute(method, path, fns) {
-    // route <path> to <callback ...>
-    if (fns.length) {
-      var route = new Route(/** @type {string} */ (path), { method });
-      for (var i = 0; i < fns.length; ++i) {
-        this.callbacks.push(route.middleware(fns[i]));
-      }
-      this.routes.push(route);
-      // show <path> with [state]
+  handleEvent(msg) {
+    let id = msg.id;
+    let inst = this.idMap.get(id);
+    let response$$1 = {};
+    let methodName = 'on' + msg.name[0].toUpperCase() + msg.name.substr(1);
+    let method = inst[methodName];
+    if(method) {
+      method.call(inst);
+      response$$1.tree = inst.render();
+      this.messenger.send(id, response$$1);
+    } else {
+      // TODO warn?
     }
   }
 
-  configure(fn) {
-    fn.call(this);
-    return this;
-  }
-
-  use(path, ...fns) {
-    this._addRoute(null, path || '*', fns);
-    return this;
-  }
-
-  get(path, ...fns){
-    this._addRoute('GET', path, fns);
-  }
-
-  post(path, ...fns) {
-    this._addRoute('POST', path, fns);
-  }
-
-  put(path, ...fns) {
-    this._addRoute('PUT', path, fns);
-  }
-
-  delete(path, ...fns) {
-    this._addRoute('DELETE', path, fns);
+  render(msg) {
+    let id = msg.id;
+    let tag = msg.tag;
+    let inst = this.idMap.get(id);
+    let response$$1 = {};
+    if(!inst) {
+      let constr = this.componentMap.get(tag);
+      inst = new constr();
+      this.idMap.set(id, inst);
+      response$$1.events = constr.observedEvents;
+    }
+    response$$1.tree = inst.render();
+    this.messenger.send(id, response$$1);
   }
 }
 
@@ -747,9 +624,7 @@ var h = function(tag, attrs, children){
   return tree;
 };
 
-function fritz$1() {
-  return new App();
-}
+const fritz$1 = new App();
 
 fritz$1.h = h;
 

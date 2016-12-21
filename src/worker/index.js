@@ -1,9 +1,7 @@
 import App from './app.js';
 import h from './hyperscript.js';
 
-function fritz() {
-  return new App();
-}
+const fritz = new App();
 
 fritz.h = h;
 

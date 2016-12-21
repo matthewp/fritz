@@ -1,6 +1,6 @@
 export default class {
-  constructor(router) {
-    this.router = router;
+  constructor(app) {
+    this.app = app;
     this._listen();
   }
 
@@ -13,23 +13,21 @@ export default class {
     let msg = e.data;
 
     switch(msg.type) {
-      case 'initial':
-        this.router.baseURI = msg.baseURI;
-        var request = {
-          method: 'GET',
-          url: msg.url
-        };
-        if(msg.state) {
-          this.router.state = msg.state;
-        }
-        this.router.dispatch(request);
+      case 'render':
+        this.app.render(msg);
         break;
-      case 'request':
-        this.router.dispatch(msg);
+      case 'event':
+        this.app.handleEvent(msg);
+        break;
     }
   }
 
-  send(tree) {
-    postMessage({tree});
+  define(tag) {
+    postMessage({ type: 'tag', tag });
+  }
+
+  send(id, response) {
+    let msg = Object.assign({ id, type: 'render' }, response);
+    postMessage(msg);
   }
 }

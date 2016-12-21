@@ -3,87 +3,45 @@ import Route from './route.js';
 import Response from './response.js';
 
 class App {
-  static get app() {
-    return this._val;
-  }
-
-  static set app(val) {
-    this._app = val;
-  }
-
-  static hasMatchingRoute(method, path) {
-    return this._app.hasMatchingRoute(method, path);
-  }
-
   constructor() {
     this.messenger = new Messenger(this);
-    this.baseURI = '/';
-    this.routes = [];
-    this.callbacks = [];
-    this.state = {};
-    App.app = this;
+    this.componentMap = new Map();
+    this.idMap = new Map();
   }
 
-  dispatch(request) {
-    let url = request.url = new URL(request.url, this.currentURL);
-    this.currentURL = url;
-    request.params = {};
-    let response = new Response(request, this);
-    let i = 0;
-    let self = this;
-
-    function next() {
-      let fn = self.callbacks[i++];
-      if(!fn) return; // TODO this should do a unhandled
-      fn(request, response, next);
-    }
-
-    next();
+  define(tag, constr) {
+    this.componentMap.set(tag, constr);
+    this.messenger.define(tag);
   }
 
-  hasMatchingRoute(method, path) {
-    for(var i = 0, len = this.routes.length; i < len; i++) {
-      if(this.routes[i].isMatch(method, path)) return true;
-    }
-    return false;
-  }
-
-  _addRoute(method, path, fns) {
-    // route <path> to <callback ...>
-    if (fns.length) {
-      var route = new Route(/** @type {string} */ (path), { method });
-      for (var i = 0; i < fns.length; ++i) {
-        this.callbacks.push(route.middleware(fns[i]));
-      }
-      this.routes.push(route);
-      // show <path> with [state]
+  handleEvent(msg) {
+    let id = msg.id;
+    let inst = this.idMap.get(id);
+    let response = {};
+    let methodName = 'on' + msg.name[0].toUpperCase() + msg.name.substr(1);
+    let method = inst[methodName];
+    if(method) {
+      method.call(inst);
+      response.tree = inst.render();
+      this.messenger.send(id, response);
+    } else {
+      // TODO warn?
     }
   }
 
-  configure(fn) {
-    fn.call(this);
-    return this;
-  }
-
-  use(path, ...fns) {
-    this._addRoute(null, path || '*', fns);
-    return this;
-  }
-
-  get(path, ...fns){
-    this._addRoute('GET', path, fns);
-  }
-
-  post(path, ...fns) {
-    this._addRoute('POST', path, fns);
-  }
-
-  put(path, ...fns) {
-    this._addRoute('PUT', path, fns);
-  }
-
-  delete(path, ...fns) {
-    this._addRoute('DELETE', path, fns);
+  render(msg) {
+    let id = msg.id;
+    let tag = msg.tag;
+    let inst = this.idMap.get(id);
+    let response = {};
+    if(!inst) {
+      let constr = this.componentMap.get(tag);
+      inst = new constr();
+      this.idMap.set(id, inst);
+      response.events = constr.observedEvents;
+    }
+    response.tree = inst.render();
+    this.messenger.send(id, response);
   }
 }
 

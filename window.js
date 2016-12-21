@@ -1425,8 +1425,17 @@ function serializeBody(toQueryParams, fn) {
 
 class Framework {
   constructor() {
-    this._router = null;
+    this._app = null;
     this._started = false;
+    this._componentMap = new WeakMap();
+    this._idMap = new Map();
+    this._componentId = 1;
+    //this._eventHandler2 = this._eventHandler2.bind(this);
+  }
+
+  _eventHandler2(ev) {
+    debugger;
+    ev.preventDefault();
   }
 
   eventHandler(data) {
@@ -1447,40 +1456,41 @@ class Framework {
     };
   }
 
-  get router() {
-    return this._router;
+  get app() {
+    return this._app;
   }
 
-  set router(val) {
-    this._router = val;
+  set app(val) {
+    this._app = val;
     if(!this.started) {
       this.start();
     }
   }
 
   start() {
-    let url = "" + location;
-    this._router.postMessage({
-      type: 'initial',
-      state: this.state,
-      url
-    });
-    history.replaceState({ url, method: 'GET' }, document.title, url);
-
-    this._router.addEventListener('message',
+    this._app.addEventListener('message',
       ev => this.handle(ev));
-
-    window.addEventListener('popstate',
-      ev => this.popstate(ev));
   }
 
   request(request) {
     request.type = 'request';
-    this._router.postMessage(request);
+    this._app.postMessage(request);
   }
 
   handle(msg) {
     var ev = msg.data;
+    switch(ev.type) {
+      case 'tag':
+        this.handleDefine(ev);
+        break;
+      case 'render':
+        this.patch(ev);
+        break;
+    }
+  }
+
+  patch(ev) {
+    var id = ev.id;
     var bc = ev.tree;
     var self = this;
 
@@ -1510,13 +1520,54 @@ class Framework {
       }
     };
 
-    patchInner(document.documentElement, render);
+    let el = this._idMap.get(id);
+    patchInner(el.shadowRoot, render);
+
+    if(ev.events) {
+      el.observe(ev.events);
+    }
   }
 
-  popstate(ev) {
-    if(ev.state) {
-      this.request(ev.state);
-    }
+  handleDefine(ev) {
+    const tag = ev.tag;
+    const fw = this;
+    customElements.define(tag, class extends HTMLElement {
+      constructor() {
+        super();
+
+        this.attachShadow({ mode: 'open' });
+      }
+
+      connectedCallback() {
+        this._id = fw._componentId++;
+        fw._componentMap.set(this, this._id);
+        fw._idMap.set(this._id, this);
+
+        this.render();
+      }
+
+      handleEvent(ev) {
+        fw._app.postMessage({
+          type: 'event',
+          name: ev.type,
+          id: this._id
+        });
+      }
+
+      observe(events) {
+        events.forEach(eventName => {
+          this.shadowRoot.addEventListener(eventName, this);
+        });
+      }
+
+      render() {
+        fw._app.postMessage({
+          type: 'render',
+          id: this._id,
+          tag
+        });
+      }
+    });
   }
 }
 
