@@ -32,6 +32,11 @@ var Messenger = class {
     postMessage({ type: 'tag', tag });
   }
 
+  dispatch(id, event) {
+    let msg = { id, type: 'event', event };
+    postMessage(msg);
+  }
+
   send(id, response) {
     let msg = Object.assign({ id, type: 'render' }, response);
     postMessage(msg);
@@ -485,6 +490,7 @@ class App {
     this.messenger = new Messenger(this);
     this.componentMap = new Map();
     this.idMap = new Map();
+    this.instMap = new WeakMap();
   }
 
   define(tag, constr) {
@@ -495,7 +501,7 @@ class App {
   handleEvent(msg) {
     let id = msg.id;
     let inst = this.idMap.get(id);
-    let response$$1 = {};
+    let response$$1 = Object.create(null);
     let methodName = 'on' + msg.name[0].toUpperCase() + msg.name.substr(1);
     let method = inst[methodName];
     if(method) {
@@ -511,21 +517,35 @@ class App {
     let id = msg.id;
     let tag = msg.tag;
     let inst = this.idMap.get(id);
-    let response$$1 = {};
+    let response$$1 = Object.create(null);
     if(!inst) {
       let constr = this.componentMap.get(tag);
       inst = new constr();
+      inst._app = this;
       this.idMap.set(id, inst);
+      this.instMap.set(inst, id);
       response$$1.events = constr.observedEvents;
     }
     response$$1.tree = inst.render();
     this.messenger.send(id, response$$1);
   }
+
+  dispatch(inst, ev) {
+    let id = this.instMap.get(inst);
+    this.messenger.dispatch(id, ev);
+  }
 }
 
 const isNode = typeof process === 'object' && {}.toString.call(process) === '[object process]';
 
+const eventAttrExp = /^on[A-Z]/;
+
 function signal(tagName, attrName, attrValue, attrs) {
+
+  if(eventAttrExp.test(attrName)) {
+    return null;
+  }
+
   switch(attrName) {
     case 'action':
       if(tagName === 'form') {
@@ -624,9 +644,16 @@ var h = function(tag, attrs, children){
   return tree;
 };
 
+class Component {
+  dispatch(ev) {
+    this._app.dispatch(this, ev);
+  }
+}
+
 const fritz$1 = new App();
 
 fritz$1.h = h;
+fritz$1.Component = Component;
 
 return fritz$1;
 

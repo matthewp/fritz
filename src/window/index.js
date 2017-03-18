@@ -70,6 +70,9 @@ class Framework {
       case 'render':
         this.patch(ev);
         break;
+      case 'event':
+        this.handleEvent(ev);
+        break;
     }
   }
 
@@ -152,6 +155,14 @@ class Framework {
         });
       }
     });
+  }
+
+  handleEvent(msg) {
+    let inst = this._idMap.get(msg.id);
+    let event = new Event(msg.event.type, {
+      bubbles: true
+    });
+    inst.dispatchEvent(event);
   }
 }
 

@@ -2,7 +2,14 @@ import App from './app.js';
 
 const isNode = typeof process === 'object' && {}.toString.call(process) === '[object process]';
 
+const eventAttrExp = /^on[A-Z]/;
+
 function signal(tagName, attrName, attrValue, attrs) {
+
+  if(eventAttrExp.test(attrName)) {
+    return null;
+  }
+
   switch(attrName) {
     case 'action':
       if(tagName === 'form') {

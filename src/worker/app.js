@@ -7,6 +7,7 @@ class App {
     this.messenger = new Messenger(this);
     this.componentMap = new Map();
     this.idMap = new Map();
+    this.instMap = new WeakMap();
   }
 
   define(tag, constr) {
@@ -17,7 +18,7 @@ class App {
   handleEvent(msg) {
     let id = msg.id;
     let inst = this.idMap.get(id);
-    let response = {};
+    let response = Object.create(null);
     let methodName = 'on' + msg.name[0].toUpperCase() + msg.name.substr(1);
     let method = inst[methodName];
     if(method) {
@@ -33,15 +34,22 @@ class App {
     let id = msg.id;
     let tag = msg.tag;
     let inst = this.idMap.get(id);
-    let response = {};
+    let response = Object.create(null);
     if(!inst) {
       let constr = this.componentMap.get(tag);
       inst = new constr();
+      inst._app = this;
       this.idMap.set(id, inst);
+      this.instMap.set(inst, id);
       response.events = constr.observedEvents;
     }
     response.tree = inst.render();
     this.messenger.send(id, response);
+  }
+
+  dispatch(inst, ev) {
+    let id = this.instMap.get(inst);
+    this.messenger.dispatch(id, ev);
   }
 }
 

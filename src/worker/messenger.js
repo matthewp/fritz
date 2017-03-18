@@ -26,6 +26,11 @@ export default class {
     postMessage({ type: 'tag', tag });
   }
 
+  dispatch(id, event) {
+    let msg = { id, type: 'event', event };
+    postMessage(msg);
+  }
+
   send(id, response) {
     let msg = Object.assign({ id, type: 'render' }, response);
     postMessage(msg);
