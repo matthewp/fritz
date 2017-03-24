@@ -1,42 +1,66 @@
-function App(contents) {
-  return h('html', [
+importScripts('../../worker.umd.js');
+importScripts('./styles.js');
 
-    h('head', [
-      h('style',[`
-          p {
-          font: 12px/16px Arial;
-          margin: 10px 10px 15px;
-        }
-        button {
-          font: bold 14px/14px Arial;
-          margin-left: 10px;
-        }
-        #grid {
-          margin: 10px;
-        }
-        #timing {
-          clear: both;
-          padding-top: 10px;
-        }
-        .box-view {
-          width: 20px; height: 20px;
-          float: left;
-          position: relative;
-          margin: 8px;
-        }
-        .box {
-          border-radius: 100px;
-          width: 20px; height: 10px;
-          padding: 5px 0;
-          color: #fff;
-          font: 10px/10px Arial;
-          text-align: center;
-          position: absolute;
-      }`])
-    ]),
-    h('body', [
-      h('div', {id:'timing'}),
-      contents
-    ])
+const { h, Component } = fritz;
+
+function StartButton() {
+  return h('form', {action:'/start', method: 'POST'}, [
+    h('button', ['Start'])
   ]);
 }
+
+function Box(num, count) {
+  var top = Math.sin(count / 10) * 10;
+  var left = Math.cos(count / 10) * 10;
+  var color = count % 255;
+  var content = ""+(count % 100);
+  var style = `top: ${top}px; left: ${left}px; background: rgb(0,0,${color});`;
+
+  return h('div', {'class':'box-view'}, [
+    h('div', {id:`box-${num}`,'class':'box',style:style}, [ content ])
+  ]);
+}
+
+class CirclesDemo extends Component {
+  static get observedEvents() {
+    return ['submit'];
+  }
+
+  constructor() {
+    super();
+    this.id = null;
+    this.count = 0;
+  }
+
+  onSubmit() {
+    this.id = setInterval(_ => {
+      this.update();
+
+      if(this.count >= 1000) {
+        clearInterval(this.id);
+        this.id = null;
+        this.count = 0;
+      }
+    }, 1);
+  }
+
+  render() {
+    if(!this.id) {
+      return StartButton();
+    }
+
+    this.count++;
+    var boxes = [];
+    for(var i = 0; i < 100; i++) {
+      boxes.push(Box(i, this.count));
+    }
+
+    return h('div', [
+      Styles(),
+      StartButton(),
+      h('div', boxes)
+    ]);
+  }
+}
+
+fritz.define('circles-demo', CirclesDemo);

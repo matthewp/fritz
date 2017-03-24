@@ -530,6 +530,13 @@ class App {
     this.messenger.send(id, response$$1);
   }
 
+  update(inst) {
+    let id = this.instMap.get(inst);
+    let response$$1 = Object.create(null);
+    response$$1.tree = inst.render();
+    this.messenger.send(id, response$$1);
+  }
+
   dispatch(inst, ev) {
     let id = this.instMap.get(inst);
     this.messenger.dispatch(id, ev);
@@ -647,6 +654,10 @@ var h = function(tag, attrs, children){
 class Component {
   dispatch(ev) {
     this._app.dispatch(this, ev);
+  }
+
+  update() {
+    this._app.update(this);
   }
 }
 

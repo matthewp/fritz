@@ -47,6 +47,13 @@ class App {
     this.messenger.send(id, response);
   }
 
+  update(inst) {
+    let id = this.instMap.get(inst);
+    let response = Object.create(null);
+    response.tree = inst.render();
+    this.messenger.send(id, response);
+  }
+
   dispatch(inst, ev) {
     let id = this.instMap.get(inst);
     this.messenger.dispatch(id, ev);
