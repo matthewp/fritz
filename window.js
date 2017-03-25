@@ -1374,32 +1374,6 @@ const text$1 = function(value, var_args) {
  * limitations under the License.
  */
 
-var makeRequest = function(url, method = 'GET', el, ev){
-  let body;
-  let toQueryParams = method === 'GET';
-
-  switch(el.tagName) {
-    case 'FORM':
-      body = serializeForm(el, toQueryParams);
-      break;
-    default:
-      break;
-  }
-
-  if(toQueryParams && body) {
-    url += body;
-    body = undefined;
-  }
-
-  url = new URL(url, location);
-
-  return {
-    url: url+'',
-    method,
-    body
-  };
-};
-
 function serializeForm(form, toQueryParams){
   var el;
   return serializeBody(toQueryParams, function(cb){
@@ -1438,13 +1412,23 @@ class Framework {
     ev.preventDefault();
   }
 
-  eventHandler(data) {
+  eventHandler(data, id) {
     let self = this;
 
     return function(ev){
       ev.preventDefault();
 
       let ct = ev.currentTarget;
+
+      self._app.postMessage({
+        type: 'event',
+        name: ev.type,
+        id: id,
+        handle: data[2]
+      });
+
+
+      /*
       let request = makeRequest(data[2], data[3], ct, ev);
       let push = !ct.dataset.noPush && request.method === 'GET';
 
@@ -1453,6 +1437,7 @@ class Framework {
       }
 
       self.request(request);
+      */
     };
   }
 
@@ -1506,7 +1491,7 @@ class Framework {
           case 1:
             if(n[3]) {
               for(var j = 0, jlen = n[3].length; j < jlen; j++) {
-                n[2].push(n[3][j][1], self.eventHandler(n[3][j]));
+                n[2].push(n[3][j][1], self.eventHandler(n[3][j], id));
               }
             }
 

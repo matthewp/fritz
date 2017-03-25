@@ -1,44 +1,14 @@
-import App from './app.js';
-
-const isNode = typeof process === 'object' && {}.toString.call(process) === '[object process]';
+//import App from './app.js';
+import Handle from './handle.js';
 
 const eventAttrExp = /^on[A-Z]/;
 
 function signal(tagName, attrName, attrValue, attrs) {
-
   if(eventAttrExp.test(attrName)) {
-    return null;
-  }
-
-  switch(attrName) {
-    case 'action':
-      if(tagName === 'form') {
-        let eventName = s.event(attrs) || 'submit';
-        let method = s.method(attrs) || attrs['method'];
-        return [1, 'on' + eventName, attrValue, method];
-      }
-      break;
-    case 'href':
-      if(tagName === 'a' && App.hasMatchingRoute('GET', attrValue)) {
-        return [1, 'onclick', attrValue, 'GET'];
-      }
-      break;
-    case 'data-url':
-      let method = s.method(attrs) || 'GET';
-      if(App.hasMatchingRoute(method, attrValue)) {
-        let eventName = s.event(attrs) || 'click';
-        return [1, 'on' + eventName, attrValue, method];
-      }
-      break;
+    let eventName = attrName.toLowerCase();
+    let id = Handle.from(attrValue).id;
+    return [1, eventName, id];
   }
 }
 
-const s = ['event', 'url', 'method'].reduce(function(o, n){
-  var prop = 'data-' + n;
-  o[n] = function(attrs){
-    return attrs[prop];
-  };
-  return o;
-}, {});
-
-export default isNode ? function(){} : signal;
+export default signal;

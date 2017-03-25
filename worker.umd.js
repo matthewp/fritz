@@ -4,6 +4,78 @@
   (global.fritz = factory());
 }(this, (function () { 'use strict';
 
+class Serializable {
+  serialize() {
+    let out = Object.create(null);
+    return Object.assign(out, this);
+  }
+}
+
+class Event extends Serializable {
+  constructor(type) {
+    super();
+    this.type = type;
+    this.defaultPrevented = false;
+  }
+
+  preventDefault() {
+    this.defaultPrevented = true;
+  }
+}
+
+let Store;
+let Handle;
+
+Store = class {
+  constructor() {
+    this.handleMap = new WeakMap();
+    this.idMap = new Map();
+    this.id = 0;
+  }
+
+  from(fn) {
+    let handle;
+    let id = this.handleMap.get(fn);
+    if(id == null) {
+      id = this.id++;
+      handle = new Handle(id, fn);
+      this.handleMap.set(fn, id);
+      this.idMap.set(id, handle);
+    } else {
+      handle = this.idMap.get(id);
+    }
+    return handle;
+  }
+
+  get(id) {
+    return this.idMap.get(id);
+  }
+};
+
+Handle = class {
+  static get store() {
+    if(!this._store) {
+      this._store = new Store();
+    }
+    return this._store;
+  }
+
+  static from(fn) {
+    return this.store.from(fn);
+  }
+
+  static get(id) {
+    return this.store.get(id);
+  }
+
+  constructor(id, fn) {
+    this.id = id;
+    this.fn = fn;
+  }
+};
+
+var Handle$1 = Handle;
+
 var Messenger = class {
   constructor(app) {
     this.app = app;
@@ -502,11 +574,22 @@ class App {
     let id = msg.id;
     let inst = this.idMap.get(id);
     let response$$1 = Object.create(null);
-    let methodName = 'on' + msg.name[0].toUpperCase() + msg.name.substr(1);
-    let method = inst[methodName];
+
+    let method;
+
+    if(msg.handle != null) {
+      method = Handle$1.get(msg.handle).fn;
+    } else {
+      let methodName = 'on' + msg.name[0].toUpperCase() + msg.name.substr(1);
+      method = inst[methodName];
+    }
+
     if(method) {
-      method.call(inst);
+      let event = new Event(msg.name);
+
+      method.call(inst, event);
       response$$1.tree = inst.render();
+      response$$1.event = event.serialize();
       this.messenger.send(id, response$$1);
     } else {
       // TODO warn?
@@ -543,48 +626,16 @@ class App {
   }
 }
 
-const isNode = typeof process === 'object' && {}.toString.call(process) === '[object process]';
-
+//import App from './app.js';
 const eventAttrExp = /^on[A-Z]/;
 
 function signal(tagName, attrName, attrValue, attrs) {
-
   if(eventAttrExp.test(attrName)) {
-    return null;
-  }
-
-  switch(attrName) {
-    case 'action':
-      if(tagName === 'form') {
-        let eventName = s.event(attrs) || 'submit';
-        let method = s.method(attrs) || attrs['method'];
-        return [1, 'on' + eventName, attrValue, method];
-      }
-      break;
-    case 'href':
-      if(tagName === 'a' && App.hasMatchingRoute('GET', attrValue)) {
-        return [1, 'onclick', attrValue, 'GET'];
-      }
-      break;
-    case 'data-url':
-      let method = s.method(attrs) || 'GET';
-      if(App.hasMatchingRoute(method, attrValue)) {
-        let eventName = s.event(attrs) || 'click';
-        return [1, 'on' + eventName, attrValue, method];
-      }
-      break;
+    let eventName = attrName.toLowerCase();
+    let id = Handle$1.from(attrValue).id;
+    return [1, eventName, id];
   }
 }
-
-const s = ['event', 'url', 'method'].reduce(function(o, n){
-  var prop = 'data-' + n;
-  o[n] = function(attrs){
-    return attrs[prop];
-  };
-  return o;
-}, {});
-
-var signal$1 = isNode ? function(){} : signal;
 
 class Tree extends Array {}
 
@@ -611,13 +662,14 @@ var h = function(tag, attrs, children){
     var evs;
     attrs = Object.keys(attrs).reduce(function(acc, key){
       var value = attrs[key];
-      acc.push(key);
-      acc.push(value);
 
-      var eventInfo = signal$1(tag, key, value, attrs);
+      var eventInfo = signal(tag, key, value, attrs);
       if(eventInfo) {
         if(!evs) evs = [];
         evs.push(eventInfo);
+      } else {
+        acc.push(key);
+        acc.push(value);
       }
 
       return acc;

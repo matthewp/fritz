@@ -5,8 +5,6 @@ import {
   patch
 } from 'incremental-dom/index.js';
 
-import makeRequest from './make-request.js';
-
 class Framework {
   constructor() {
     this._app = null;
@@ -17,26 +15,18 @@ class Framework {
     //this._eventHandler2 = this._eventHandler2.bind(this);
   }
 
-  _eventHandler2(ev) {
-    debugger;
-    ev.preventDefault();
-  }
-
-  eventHandler(data) {
+  eventHandler(data, id) {
     let self = this;
 
     return function(ev){
       ev.preventDefault();
 
-      let ct = ev.currentTarget;
-      let request = makeRequest(data[2], data[3], ct, ev);
-      let push = !ct.dataset.noPush && request.method === 'GET';
-
-      if(push) {
-        history.pushState(request, null, request.url);
-      }
-
-      self.request(request);
+      self._app.postMessage({
+        type: 'event',
+        name: ev.type,
+        id: id,
+        handle: data[2]
+      });
     };
   }
 
@@ -90,7 +80,7 @@ class Framework {
           case 1:
             if(n[3]) {
               for(var j = 0, jlen = n[3].length; j < jlen; j++) {
-                n[2].push(n[3][j][1], self.eventHandler(n[3][j]));
+                n[2].push(n[3][j][1], self.eventHandler(n[3][j], id));
               }
             }
 

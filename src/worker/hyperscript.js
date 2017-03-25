@@ -25,13 +25,14 @@ export default function(tag, attrs, children){
     var evs;
     attrs = Object.keys(attrs).reduce(function(acc, key){
       var value = attrs[key];
-      acc.push(key);
-      acc.push(value);
 
       var eventInfo = signal(tag, key, value, attrs)
       if(eventInfo) {
         if(!evs) evs = [];
         evs.push(eventInfo);
+      } else {
+        acc.push(key);
+        acc.push(value);
       }
 
       return acc;

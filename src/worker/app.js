@@ -1,3 +1,5 @@
+import Event from './event.js';
+import Handle from './handle.js';
 import Messenger from './messenger.js';
 import Route from './route.js';
 import Response from './response.js';
@@ -19,11 +21,22 @@ class App {
     let id = msg.id;
     let inst = this.idMap.get(id);
     let response = Object.create(null);
-    let methodName = 'on' + msg.name[0].toUpperCase() + msg.name.substr(1);
-    let method = inst[methodName];
+
+    let method;
+
+    if(msg.handle != null) {
+      method = Handle.get(msg.handle).fn;
+    } else {
+      let methodName = 'on' + msg.name[0].toUpperCase() + msg.name.substr(1);
+      method = inst[methodName];
+    }
+
     if(method) {
-      method.call(inst);
+      let event = new Event(msg.name);
+
+      method.call(inst, event);
       response.tree = inst.render();
+      response.event = event.serialize();
       this.messenger.send(id, response);
     } else {
       // TODO warn?
