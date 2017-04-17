@@ -3,7 +3,8 @@ import {
   elementClose,
   text,
   patch
-} from 'incremental-dom/index.js';
+} from 'incremental-dom';
+import { Component } from './component.js';
 
 class Framework {
   constructor() {

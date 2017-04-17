@@ -1,8 +1,386 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-  typeof define === 'function' && define.amd ? define(factory) :
-  (global.fritz = factory());
+	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+	typeof define === 'function' && define.amd ? define(factory) :
+	(global.fritz = factory());
 }(this, (function () { 'use strict';
+
+const root = typeof window === 'undefined' ? global : window;
+
+const {
+  customElements: customElements$1,
+  HTMLElement = null,
+  Object: Object$1,
+  MutationObserver
+} = root;
+const {
+  getOwnPropertyNames,
+  getOwnPropertySymbols
+} = Object$1;
+
+function dashCase(str) {
+  return str.split(/([_A-Z])/).reduce((one, two, idx) => {
+    const dash = !one || idx % 2 === 0 ? '' : '-';
+    two = two === '_' ? '' : two;
+    return `${one}${dash}${two.toLowerCase()}`;
+  });
+}
+
+function debounce(cbFunc) {
+  let scheduled = false;
+  let i = 0;
+  let cbArgs = [];
+  const elem = document.createElement('span');
+  const observer = new MutationObserver(() => {
+    cbFunc(...cbArgs);
+    scheduled = false;
+    cbArgs = null;
+  });
+
+  observer.observe(elem, { childList: true });
+
+  return (...args) => {
+    cbArgs = args;
+    if (!scheduled) {
+      scheduled = true;
+      elem.textContent = `${i}`;
+      i += 1;
+    }
+  };
+}
+
+const empty = val => val == null;
+const { freeze } = Object$1;
+
+function keys(obj = {}) {
+  const names = getOwnPropertyNames(obj);
+  return getOwnPropertySymbols ? names.concat(getOwnPropertySymbols(obj)) : names;
+}
+
+function sym(description) {
+  return typeof Symbol === 'function' ? Symbol(description ? String(description) : undefined) : uniqueId(description);
+}
+
+function uniqueId(description) {
+  return (description ? String(description) : '') + 'xxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : r & 0x3 | 0x8;
+    return v.toString(16);
+  });
+}
+
+var _extends$1 = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+const _definedProps = sym('_definedProps');
+const _normPropDef = sym('_normPropDef');
+const _syncingAttributeToProperty = sym('_syncingAttributeToProperty');
+const _syncingPropertyToAttribute = sym('_syncingPropertyToAttribute');
+
+const _updateDebounced = sym('_updateDebounced');
+
+function defineProps(Ctor) {
+  if (Ctor[_definedProps]) {
+    return;
+  }
+  Ctor[_definedProps] = true;
+
+  const { prototype } = Ctor;
+  const props = normPropDefs(Ctor);
+
+  Object.defineProperties(prototype, keys(props).reduce((prev, curr) => {
+    const { attribute: { target }, coerce, default: def, serialize } = props[curr];
+    const _value = sym(curr);
+    prev[curr] = {
+      configurable: true,
+      get() {
+        const val = this[_value];
+        return val == null ? def : val;
+      },
+      set(val) {
+        this[_value] = coerce(val);
+        syncPropertyToAttribute(this, target, serialize, val);
+        this[_updateDebounced]();
+      }
+    };
+    return prev;
+  }, {}));
+}
+
+function normAttribute(name, prop) {
+  const { attribute } = prop;
+  const obj = typeof attribute === 'object' ? _extends$1({}, attribute) : {
+    source: attribute,
+    target: attribute
+  };
+  if (obj.source === true) {
+    obj.source = dashCase(name);
+  }
+  if (obj.target === true) {
+    obj.target = dashCase(name);
+  }
+  return obj;
+}
+
+function normPropDef(name, prop) {
+  const { coerce, default: def, deserialize, serialize } = prop;
+  return {
+    attribute: normAttribute(name, prop),
+    coerce: coerce || (v => v),
+    default: def,
+    deserialize: deserialize || (v => v),
+    serialize: serialize || (v => v)
+  };
+}
+
+function normPropDefs(Ctor) {
+  return Ctor[_normPropDef] || (Ctor[_normPropDef] = keys(Ctor.props).reduce((prev, curr) => {
+    prev[curr] = normPropDef(curr, Ctor.props[curr] || {});
+    return prev;
+  }, {}));
+}
+
+function syncAttributeToProperty(elem, name, value) {
+  if (elem[_syncingPropertyToAttribute]) {
+    return;
+  }
+  const propDefs = normPropDefs(elem.constructor);
+  for (let propName in propDefs) {
+    const { attribute: { source }, deserialize } = propDefs[propName];
+    if (source === name) {
+      elem[_syncingAttributeToProperty] = propName;
+      elem[propName] = value == null ? value : deserialize(value);
+      elem[_syncingAttributeToProperty] = null;
+    }
+  }
+}
+
+function syncPropertyToAttribute(elem, target, serialize, val) {
+  if (target && elem[_syncingAttributeToProperty] !== target) {
+    const serialized = serialize(val);
+    elem[_syncingPropertyToAttribute] = true;
+    if (serialized == null) {
+      elem.removeAttribute(target);
+    } else {
+      elem.setAttribute(target, serialized);
+    }
+    elem[_syncingPropertyToAttribute] = false;
+  }
+}
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+// Unfortunately the polyfills still seem to double up on lifecycle calls. In
+// order to get around this, we need guards to prevent us from executing them
+// more than once for a given state.
+const _connected = sym('_connected');
+const _constructed = sym('_constructed');
+
+const _observedAttributes = sym('_observedAttributes');
+const _prevProps = sym('_prevProps');
+const _props = sym('_props');
+const _updateCallback = sym('_updateCallback');
+const _updating = sym('_updating');
+
+const withProps = (Base = HTMLElement) => {
+  return class extends Base {
+    static get observedAttributes() {
+      const props = normPropDefs(this);
+      return keys(props).map(k => props[k].attribute).filter(Boolean).map(a => a.source).concat(this[_observedAttributes] || []);
+    }
+
+    static set observedAttributes(attrs) {
+      this[_observedAttributes] = attrs;
+    }
+
+    static get props() {
+      return this[_props];
+    }
+
+    static set props(props) {
+      this[_props] = props;
+    }
+
+    get props() {
+      return keys(this.constructor.props).reduce((prev, curr) => {
+        prev[curr] = this[curr];
+        return prev;
+      }, {});
+    }
+
+    set props(props) {
+      const ctorProps = this.constructor.props;
+      keys(props).forEach(k => k in ctorProps && (this[k] = props[k]));
+    }
+
+    constructor() {
+      super();
+
+      this[_updateCallback] = () => {
+        if (this[_updating] || !this[_connected]) {
+          return;
+        }
+
+        // Flag as rendering. This prevents anything from trying to render - or
+        // queueing a render - while there is a pending render.
+        this[_updating] = true;
+
+        // Prev / next props for prop lifecycle callbacks.
+        const prev = this[_prevProps];
+        const next = this[_prevProps] = this.props;
+
+        // Always call set, but only call changed if the props updated.
+        this.propsSetCallback(next, prev);
+        if (this.propsUpdatedCallback(next, prev)) {
+          this.propsChangedCallback(next, prev);
+        }
+
+        this[_updating] = false;
+      };
+
+      if (this[_constructed]) return;
+      this[_constructed] = true;
+      const { constructor } = this;
+      defineProps(constructor);
+      this[_updateDebounced] = debounce(this[_updateCallback]);
+    }
+
+    connectedCallback() {
+      if (this[_connected]) return;
+      this[_connected] = true;
+      if (super.connectedCallback) super.connectedCallback();
+      this[_updateDebounced]();
+    }
+
+    disconnectedCallback() {
+      if (!this[_connected]) return;
+      this[_connected] = false;
+      if (super.disconnectedCallback) super.disconnectedCallback();
+    }
+
+    // Called when props actually change.
+    propsChangedCallback() {}
+
+    // Called whenever props are set, even if they don't change.
+    propsSetCallback() {}
+
+    // Called to see if the props changed.
+    propsUpdatedCallback(next, prev) {
+      return !prev || keys(prev).some(k => prev[k] !== next[k]);
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+      if (super.attributeChangedCallback) super.attributeChangedCallback(name, oldValue, newValue);
+      syncAttributeToProperty(this, name, newValue);
+    }
+
+    // Invokes the complete render lifecycle.
+  };
+};
+
+// Props
+
+const { parse, stringify } = JSON;
+const attribute = freeze({ source: true });
+const createProp = obj => freeze(_extends({ attribute }, obj));
+const nullOrType = type => val => empty(val) ? null : type(val);
+const zeroOrNumber = val => empty(val) ? 0 : Number(val);
+
+const array = createProp({
+  coerce: val => Array.isArray(val) ? val : empty(val) ? null : [val],
+  default: freeze([]),
+  deserialize: parse,
+  serialize: stringify
+});
+
+const boolean = createProp({
+  coerce: Boolean,
+  default: false,
+  deserialize: val => !empty(val),
+  serialize: val => val ? '' : null
+});
+
+const number = createProp({
+  default: 0,
+  coerce: zeroOrNumber,
+  deserialize: zeroOrNumber,
+  serialize: nullOrType(Number)
+});
+
+const object = createProp({
+  default: freeze({}),
+  deserialize: parse,
+  serialize: stringify
+});
+
+const string = createProp({
+  default: '',
+  coerce: String,
+  serialize: nullOrType(String)
+});
+
+const _shadowRoot = sym();
+
+const attachShadowOptions = { mode: 'open' };
+
+function attachShadow(elem) {
+  return elem.attachShadow ? elem.attachShadow(attachShadowOptions) : elem;
+}
+
+const withRender = (Base = HTMLElement) => class extends Base {
+  propsChangedCallback() {
+    this[_shadowRoot] = this[_shadowRoot] || (this[_shadowRoot] = attachShadow(this));
+    this.rendererCallback(this[_shadowRoot], () => this.renderCallback(this));
+    this.renderedCallback();
+  }
+
+  // Called to render the component.
+  renderCallback() {}
+
+  // Called after the component has rendered.
+  renderedCallback() {}
+};
+
+let suffix = 0;
+
+function formatName(prefix, suffix) {
+  prefix = prefix || 'element';
+  return (prefix.indexOf('-') === -1 ? `x-${prefix}` : prefix) + (suffix ? `-${suffix}` : '');
+}
+
+function generateName(Ctor) {
+  const prefix = dashCase(Ctor.name);
+  while (customElements$1.get(formatName(prefix, suffix))) {
+    suffix++;
+  }
+  return formatName(prefix, suffix++);
+}
+
+const _is = sym('_is');
+
+const withUnique = (Base = HTMLElement) => class extends Base {
+  static get is() {
+    return this[_is] || (this[_is] = generateName(this));
+  }
+  static set is(is) {
+    this[_is] = is;
+  }
+};
+
+/**
+ * @license
+ * Copyright 2015 The Incremental DOM Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS-IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 /**
  * Copyright 2015 The Incremental DOM Authors. All Rights Reserved.
@@ -20,12 +398,10 @@
  * limitations under the License.
  */
 
-
 /**
  * A cached reference to the hasOwnProperty function.
  */
-const hasOwnProperty = Object.prototype.hasOwnProperty;
-
+var hasOwnProperty = Object.prototype.hasOwnProperty;
 
 /**
  * A constructor function that will create blank objects.
@@ -35,41 +411,23 @@ function Blank() {}
 
 Blank.prototype = Object.create(null);
 
-
 /**
  * Used to prevent property collisions between our "map" and its prototype.
  * @param {!Object<string, *>} map The map to check.
  * @param {string} property The property to check.
  * @return {boolean} Whether map has property.
  */
-const has = function(map, property) {
+var has = function (map, property) {
   return hasOwnProperty.call(map, property);
 };
-
 
 /**
  * Creates an map object without a prototype.
  * @return {!Object}
  */
-const createMap = function() {
+var createMap = function () {
   return new Blank();
 };
-
-/**
- * Copyright 2015 The Incremental DOM Authors. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS-IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 /**
  * Keeps track of information needed to perform diffs for a given DOM node.
@@ -141,7 +499,6 @@ function NodeData(nodeName, key) {
   this.text = null;
 }
 
-
 /**
  * Initializes a NodeData object for a Node.
  *
@@ -150,12 +507,11 @@ function NodeData(nodeName, key) {
  * @param {?string=} key The key that identifies the node.
  * @return {!NodeData} The newly initialized data object
  */
-const initData = function(node, nodeName, key) {
-  const data = new NodeData(nodeName, key);
+var initData = function (node, nodeName, key) {
+  var data = new NodeData(nodeName, key);
   node['__incrementalDOMData'] = data;
   return data;
 };
-
 
 /**
  * Retrieves the NodeData object for a Node, creating it if necessary.
@@ -163,41 +519,40 @@ const initData = function(node, nodeName, key) {
  * @param {?Node} node The Node to retrieve the data for.
  * @return {!NodeData} The NodeData for this Node.
  */
-const getData = function(node) {
+var getData = function (node) {
   importNode(node);
   return node['__incrementalDOMData'];
 };
-
 
 /**
  * Imports node and its subtree, initializing caches.
  *
  * @param {?Node} node The Node to import.
  */
-const importNode = function(node) {
+var importNode = function (node) {
   if (node['__incrementalDOMData']) {
     return;
   }
 
-  const isElement = node instanceof Element;
-  const nodeName = isElement ? node.localName : node.nodeName;
-  const key = isElement ? node.getAttribute('key') : null;
-  const data = initData(node, nodeName, key);
+  var isElement = node instanceof Element;
+  var nodeName = isElement ? node.localName : node.nodeName;
+  var key = isElement ? node.getAttribute('key') : null;
+  var data = initData(node, nodeName, key);
 
   if (key) {
     getData(node.parentNode).keyMap[key] = node;
   }
 
   if (isElement) {
-    const attributes = node.attributes;
-    const attrs = data.attrs;
-    const newAttrs = data.newAttrs;
-    const attrsArr = data.attrsArr;
+    var attributes = node.attributes;
+    var attrs = data.attrs;
+    var newAttrs = data.newAttrs;
+    var attrsArr = data.attrsArr;
 
-    for (let i = 0; i < attributes.length; i += 1) {
-      const attr = attributes[i];
-      const name = attr.name;
-      const value = attr.value;
+    for (var i = 0; i < attributes.length; i += 1) {
+      var attr = attributes[i];
+      var name = attr.name;
+      var value = attr.value;
 
       attrs[name] = value;
       newAttrs[name] = undefined;
@@ -206,26 +561,10 @@ const importNode = function(node) {
     }
   }
 
-  for (let child = node.firstChild; child; child = child.nextSibling) {
+  for (var child = node.firstChild; child; child = child.nextSibling) {
     importNode(child);
   }
 };
-
-/**
- * Copyright 2015 The Incremental DOM Authors. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS-IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 /**
  * Gets the namespace to create an element (of a given tag) in.
@@ -233,7 +572,7 @@ const importNode = function(node) {
  * @param {?Node} parent
  * @return {?string} The namespace to create the tag in.
  */
-const getNamespaceForTag = function(tag, parent) {
+var getNamespaceForTag = function (tag, parent) {
   if (tag === 'svg') {
     return 'http://www.w3.org/2000/svg';
   }
@@ -245,7 +584,6 @@ const getNamespaceForTag = function(tag, parent) {
   return parent.namespaceURI;
 };
 
-
 /**
  * Creates an Element.
  * @param {Document} doc The document with which to create the Element.
@@ -254,9 +592,9 @@ const getNamespaceForTag = function(tag, parent) {
  * @param {?string=} key A key to identify the Element.
  * @return {!Element}
  */
-const createElement = function(doc, parent, tag, key) {
-  const namespace = getNamespaceForTag(tag, parent);
-  let el;
+var createElement = function (doc, parent, tag, key) {
+  var namespace = getNamespaceForTag(tag, parent);
+  var el = undefined;
 
   if (namespace) {
     el = doc.createElementNS(namespace, tag);
@@ -269,14 +607,13 @@ const createElement = function(doc, parent, tag, key) {
   return el;
 };
 
-
 /**
  * Creates a Text Node.
  * @param {Document} doc The document with which to create the Element.
  * @return {!Text}
  */
-const createText = function(doc) {
-  const node = doc.createTextNode('');
+var createText = function (doc) {
+  var node = doc.createTextNode('');
   initData(node, '#text', null);
   return node;
 };
@@ -298,7 +635,7 @@ const createText = function(doc) {
  */
 
 /** @const */
-const notifications = {
+var notifications = {
   /**
    * Called after patch has compleated with any Nodes that have been created
    * and added to the DOM.
@@ -316,22 +653,6 @@ const notifications = {
 };
 
 /**
- * Copyright 2015 The Incremental DOM Authors. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS-IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/**
  * Keeps track of the state of a patch.
  * @constructor
  */
@@ -347,31 +668,28 @@ function Context() {
   this.deleted = notifications.nodesDeleted && [];
 }
 
-
 /**
  * @param {!Node} node
  */
-Context.prototype.markCreated = function(node) {
+Context.prototype.markCreated = function (node) {
   if (this.created) {
     this.created.push(node);
   }
 };
 
-
 /**
  * @param {!Node} node
  */
-Context.prototype.markDeleted = function(node) {
+Context.prototype.markDeleted = function (node) {
   if (this.deleted) {
     this.deleted.push(node);
   }
 };
 
-
 /**
  * Notifies about nodes that were created during the patch opearation.
  */
-Context.prototype.notifyChanges = function() {
+Context.prototype.notifyChanges = function () {
   if (this.created && this.created.length > 0) {
     notifications.nodesCreated(this.created);
   }
@@ -397,154 +715,98 @@ Context.prototype.notifyChanges = function() {
  * limitations under the License.
  */
 
-
 /**
   * Keeps track whether or not we are in an attributes declaration (after
   * elementOpenStart, but before elementOpenEnd).
   * @type {boolean}
   */
-let inAttributes = false;
-
+var inAttributes = false;
 
 /**
   * Keeps track whether or not we are in an element that should not have its
   * children cleared.
   * @type {boolean}
   */
-let inSkip = false;
-
+var inSkip = false;
 
 /**
  * Makes sure that a patch closes every node that it opened.
  * @param {?Node} openElement
  * @param {!Node|!DocumentFragment} root
  */
-const assertNoUnclosedTags = function(openElement, root) {
+var assertNoUnclosedTags = function (openElement, root) {
   if (openElement === root) {
     return;
   }
 
-  let currentElement = openElement;
-  const openTags = [];
+  var currentElement = openElement;
+  var openTags = [];
   while (currentElement && currentElement !== root) {
     openTags.push(currentElement.nodeName.toLowerCase());
     currentElement = currentElement.parentNode;
   }
 
-  throw new Error('One or more tags were not closed:\n' +
-      openTags.join('\n'));
+  throw new Error('One or more tags were not closed:\n' + openTags.join('\n'));
 };
-
 
 /**
  * Makes sure that the caller is not where attributes are expected.
  * @param {string} functionName
  */
-const assertNotInAttributes = function(functionName) {
+var assertNotInAttributes = function (functionName) {
   if (inAttributes) {
-    throw new Error(functionName + '() can not be called between ' +
-        'elementOpenStart() and elementOpenEnd().');
+    throw new Error(functionName + '() can not be called between ' + 'elementOpenStart() and elementOpenEnd().');
   }
 };
-
 
 /**
  * Makes sure that the caller is not inside an element that has declared skip.
  * @param {string} functionName
  */
-const assertNotInSkip = function(functionName) {
+var assertNotInSkip = function (functionName) {
   if (inSkip) {
-    throw new Error(functionName + '() may not be called inside an element ' +
-        'that has called skip().');
+    throw new Error(functionName + '() may not be called inside an element ' + 'that has called skip().');
   }
 };
-
 
 /**
  * Makes sure the patch closes virtual attributes call
  */
-const assertVirtualAttributesClosed = function() {
+var assertVirtualAttributesClosed = function () {
   if (inAttributes) {
-    throw new Error('elementOpenEnd() must be called after calling ' +
-        'elementOpenStart().');
+    throw new Error('elementOpenEnd() must be called after calling ' + 'elementOpenStart().');
   }
 };
-
 
 /**
   * Makes sure that tags are correctly nested.
   * @param {string} nodeName
   * @param {string} tag
   */
-const assertCloseMatchesOpenTag = function(nodeName, tag) {
+var assertCloseMatchesOpenTag = function (nodeName, tag) {
   if (nodeName !== tag) {
-    throw new Error('Received a call to close "' + tag + '" but "' +
-        nodeName + '" was open.');
+    throw new Error('Received a call to close "' + tag + '" but "' + nodeName + '" was open.');
   }
 };
-
-
-/**
- * Makes sure that no children elements have been declared yet in the current
- * element.
- * @param {string} functionName
- * @param {?Node} previousNode
- */
-const assertNoChildrenDeclaredYet = function(functionName, previousNode) {
-  if (previousNode !== null) {
-    throw new Error(functionName + '() must come before any child ' +
-        'declarations inside the current element.');
-  }
-};
-
-
-/**
- * Checks that a call to patchOuter actually patched the element.
- * @param {?Node} startNode The value for the currentNode when the patch
- *     started.
- * @param {?Node} currentNode The currentNode when the patch finished.
- * @param {?Node} expectedNextNode The Node that is expected to follow the
- *    currentNode after the patch;
- * @param {?Node} expectedPrevNode The Node that is expected to preceed the
- *    currentNode after the patch.
- */
-const assertPatchElementNoExtras = function(
-    startNode,
-    currentNode,
-    expectedNextNode,
-    expectedPrevNode) {
-  const wasUpdated = currentNode.nextSibling === expectedNextNode &&
-                     currentNode.previousSibling === expectedPrevNode;
-  const wasChanged = currentNode.nextSibling === startNode.nextSibling &&
-                     currentNode.previousSibling === expectedPrevNode;
-  const wasRemoved = currentNode === startNode;
-
-  if (!wasUpdated && !wasChanged && !wasRemoved) {
-    throw new Error('There must be exactly one top level call corresponding ' +
-        'to the patched element.');
-  }
-};
-
 
 /**
  * Updates the state of being in an attribute declaration.
  * @param {boolean} value
  * @return {boolean} the previous value.
  */
-const setInAttributes = function(value) {
-  const previous = inAttributes;
+var setInAttributes = function (value) {
+  var previous = inAttributes;
   inAttributes = value;
   return previous;
 };
-
 
 /**
  * Updates the state of being in a skip element.
  * @param {boolean} value
  * @return {boolean} the previous value.
  */
-const setInSkip = function(value) {
-  const previous = inSkip;
+var setInSkip = function (value) {
+  var previous = inSkip;
   inSkip = value;
   return previous;
 };
@@ -565,27 +827,25 @@ const setInSkip = function(value) {
  * limitations under the License.
  */
 
-
 /**
  * @param {!Node} node
  * @return {boolean} True if the node the root of a document, false otherwise.
  */
-const isDocumentRoot = function(node) {
+var isDocumentRoot = function (node) {
   // For ShadowRoots, check if they are a DocumentFragment instead of if they
   // are a ShadowRoot so that this can work in 'use strict' if ShadowRoots are
   // not supported.
   return node instanceof Document || node instanceof DocumentFragment;
 };
 
-
 /**
  * @param {!Node} node The node to start at, inclusive.
  * @param {?Node} root The root ancestor to get until, exclusive.
  * @return {!Array<!Node>} The ancestry of DOM nodes.
  */
-const getAncestry = function(node, root) {
-  const ancestry = [];
-  let cur = node;
+var getAncestry = function (node, root) {
+  var ancestry = [];
+  var cur = node;
 
   while (cur !== root) {
     ancestry.push(cur);
@@ -595,14 +855,13 @@ const getAncestry = function(node, root) {
   return ancestry;
 };
 
-
 /**
  * @param {!Node} node
  * @return {!Node} The root node of the DOM tree that contains node.
  */
-const getRoot = function(node) {
-  let cur = node;
-  let prev = cur;
+var getRoot = function (node) {
+  var cur = node;
+  var prev = cur;
 
   while (cur) {
     prev = cur;
@@ -612,17 +871,15 @@ const getRoot = function(node) {
   return prev;
 };
 
-
 /**
  * @param {!Node} node The node to get the activeElement for.
  * @return {?Element} The activeElement in the Document or ShadowRoot
  *     corresponding to node, if present.
  */
-const getActiveElement = function(node) {
-  const root = getRoot(node);
+var getActiveElement = function (node) {
+  var root = getRoot(node);
   return isDocumentRoot(root) ? root.activeElement : null;
 };
-
 
 /**
  * Gets the path of nodes that contain the focused node in the same document as
@@ -631,8 +888,8 @@ const getActiveElement = function(node) {
  * @param {?Node} root The root to get the focused path until.
  * @return {!Array<Node>}
  */
-const getFocusedPath = function(node, root) {
-  const activeElement = getActiveElement(node);
+var getFocusedPath = function (node, root) {
+  var activeElement = getActiveElement(node);
 
   if (!activeElement || !node.contains(activeElement)) {
     return [];
@@ -641,7 +898,6 @@ const getFocusedPath = function(node, root) {
   return getAncestry(activeElement, root);
 };
 
-
 /**
  * Like insertBefore, but instead instead of moving the desired node, instead
  * moves all the other nodes after.
@@ -649,56 +905,38 @@ const getFocusedPath = function(node, root) {
  * @param {!Node} node
  * @param {?Node} referenceNode
  */
-const moveBefore = function(parentNode, node, referenceNode) {
-  const insertReferenceNode = node.nextSibling;
-  let cur = referenceNode;
+var moveBefore = function (parentNode, node, referenceNode) {
+  var insertReferenceNode = node.nextSibling;
+  var cur = referenceNode;
 
   while (cur !== node) {
-    const next = cur.nextSibling;
+    var next = cur.nextSibling;
     parentNode.insertBefore(cur, insertReferenceNode);
     cur = next;
   }
 };
 
-/**
- * Copyright 2015 The Incremental DOM Authors. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS-IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 /** @type {?Context} */
-let context = null;
+var context = null;
 
 /** @type {?Node} */
-let currentNode = null;
+var currentNode = null;
 
 /** @type {?Node} */
-let currentParent = null;
+var currentParent = null;
 
 /** @type {?Document} */
-let doc = null;
-
+var doc = null;
 
 /**
  * @param {!Array<Node>} focusPath The nodes to mark.
  * @param {boolean} focused Whether or not they are focused.
  */
-const markFocused = function(focusPath, focused) {
-  for (let i = 0; i < focusPath.length; i += 1) {
+var markFocused = function (focusPath, focused) {
+  for (var i = 0; i < focusPath.length; i += 1) {
     getData(focusPath[i]).focused = focused;
   }
 };
-
 
 /**
  * Returns a patcher function that sets up and restores a patch context,
@@ -707,7 +945,7 @@ const markFocused = function(focusPath, focused) {
  * @return {function((!Element|!DocumentFragment),!function(T),T=): ?Node}
  * @template T
  */
-const patchFactory = function(run) {
+var patchFactory = function (run) {
   /**
    * TODO(moz): These annotations won't be necessary once we switch to Closure
    * Compiler's new type inference. Remove these once the switch is done.
@@ -718,13 +956,13 @@ const patchFactory = function(run) {
    * @return {?Node} node
    * @template T
    */
-  const f = function(node, fn, data) {
-    const prevContext = context;
-    const prevDoc = doc;
-    const prevCurrentNode = currentNode;
-    const prevCurrentParent = currentParent;
-    let previousInAttributes = false;
-    let previousInSkip = false;
+  var f = function (node, fn, data) {
+    var prevContext = context;
+    var prevDoc = doc;
+    var prevCurrentNode = currentNode;
+    var prevCurrentParent = currentParent;
+    var previousInAttributes = false;
+    var previousInSkip = false;
 
     context = new Context();
     doc = node.ownerDocument;
@@ -735,9 +973,9 @@ const patchFactory = function(run) {
       previousInSkip = setInSkip(false);
     }
 
-    const focusPath = getFocusedPath(node, currentParent);
+    var focusPath = getFocusedPath(node, currentParent);
     markFocused(focusPath, true);
-    const retVal = run(node, fn, data);
+    var retVal = run(node, fn, data);
     markFocused(focusPath, false);
 
     {
@@ -758,7 +996,6 @@ const patchFactory = function(run) {
   return f;
 };
 
-
 /**
  * Patches the document starting at node with the provided function. This
  * function may be called during an existing patch operation.
@@ -770,7 +1007,7 @@ const patchFactory = function(run) {
  * @return {!Node} The patched node.
  * @template T
  */
-const patchInner = patchFactory(function(node, fn, data) {
+var patchInner = patchFactory(function (node, fn, data) {
   currentNode = node;
 
   enterNode();
@@ -784,7 +1021,6 @@ const patchInner = patchFactory(function(node, fn, data) {
   return node;
 });
 
-
 /**
  * Checks whether or not the current node matches the specified nodeName and
  * key.
@@ -794,15 +1030,14 @@ const patchInner = patchFactory(function(node, fn, data) {
  * @param {?string=} key An optional key that identifies a node.
  * @return {boolean} True if the node matches, false otherwise.
  */
-const matches = function(matchNode, nodeName, key) {
-  const data = getData(matchNode);
+var matches = function (matchNode, nodeName, key) {
+  var data = getData(matchNode);
 
   // Key check is done using double equals as we want to treat a null key the
   // same as undefined. This should be okay as the only values allowed are
   // strings, null and undefined so the == semantics are not too weird.
   return nodeName === data.nodeName && key == data.key;
 };
-
 
 /**
  * Aligns the virtual Element definition with the actual DOM, moving the
@@ -811,19 +1046,19 @@ const matches = function(matchNode, nodeName, key) {
  *     For a Text, this should be #text.
  * @param {?string=} key The key used to identify this element.
  */
-const alignWithDOM = function(nodeName, key) {
+var alignWithDOM = function (nodeName, key) {
   if (currentNode && matches(currentNode, nodeName, key)) {
     return;
   }
 
-  const parentData = getData(currentParent);
-  const currentNodeData = currentNode && getData(currentNode);
-  const keyMap = parentData.keyMap;
-  let node;
+  var parentData = getData(currentParent);
+  var currentNodeData = currentNode && getData(currentNode);
+  var keyMap = parentData.keyMap;
+  var node = undefined;
 
   // Check to see if the node has moved within the parent.
   if (key) {
-    const keyNode = keyMap[key];
+    var keyNode = keyMap[key];
     if (keyNode) {
       if (matches(keyNode, nodeName, key)) {
         node = keyNode;
@@ -869,34 +1104,32 @@ const alignWithDOM = function(nodeName, key) {
   currentNode = node;
 };
 
-
 /**
  * @param {?Node} node
  * @param {?Node} child
  * @param {?Object<string, !Element>} keyMap
  */
-const removeChild = function(node, child, keyMap) {
+var removeChild = function (node, child, keyMap) {
   node.removeChild(child);
-  context.markDeleted(/** @type {!Node}*/(child));
+  context.markDeleted( /** @type {!Node}*/child);
 
-  const key = getData(child).key;
+  var key = getData(child).key;
   if (key) {
     delete keyMap[key];
   }
 };
 
-
 /**
  * Clears out any unvisited Nodes, as the corresponding virtual element
  * functions were never called for them.
  */
-const clearUnvisitedDOM = function() {
-  const node = currentParent;
-  const data = getData(node);
-  const keyMap = data.keyMap;
-  const keyMapValid = data.keyMapValid;
-  let child = node.lastChild;
-  let key;
+var clearUnvisitedDOM = function () {
+  var node = currentParent;
+  var data = getData(node);
+  var keyMap = data.keyMap;
+  var keyMapValid = data.keyMapValid;
+  var child = node.lastChild;
+  var key = undefined;
 
   if (child === currentNode && keyMapValid) {
     return;
@@ -921,20 +1154,18 @@ const clearUnvisitedDOM = function() {
   }
 };
 
-
 /**
  * Changes to the first child of the current node.
  */
-const enterNode = function() {
+var enterNode = function () {
   currentParent = currentNode;
   currentNode = null;
 };
 
-
 /**
  * @return {?Node} The next Node to be patched.
  */
-const getNextNode = function() {
+var getNextNode = function () {
   if (currentNode) {
     return currentNode.nextSibling;
   } else {
@@ -942,25 +1173,22 @@ const getNextNode = function() {
   }
 };
 
-
 /**
  * Changes to the next sibling of the current node.
  */
-const nextNode = function() {
+var nextNode = function () {
   currentNode = getNextNode();
 };
-
 
 /**
  * Changes to the parent of the current node, removing any unvisited children.
  */
-const exitNode = function() {
+var exitNode = function () {
   clearUnvisitedDOM();
 
   currentNode = currentParent;
   currentParent = currentParent.parentNode;
 };
-
 
 /**
  * Makes sure that the current node is an Element with a matching tagName and
@@ -972,13 +1200,13 @@ const exitNode = function() {
  *     when iterating over an array of items.
  * @return {!Element} The corresponding Element.
  */
-const elementOpen = function(tag, key) {
+var coreElementOpen = function (tag, key) {
   nextNode();
   alignWithDOM(tag, key);
   enterNode();
-  return /** @type {!Element} */(currentParent);
+  return (/** @type {!Element} */currentParent
+  );
 };
-
 
 /**
  * Closes the currently open Element, removing any unvisited children if
@@ -986,15 +1214,15 @@ const elementOpen = function(tag, key) {
  *
  * @return {!Element} The corresponding Element.
  */
-const elementClose = function() {
+var coreElementClose = function () {
   {
     setInSkip(false);
   }
 
   exitNode();
-  return /** @type {!Element} */(currentNode);
+  return (/** @type {!Element} */currentNode
+  );
 };
-
 
 /**
  * Makes sure the current node is a Text node and creates a Text node if it is
@@ -1002,10 +1230,11 @@ const elementClose = function() {
  *
  * @return {!Text} The corresponding Text Node.
  */
-const text = function() {
+var coreText = function () {
   nextNode();
   alignWithDOM('#text', null);
-  return /** @type {!Text} */(currentNode);
+  return (/** @type {!Text} */currentNode
+  );
 };
 
 /**
@@ -1025,31 +1254,15 @@ const text = function() {
  */
 
 /** @const */
-const symbols = {
+var symbols = {
   default: '__default'
 };
-
-/**
- * Copyright 2015 The Incremental DOM Authors. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS-IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 /**
  * @param {string} name
  * @return {string|undefined} The namespace to use for the attribute.
  */
-const getNamespace = function(name) {
+var getNamespace = function (name) {
   if (name.lastIndexOf('xml:', 0) === 0) {
     return 'http://www.w3.org/XML/1998/namespace';
   }
@@ -1059,7 +1272,6 @@ const getNamespace = function(name) {
   }
 };
 
-
 /**
  * Applies an attribute or property to a given Element. If the value is null
  * or undefined, it is removed from the Element. Otherwise, the value is set
@@ -1068,11 +1280,11 @@ const getNamespace = function(name) {
  * @param {string} name The attribute's name.
  * @param {?(boolean|number|string)=} value The attribute's value.
  */
-const applyAttr = function(el, name, value) {
+var applyAttr = function (el, name, value) {
   if (value == null) {
     el.removeAttribute(name);
   } else {
-    const attrNS = getNamespace(name);
+    var attrNS = getNamespace(name);
     if (attrNS) {
       el.setAttributeNS(attrNS, name, value);
     } else {
@@ -1087,10 +1299,9 @@ const applyAttr = function(el, name, value) {
  * @param {string} name The property's name.
  * @param {*} value The property's value.
  */
-const applyProp = function(el, name, value) {
+var applyProp = function (el, name, value) {
   el[name] = value;
 };
-
 
 /**
  * Applies a value to a style declaration. Supports CSS custom properties by
@@ -1099,14 +1310,13 @@ const applyProp = function(el, name, value) {
  * @param {!string} prop
  * @param {*} value
  */
-const setStyleValue = function(style, prop, value) {
+var setStyleValue = function (style, prop, value) {
   if (prop.indexOf('-') >= 0) {
-    style.setProperty(prop, /** @type {string} */(value));
+    style.setProperty(prop, /** @type {string} */value);
   } else {
     style[prop] = value;
   }
 };
-
 
 /**
  * Applies a style to an Element. No vendor prefix expansion is done for
@@ -1116,22 +1326,21 @@ const setStyleValue = function(style, prop, value) {
  * @param {*} style The style to set. Either a string of css or an object
  *     containing property-value pairs.
  */
-const applyStyle = function(el, name, style) {
+var applyStyle = function (el, name, style) {
   if (typeof style === 'string') {
     el.style.cssText = style;
   } else {
     el.style.cssText = '';
-    const elStyle = el.style;
-    const obj = /** @type {!Object<string,string>} */(style);
+    var elStyle = el.style;
+    var obj = /** @type {!Object<string,string>} */style;
 
-    for (const prop in obj) {
+    for (var prop in obj) {
       if (has(obj, prop)) {
         setStyleValue(elStyle, prop, obj[prop]);
       }
     }
   }
 };
-
 
 /**
  * Updates a single attribute on an Element.
@@ -1141,16 +1350,15 @@ const applyStyle = function(el, name, style) {
  *     function it is set on the Element, otherwise, it is set as an HTML
  *     attribute.
  */
-const applyAttributeTyped = function(el, name, value) {
-  const type = typeof value;
+var applyAttributeTyped = function (el, name, value) {
+  var type = typeof value;
 
   if (type === 'object' || type === 'function') {
     applyProp(el, name, value);
   } else {
-    applyAttr(el, name, /** @type {?(boolean|number|string)} */(value));
+    applyAttr(el, name, /** @type {?(boolean|number|string)} */value);
   }
 };
-
 
 /**
  * Calls the appropriate attribute mutator for this attribute.
@@ -1158,26 +1366,25 @@ const applyAttributeTyped = function(el, name, value) {
  * @param {string} name The attribute's name.
  * @param {*} value The attribute's value.
  */
-const updateAttribute = function(el, name, value) {
-  const data = getData(el);
-  const attrs = data.attrs;
+var updateAttribute = function (el, name, value) {
+  var data = getData(el);
+  var attrs = data.attrs;
 
   if (attrs[name] === value) {
     return;
   }
 
-  const mutator = attributes[name] || attributes[symbols.default];
+  var mutator = attributes[name] || attributes[symbols.default];
   mutator(el, name, value);
 
   attrs[name] = value;
 };
 
-
 /**
  * A publicly mutable object to provide custom mutators for attributes.
  * @const {!Object<string, function(!Element, string, *)>}
  */
-const attributes = createMap();
+var attributes = createMap();
 
 // Special generic mutator that's called for any attribute that does not
 // have a specific mutator.
@@ -1186,28 +1393,11 @@ attributes[symbols.default] = applyAttributeTyped;
 attributes['style'] = applyStyle;
 
 /**
- * Copyright 2015 The Incremental DOM Authors. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS-IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/**
  * The offset in the virtual element declaration where the attributes are
  * specified.
  * @const
  */
-const ATTRIBUTES_OFFSET = 3;
-
+var ATTRIBUTES_OFFSET = 3;
 
 /**
  * @param {string} tag The element's tag.
@@ -1221,20 +1411,20 @@ const ATTRIBUTES_OFFSET = 3;
  *     for the Element.
  * @return {!Element} The corresponding Element.
  */
-const elementOpen$1 = function(tag, key, statics, var_args) {
+var elementOpen = function (tag, key, statics, var_args) {
   {
     assertNotInAttributes('elementOpen');
     assertNotInSkip('elementOpen');
   }
 
-  const node = elementOpen(tag, key);
-  const data = getData(node);
+  var node = coreElementOpen(tag, key);
+  var data = getData(node);
 
   if (!data.staticsApplied) {
     if (statics) {
-      for (let i = 0; i < statics.length; i += 2) {
-        const name = /** @type {string} */(statics[i]);
-        const value = statics[i + 1];
+      for (var _i = 0; _i < statics.length; _i += 2) {
+        var name = /** @type {string} */statics[_i];
+        var value = statics[_i + 1];
         updateAttribute(node, name, value);
       }
     }
@@ -1250,25 +1440,25 @@ const elementOpen$1 = function(tag, key, statics, var_args) {
    * individual argument. When attributes have changed, the overhead of this is
    * minimal.
    */
-  const attrsArr = data.attrsArr;
-  const newAttrs = data.newAttrs;
-  const isNew = !attrsArr.length;
-  let i = ATTRIBUTES_OFFSET;
-  let j = 0;
+  var attrsArr = data.attrsArr;
+  var newAttrs = data.newAttrs;
+  var isNew = !attrsArr.length;
+  var i = ATTRIBUTES_OFFSET;
+  var j = 0;
 
   for (; i < arguments.length; i += 2, j += 2) {
-    const attr = arguments[i];
+    var _attr = arguments[i];
     if (isNew) {
-      attrsArr[j] = attr;
-      newAttrs[attr] = undefined;
-    } else if (attrsArr[j] !== attr) {
+      attrsArr[j] = _attr;
+      newAttrs[_attr] = undefined;
+    } else if (attrsArr[j] !== _attr) {
       break;
     }
 
-    const value = arguments[i + 1];
+    var value = arguments[i + 1];
     if (isNew || attrsArr[j + 1] !== value) {
       attrsArr[j + 1] = value;
-      updateAttribute(node, attr, value);
+      updateAttribute(node, _attr, value);
     }
   }
 
@@ -1285,20 +1475,19 @@ const elementOpen$1 = function(tag, key, statics, var_args) {
      * Actually perform the attribute update.
      */
     for (i = 0; i < attrsArr.length; i += 2) {
-      const name = /** @type {string} */(attrsArr[i]);
-      const value = attrsArr[i + 1];
+      var name = /** @type {string} */attrsArr[i];
+      var value = attrsArr[i + 1];
       newAttrs[name] = value;
     }
 
-    for (const attr in newAttrs) {
-      updateAttribute(node, attr, newAttrs[attr]);
-      newAttrs[attr] = undefined;
+    for (var _attr2 in newAttrs) {
+      updateAttribute(node, _attr2, newAttrs[_attr2]);
+      newAttrs[_attr2] = undefined;
     }
   }
 
   return node;
 };
-
 
 /**
  * Closes an open virtual Element.
@@ -1306,12 +1495,12 @@ const elementOpen$1 = function(tag, key, statics, var_args) {
  * @param {string} tag The element's tag.
  * @return {!Element} The corresponding Element.
  */
-const elementClose$1 = function(tag) {
+var elementClose = function (tag) {
   {
     assertNotInAttributes('elementClose');
   }
 
-  const node = elementClose();
+  var node = coreElementClose();
 
   {
     assertCloseMatchesOpenTag(getData(node).nodeName, tag);
@@ -1319,7 +1508,6 @@ const elementClose$1 = function(tag) {
 
   return node;
 };
-
 
 /**
  * Declares a virtual Text at this point in the document.
@@ -1330,25 +1518,25 @@ const elementClose$1 = function(tag) {
  *     changed.
  * @return {!Text} The corresponding text node.
  */
-const text$1 = function(value, var_args) {
+var text = function (value, var_args) {
   {
     assertNotInAttributes('text');
     assertNotInSkip('text');
   }
 
-  const node = text();
-  const data = getData(node);
+  var node = coreText();
+  var data = getData(node);
 
   if (data.text !== value) {
-    data.text = /** @type {string} */(value);
+    data.text = /** @type {string} */value;
 
-    let formatted = value;
-    for (let i = 1; i < arguments.length; i += 1) {
+    var formatted = value;
+    for (var i = 1; i < arguments.length; i += 1) {
       /*
        * Call the formatter function directly to prevent leaking arguments.
        * https://github.com/google/incremental-dom/pull/204#issuecomment-178223574
        */
-      const fn = arguments[i];
+      var fn = arguments[i];
       formatted = fn(formatted);
     }
 
@@ -1358,217 +1546,108 @@ const text$1 = function(value, var_args) {
   return node;
 };
 
-/**
- * Copyright 2015 The Incremental DOM Authors. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS-IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+var patch = patchInner;
+var elementOpen_1 = elementOpen;
+var elementClose_1 = elementClose;
+var text_1 = text;
 
-function serializeForm(form, toQueryParams){
-  var el;
-  return serializeBody(toQueryParams, function(cb){
-    for(var i = 0, len = form.elements.length; i < len; i++) {
-      el = form.elements[i];
-      cb(el.name, el.value);
-    }
-  });
-}
-
-function serializeBody(toQueryParams, fn) {
-  let body = toQueryParams ? '?' : Object.create(null);
-  function addToBody(key, val) {
-    if(toQueryParams) {
-      body += (body.length > 1 ? '&' : '') + key + '=' + val;
-    } else {
-      body[key] = val;
-    }
-  }
-  fn(addToBody);
-  return body;
-}
-
-class Framework {
-  constructor() {
-    this._app = null;
-    this._started = false;
-    this._componentMap = new WeakMap();
-    this._idMap = new Map();
-    this._componentId = 1;
-    //this._eventHandler2 = this._eventHandler2.bind(this);
-  }
-
-  _eventHandler2(ev) {
-    debugger;
-    ev.preventDefault();
-  }
-
-  eventHandler(data, id) {
-    let self = this;
-
-    return function(ev){
-      ev.preventDefault();
-
-      let ct = ev.currentTarget;
-
-      self._app.postMessage({
-        type: 'event',
-        name: ev.type,
-        id: id,
-        handle: data[2]
-      });
-
-
-      /*
-      let request = makeRequest(data[2], data[3], ct, ev);
-      let push = !ct.dataset.noPush && request.method === 'GET';
-
-      if(push) {
-        history.pushState(request, null, request.url);
-      }
-
-      self.request(request);
-      */
-    };
-  }
-
-  get app() {
-    return this._app;
-  }
-
-  set app(val) {
-    this._app = val;
-    if(!this.started) {
-      this.start();
-    }
-  }
-
-  start() {
-    this._app.addEventListener('message',
-      ev => this.handle(ev));
-  }
-
-  request(request) {
-    request.type = 'request';
-    this._app.postMessage(request);
-  }
-
-  handle(msg) {
-    var ev = msg.data;
-    switch(ev.type) {
-      case 'tag':
-        this.handleDefine(ev);
-        break;
-      case 'render':
-        this.patch(ev);
-        break;
-      case 'event':
-        this.handleEvent(ev);
-        break;
-    }
-  }
-
-  patch(ev) {
-    var id = ev.id;
-    var bc = ev.tree;
-    var self = this;
-
-    var render = function(){
-      var n;
-      for(var i = 0, len = bc.length; i < len; i++) {
-        n = bc[i];
-        switch(n[0]) {
-          // Open
-          case 1:
-            if(n[3]) {
-              for(var j = 0, jlen = n[3].length; j < jlen; j++) {
-                n[2].push(n[3][j][1], self.eventHandler(n[3][j], id));
-              }
-            }
-
-            var openArgs = [n[1], null, null].concat(n[2]);
-            elementOpen$1.apply(null, openArgs);
-            break;
-          case 2:
-            elementClose$1(n[1]);
-            break;
-          case 4:
-            text$1(n[1]);
-            break;
+function render(bc){
+  var n;
+  for(var i = 0, len = bc.length; i < len; i++) {
+    n = bc[i];
+    switch(n[0]) {
+      // Open
+      case 1:
+        if(n[3]) {
+          for(var j = 0, jlen = n[3].length; j < jlen; j++) {
+            console.log('huh...');
+            //n[2].push(n[3][j][1], self.eventHandler(n[3][j], id));
+          }
         }
-      }
-    };
 
-    let el = this._idMap.get(id);
-    patchInner(el.shadowRoot, render);
-
-    if(ev.events) {
-      el.observe(ev.events);
+        var openArgs = [n[1], null, null].concat(n[2]);
+        elementOpen_1.apply(null, openArgs);
+        break;
+      case 2:
+        elementClose_1(n[1]);
+        break;
+      case 4:
+        text_1(n[1]);
+        break;
     }
-  }
-
-  handleDefine(ev) {
-    const tag = ev.tag;
-    const fw = this;
-    customElements.define(tag, class extends HTMLElement {
-      constructor() {
-        super();
-
-        this.attachShadow({ mode: 'open' });
-      }
-
-      connectedCallback() {
-        this._id = fw._componentId++;
-        fw._componentMap.set(this, this._id);
-        fw._idMap.set(this._id, this);
-
-        this.render();
-      }
-
-      handleEvent(ev) {
-        fw._app.postMessage({
-          type: 'event',
-          name: ev.type,
-          id: this._id
-        });
-      }
-
-      observe(events) {
-        events.forEach(eventName => {
-          this.shadowRoot.addEventListener(eventName, this);
-        });
-      }
-
-      render() {
-        fw._app.postMessage({
-          type: 'render',
-          id: this._id,
-          tag
-        });
-      }
-    });
-  }
-
-  handleEvent(msg) {
-    let inst = this._idMap.get(msg.id);
-    let event = new Event(msg.event.type, {
-      bubbles: true
-    });
-    inst.dispatchEvent(event);
   }
 }
 
-var index = new Framework();
+function idomRender(vdom, root) {
+  patch(root, () => render(vdom));
+}
 
-return index;
+const withComponent = (Base = HTMLElement) => class extends withUnique(withRender(withProps(Base))) {
+  rendererCallback (shadowRoot, renderCallback) {
+    this._worker.postMessage({
+      type: 'render',
+      tag: this.localName,
+      id: this._id
+    });
+  }
+
+  doRenderCallback(vdom) {
+    let shadowRoot = this.shadowRoot;
+    idomRender(vdom, shadowRoot);
+  }
+};
+
+const Component = withComponent();
+
+var define = function(fritz, msg) {
+  let worker = this;
+  let tagName = msg.tag;
+
+  class OffThreadElement extends Component {
+    constructor() {
+      super();
+      this._worker = worker;
+      this._id = ++fritz._id;
+      fritz._instances[this._id] = this;
+    }
+  }
+
+  fritz.tags[tagName] = {
+    worker: worker
+  };
+
+  customElements.define(tagName, OffThreadElement);
+};
+
+function renderFor(msg, fritz) {
+  let id = msg.id;
+  let instance = fritz._instances[msg.id];
+  instance.doRenderCallback(msg.vdom);
+}
+
+const fritz = Object.create(null);
+fritz.tags = Object.create(null);
+fritz._id = 1;
+fritz._instances = Object.create(null);
+
+function use(worker) {
+  worker.addEventListener('message', handleMessage);
+}
+
+function handleMessage(ev) {
+  let msg = ev.data;
+  switch(msg.type) {
+    case 'define':
+      define.call(this, fritz, msg);
+      break;
+    case 'render':
+      renderFor(msg, fritz);
+      break;
+  }
+}
+
+fritz.use = use;
+
+return fritz;
 
 })));
