@@ -18,6 +18,21 @@ export const withComponent = (Base = HTMLElement) => class extends withUnique(wi
     let shadowRoot = this.shadowRoot;
     render(vdom, shadowRoot);
   }
+
+  observedEventsCallback(events) {
+    events.forEach(eventName => {
+      this.shadowRoot.addEventListener(eventName, this);
+    });
+  }
+
+  handleEvent(ev) {
+    ev.preventDefault();
+    this._worker.postMessage({
+      type: 'event',
+      name: ev.type,
+      id: this._id
+    });
+  }
 };
 
 export const Component = withComponent();

@@ -1,8 +1,9 @@
 import render from './render.js';
+import trigger from './trigger-event.js';
 
 let hasListened = false;
 
-function listenFor(tag, fritz) {
+function listenFor(fritz) {
   if(!hasListened) {
     hasListened = true;
 
@@ -11,6 +12,9 @@ function listenFor(tag, fritz) {
       switch(msg.type) {
         case 'render':
           render(msg, fritz);
+          break;
+        case 'event':
+          trigger(msg, fritz);
           break;
       }
     });

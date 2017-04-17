@@ -1,10 +1,15 @@
 class Component {
   dispatch(ev) {
-    this._app.dispatch(this, ev);
+    let id = this._fritzId;
+    postMessage({
+      type: 'trigger',
+      event: ev,
+      id: id
+    });
   }
 
   update() {
-    this._app.update(this);
+    //this._app.update(this);
   }
 }
 

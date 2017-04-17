@@ -1,14 +1,20 @@
 function render(msg, fritz) {
   let id = msg.id;
   let instance = fritz._instances[id];
+  let events;
   if(!instance) {
-    instance = new fritz._tags[msg.tag]();
+    let constructor = fritz._tags[msg.tag];
+    instance = new constructor();
+    instance._fritzId = id;
+    fritz._instances[id] = instance;
+    events = constructor.observedEvents;
   }
-  let vdom = instance.render();
+  let tree = instance.render();
   postMessage({
     type: 'render',
     id: id,
-    vdom: vdom
+    tree: tree,
+    events: events
   });
 }
 

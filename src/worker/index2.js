@@ -12,7 +12,7 @@ fritz._instances = Object.create(null);
 function define(tag, constructor) {
   fritz._tags[tag] = constructor;
 
-  listenFor(tag, fritz);
+  listenFor(fritz);
 
   postMessage({
     type: 'define',

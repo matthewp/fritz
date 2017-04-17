@@ -1595,6 +1595,21 @@ const withComponent = (Base = HTMLElement) => class extends withUnique(withRende
     let shadowRoot = this.shadowRoot;
     idomRender(vdom, shadowRoot);
   }
+
+  observedEventsCallback(events) {
+    events.forEach(eventName => {
+      this.shadowRoot.addEventListener(eventName, this);
+    });
+  }
+
+  handleEvent(ev) {
+    ev.preventDefault();
+    this._worker.postMessage({
+      type: 'event',
+      name: ev.type,
+      id: this._id
+    });
+  }
 };
 
 const Component = withComponent();
@@ -1622,8 +1637,23 @@ var define = function(fritz, msg) {
 function renderFor(msg, fritz) {
   let id = msg.id;
   let instance = fritz._instances[msg.id];
-  instance.doRenderCallback(msg.vdom);
+  instance.doRenderCallback(msg.tree);
+  if(msg.events) {
+    instance.observedEventsCallback(msg.events);
+  }
 }
+
+function getInstance(id, fritz){
+  return fritz._instances[id];
+}
+
+var trigger = function(msg, fritz) {
+  let inst = getInstance(msg.id, fritz);
+  let event = new Event(msg.event.type, {
+    bubbles: true
+  });
+  inst.dispatchEvent(event);  
+};
 
 const fritz = Object.create(null);
 fritz.tags = Object.create(null);
@@ -1643,6 +1673,8 @@ function handleMessage(ev) {
     case 'render':
       renderFor(msg, fritz);
       break;
+    case 'trigger':
+      trigger(msg, fritz);
   }
 }
 

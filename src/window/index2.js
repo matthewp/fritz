@@ -1,6 +1,7 @@
 import { Component } from './component.js';
 import define from './define.js';
 import { renderFor } from './render.js';
+import trigger from './trigger.js';
 
 const fritz = Object.create(null);
 fritz.tags = Object.create(null);
@@ -20,6 +21,8 @@ function handleMessage(ev) {
     case 'render':
       renderFor(msg, fritz);
       break;
+    case 'trigger':
+      trigger(msg, fritz);
   }
 }
 
