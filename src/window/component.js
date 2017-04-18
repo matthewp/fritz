@@ -1,14 +1,25 @@
-
 import { HTMLElement } from 'skatejs/out/util';
 import { withProps } from 'skatejs/out/with-props';
 import { withRender } from 'skatejs/out/with-render';
 import { withUnique } from 'skatejs/out/with-unique';
 import { idomRender as render } from './idom-render.js';
+import { EVENT, RENDER } from '../message-types.js';
+
+function postEvent(event, inst, handle) {
+  let worker = inst._worker;
+  let id = inst._id;
+  worker.postMessage({
+    type: EVENT,
+    name: event.type,
+    id: id,
+    handle: handle
+  });
+}
 
 export const withComponent = (Base = HTMLElement) => class extends withUnique(withRender(withProps(Base))) {
   rendererCallback (shadowRoot, renderCallback) {
     this._worker.postMessage({
-      type: 'render',
+      type: RENDER,
       tag: this.localName,
       id: this._id
     });
@@ -16,7 +27,7 @@ export const withComponent = (Base = HTMLElement) => class extends withUnique(wi
 
   doRenderCallback(vdom) {
     let shadowRoot = this.shadowRoot;
-    render(vdom, shadowRoot);
+    render(vdom, shadowRoot, this);
   }
 
   observedEventsCallback(events) {
@@ -25,13 +36,17 @@ export const withComponent = (Base = HTMLElement) => class extends withUnique(wi
     });
   }
 
+  addEventCallback(handleId) {
+    var self = this;
+    return function(ev){
+      ev.preventDefault();
+      postEvent(ev, self, handleId);
+    };
+  }
+
   handleEvent(ev) {
     ev.preventDefault();
-    this._worker.postMessage({
-      type: 'event',
-      name: ev.type,
-      id: this._id
-    });
+    postEvent(ev, this);
   }
 };
 

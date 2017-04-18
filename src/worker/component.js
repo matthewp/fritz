@@ -1,15 +1,22 @@
+import { RENDER, TRIGGER } from '../message-types.js';
+
 class Component {
   dispatch(ev) {
     let id = this._fritzId;
     postMessage({
-      type: 'trigger',
+      type: TRIGGER,
       event: ev,
       id: id
     });
   }
 
   update() {
-    //this._app.update(this);
+    let id = this._fritzId;
+    postMessage({
+      type: RENDER,
+      id: id,
+      tree: this.render()
+    });
   }
 }
 

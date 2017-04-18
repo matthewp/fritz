@@ -1,15 +1,25 @@
+const DEFINE = 'define';
+const TRIGGER = 'trigger';
+const RENDER = 'render';
+const EVENT = 'event';
+
 class Component {
   dispatch(ev) {
     let id = this._fritzId;
     postMessage({
-      type: 'trigger',
+      type: TRIGGER,
       event: ev,
       id: id
     });
   }
 
   update() {
-    //this._app.update(this);
+    let id = this._fritzId;
+    postMessage({
+      type: RENDER,
+      id: id,
+      tree: this.render()
+    });
   }
 }
 
@@ -66,7 +76,6 @@ Handle = class {
 
 var Handle$1 = Handle;
 
-//import App from './app.js';
 const eventAttrExp = /^on[A-Z]/;
 
 function signal(tagName, attrName, attrValue, attrs) {
@@ -143,26 +152,6 @@ var h = function(tag, attrs, children){
   return tree;
 };
 
-function render(msg, fritz) {
-  let id = msg.id;
-  let instance = fritz._instances[id];
-  let events;
-  if(!instance) {
-    let constructor = fritz._tags[msg.tag];
-    instance = new constructor();
-    instance._fritzId = id;
-    fritz._instances[id] = instance;
-    events = constructor.observedEvents;
-  }
-  let tree = instance.render();
-  postMessage({
-    type: 'render',
-    id: id,
-    tree: tree,
-    events: events
-  });
-}
-
 class Serializable {
   serialize() {
     let out = Object.create(null);
@@ -186,12 +175,38 @@ function getInstance(fritz, id){
   return fritz._instances[id];
 }
 
-var trigger = function(msg, fritz){
+function setInstance(fritz, id, instance){
+  fritz._instances[id] = instance;
+}
+
+function render(fritz, msg) {
+  let id = msg.id;
+  let instance = getInstance(fritz, id);
+  let events;
+  if(!instance) {
+    let constructor = fritz._tags[msg.tag];
+    instance = new constructor();
+    Object.defineProperty(instance, '_fritzId', {
+      enumerable: false,
+      value: id
+    });
+    setInstance(fritz, id, instance);
+    events = constructor.observedEvents;
+  }
+  let tree = instance.render();
+  postMessage({
+    type: RENDER,
+    id: id,
+    tree: tree,
+    events: events
+  });
+}
+
+function trigger(fritz, msg){
   let inst = getInstance(fritz, msg.id);
   let response = Object.create(null);
 
   let method;
-
   if(msg.handle != null) {
     method = Handle$1.get(msg.handle).fn;
   } else {
@@ -203,7 +218,7 @@ var trigger = function(msg, fritz){
     let event = new Event(msg.name);
 
     method.call(inst, event);
-    response.type = 'render';
+    response.type = RENDER;
     response.id = msg.id;
     response.tree = inst.render();
     response.event = event.serialize();
@@ -211,22 +226,22 @@ var trigger = function(msg, fritz){
   } else {
     // TODO warn?
   }
-};
+}
 
 let hasListened = false;
 
-function listenFor(fritz) {
+function relay(fritz) {
   if(!hasListened) {
     hasListened = true;
 
     self.addEventListener('message', function(ev){
       let msg = ev.data;
       switch(msg.type) {
-        case 'render':
-          render(msg, fritz);
+        case RENDER:
+          render(fritz, msg);
           break;
-        case 'event':
-          trigger(msg, fritz);
+        case EVENT:
+          trigger(fritz, msg);
           break;
       }
     });
@@ -243,12 +258,12 @@ fritz._instances = Object.create(null);
 function define(tag, constructor) {
   fritz._tags[tag] = constructor;
 
-  listenFor(fritz);
+  relay(fritz);
 
   postMessage({
-    type: 'define',
+    type: DEFINE,
     tag: tag
   });
 }
 
-export default fritz;
+export { Component, h };export default fritz;

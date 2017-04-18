@@ -1551,7 +1551,7 @@ var elementOpen_1 = elementOpen;
 var elementClose_1 = elementClose;
 var text_1 = text;
 
-function render(bc){
+function render$1(bc, component){
   var n;
   for(var i = 0, len = bc.length; i < len; i++) {
     n = bc[i];
@@ -1560,8 +1560,8 @@ function render(bc){
       case 1:
         if(n[3]) {
           for(var j = 0, jlen = n[3].length; j < jlen; j++) {
-            console.log('huh...');
-            //n[2].push(n[3][j][1], self.eventHandler(n[3][j], id));
+            let handler = component.addEventCallback(n[3][j][2]);
+            n[2].push(n[3][j][1], handler);
           }
         }
 
@@ -1578,14 +1578,30 @@ function render(bc){
   }
 }
 
-function idomRender(vdom, root) {
-  patch(root, () => render(vdom));
+function idomRender(vdom, root, component) {
+  patch(root, () => render$1(vdom, component));
+}
+
+const DEFINE = 'define';
+const TRIGGER = 'trigger';
+const RENDER = 'render';
+const EVENT = 'event';
+
+function postEvent(event, inst, handle) {
+  let worker = inst._worker;
+  let id = inst._id;
+  worker.postMessage({
+    type: EVENT,
+    name: event.type,
+    id: id,
+    handle: handle
+  });
 }
 
 const withComponent = (Base = HTMLElement) => class extends withUnique(withRender(withProps(Base))) {
   rendererCallback (shadowRoot, renderCallback) {
     this._worker.postMessage({
-      type: 'render',
+      type: RENDER,
       tag: this.localName,
       id: this._id
     });
@@ -1593,7 +1609,7 @@ const withComponent = (Base = HTMLElement) => class extends withUnique(withRende
 
   doRenderCallback(vdom) {
     let shadowRoot = this.shadowRoot;
-    idomRender(vdom, shadowRoot);
+    idomRender(vdom, shadowRoot, this);
   }
 
   observedEventsCallback(events) {
@@ -1602,19 +1618,23 @@ const withComponent = (Base = HTMLElement) => class extends withUnique(withRende
     });
   }
 
+  addEventCallback(handleId) {
+    var self = this;
+    return function(ev){
+      ev.preventDefault();
+      postEvent(ev, self, handleId);
+    };
+  }
+
   handleEvent(ev) {
     ev.preventDefault();
-    this._worker.postMessage({
-      type: 'event',
-      name: ev.type,
-      id: this._id
-    });
+    postEvent(ev, this);
   }
 };
 
 const Component = withComponent();
 
-var define = function(fritz, msg) {
+function define(fritz, msg) {
   let worker = this;
   let tagName = msg.tag;
 
@@ -1627,14 +1647,10 @@ var define = function(fritz, msg) {
     }
   }
 
-  fritz.tags[tagName] = {
-    worker: worker
-  };
-
   customElements.define(tagName, OffThreadElement);
-};
+}
 
-function renderFor(msg, fritz) {
+function render(fritz, msg){
   let id = msg.id;
   let instance = fritz._instances[msg.id];
   instance.doRenderCallback(msg.tree);
@@ -1643,17 +1659,17 @@ function renderFor(msg, fritz) {
   }
 }
 
-function getInstance(id, fritz){
-  return fritz._instances[id];
-}
-
-var trigger = function(msg, fritz) {
+function trigger(fritz, msg) {
   let inst = getInstance(msg.id, fritz);
   let event = new Event(msg.event.type, {
     bubbles: true
   });
   inst.dispatchEvent(event);  
-};
+}
+
+function getInstance(id, fritz){
+  return fritz._instances[id];
+}
 
 const fritz = Object.create(null);
 fritz.tags = Object.create(null);
@@ -1667,14 +1683,14 @@ function use(worker) {
 function handleMessage(ev) {
   let msg = ev.data;
   switch(msg.type) {
-    case 'define':
+    case DEFINE:
       define.call(this, fritz, msg);
       break;
-    case 'render':
-      renderFor(msg, fritz);
+    case RENDER:
+      render(fritz, msg);
       break;
-    case 'trigger':
-      trigger(msg, fritz);
+    case TRIGGER:
+      trigger(fritz, msg);
   }
 }
 

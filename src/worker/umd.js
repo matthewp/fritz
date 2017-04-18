@@ -1,3 +1,3 @@
-import fritz from './index2.js';
+import fritz from './index.js';
 
 export default fritz;

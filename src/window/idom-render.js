@@ -5,7 +5,7 @@ import {
   patch
 } from 'incremental-dom';
 
-function render(bc){
+function render(bc, component){
   var n;
   for(var i = 0, len = bc.length; i < len; i++) {
     n = bc[i];
@@ -14,8 +14,8 @@ function render(bc){
       case 1:
         if(n[3]) {
           for(var j = 0, jlen = n[3].length; j < jlen; j++) {
-            console.log('huh...');
-            //n[2].push(n[3][j][1], self.eventHandler(n[3][j], id));
+            let handler = component.addEventCallback(n[3][j][2]);
+            n[2].push(n[3][j][1], handler);
           }
         }
 
@@ -32,8 +32,8 @@ function render(bc){
   }
 }
 
-function idomRender(vdom, root) {
-  patch(root, () => render(vdom));
+function idomRender(vdom, root, component) {
+  patch(root, () => render(vdom, component));
 }
 
 export { idomRender };

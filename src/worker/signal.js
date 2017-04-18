@@ -1,4 +1,3 @@
-//import App from './app.js';
 import Handle from './handle.js';
 
 const eventAttrExp = /^on[A-Z]/;
