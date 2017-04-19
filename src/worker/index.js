@@ -11,7 +11,16 @@ fritz._tags = Object.create(null);
 fritz._instances = Object.create(null);
 
 function define(tag, constructor) {
+  if(constructor === undefined) {
+    throw new Error('fritz.define expects 2 arguments');
+  }
+
   fritz._tags[tag] = constructor;
+
+  Object.defineProperty(constructor.prototype, 'localName', {
+    enumerable: false,
+    value: tag
+  });
 
   relay(fritz);
 

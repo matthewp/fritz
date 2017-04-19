@@ -5,7 +5,7 @@
   "main": "worker.umd.js",
   "jsnext:main": "worker.js",
   "scripts": {
-    "test": "testee test/basics.html --browsers chrome"
+    "test": "testee test/basics.html test/events.html --browsers chrome"
   },
   "repository": {
     "type": "git",

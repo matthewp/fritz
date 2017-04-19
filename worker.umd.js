@@ -94,7 +94,7 @@ function signal(tagName, attrName, attrValue, attrs) {
 
 class Tree extends Array {}
 
-var h = function(tag, attrs, children){
+function h(tag, attrs, children){
   const argsLen = arguments.length;
   if(argsLen === 2) {
     if(typeof attrs !== 'object' || Array.isArray(attrs)) {
@@ -109,6 +109,11 @@ var h = function(tag, attrs, children){
   var isFn = typeof tag === 'function';
 
   if(isFn) {
+    var localName = tag.prototype.localName;
+    if(localName) {
+      return h(localName, attrs, children);
+    }
+
     return tag(attrs || {}, children);
   }
 
@@ -156,7 +161,7 @@ var h = function(tag, attrs, children){
   tree.push([2, tag]);
 
   return tree;
-};
+}
 
 class Serializable {
   serialize() {
@@ -262,7 +267,16 @@ fritz$1._tags = Object.create(null);
 fritz$1._instances = Object.create(null);
 
 function define(tag, constructor) {
+  if(constructor === undefined) {
+    throw new Error('fritz.define expects 2 arguments');
+  }
+
   fritz$1._tags[tag] = constructor;
+
+  Object.defineProperty(constructor.prototype, 'localName', {
+    enumerable: false,
+    value: tag
+  });
 
   relay(fritz$1);
 

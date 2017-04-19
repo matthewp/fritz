@@ -12,5 +12,11 @@ worker:
 window:
 	node_modules/.bin/rollup -o window.js -c rollup.config.js -n fritz src/window/index.js
 
+serve:
+	http-server -p 8008
+
 watch:
 	find src -name "*.js" | entr make all
+
+dev:
+	make serve & make watch
