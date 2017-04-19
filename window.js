@@ -1588,7 +1588,8 @@ function postEvent(event, inst, handle) {
     type: EVENT,
     name: event.type,
     id: id,
-    handle: handle
+    handle: handle,
+    value: event.target.value
   });
 }
 

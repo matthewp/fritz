@@ -33,6 +33,31 @@
             }, 50);
           });
         });
+
+        describe('Inputs', function(){
+          const win = basicsFrame.contentWindow;
+          const doc = basicsFrame.contentDocument;
+
+          before(function(done) {
+            setTimeout(done, 100);
+          });
+
+          it('Input events send the input\'s value', function(done){
+            let shadow = doc.querySelector('input-el').shadowRoot;
+            let input = shadow.querySelector('input');
+            let result = shadow.querySelector('.result');
+
+            assert.equal(result.textContent, '');
+
+            input.value = 'hello';
+            input.dispatchEvent(new Event('keyup'));
+
+            setTimeout(function(){
+              assert.equal(result.textContent, 'hello');
+              done();
+            }, 50);
+          });
+        });
       </script>
     </template>
   </mocha-test>

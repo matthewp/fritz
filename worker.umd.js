@@ -227,6 +227,7 @@ function trigger(fritz, msg){
 
   if(method) {
     let event = new Event(msg.name);
+    event.value = msg.value;
 
     method.call(inst, event);
     response.type = RENDER;

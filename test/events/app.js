@@ -20,3 +20,23 @@ class EventEl extends Component {
 }
 
 fritz.define('event-element', EventEl);
+
+class InputEl extends Component {
+  constructor() {
+    super();
+    this.filter = '';
+  }
+
+  setFilter(ev) {
+    this.filter = ev.value;
+  }
+
+  render() {
+    return h('div', [
+      h('div', {'class': 'result'}, [this.filter]),
+      h('input', {type: 'text', value: this.filter, onKeyup:this.setFilter})
+    ]);
+  }
+}
+
+fritz.define('input-el', InputEl);
