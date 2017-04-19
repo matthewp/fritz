@@ -10,7 +10,8 @@ worker:
 	node_modules/.bin/rollup -o worker.js -c rollup.config.js -f es -n fritz src/worker/index.js
 
 window:
-	node_modules/.bin/rollup -o window.js -c rollup.config.js -n fritz src/window/index.js
+	node_modules/.bin/rollup -o window.umd.js -c rollup.config.js -n fritz src/window/index.js
+	node_modules/.bin/rollup -o window.js -c rollup.config.js -f es -n fritz src/worker/index.js
 
 serve:
 	http-server -p 8008
