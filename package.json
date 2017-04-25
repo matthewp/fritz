@@ -42,6 +42,6 @@
     "testee": "^0.3.0"
   },
   "dependencies": {
-    "skatejs": "skatejs/skatejs#5.x"
+    "skatejs": "skatejs/skatejs#build"
   }
 }

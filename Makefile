@@ -1,9 +1,6 @@
 .PHONY: window worker watch compile-skate all
 
-all: compile-skate worker window
-
-compile-skate:
-	node_modules/.bin/babel node_modules/skatejs/src --out-dir node_modules/skatejs/out
+all: worker window
 
 worker:
 	node_modules/.bin/rollup -o worker.umd.js -c rollup.config.js -f umd -n fritz src/worker/umd.js

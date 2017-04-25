@@ -1,7 +1,7 @@
-import { HTMLElement } from 'skatejs/out/util';
-import { withProps } from 'skatejs/out/with-props';
-import { withRender } from 'skatejs/out/with-render';
-import { withUnique } from 'skatejs/out/with-unique';
+import { HTMLElement } from 'skatejs/es-latest/util';
+import { withProps } from 'skatejs/es-latest/with-props';
+import { withRender } from 'skatejs/es-latest/with-render';
+import { withUnique } from 'skatejs/es-latest/with-unique';
 import { idomRender as render } from './idom-render.js';
 import { EVENT, RENDER } from '../message-types.js';
 
