@@ -3,8 +3,13 @@ import { Component } from './component.js';
 export function define(fritz, msg) {
   let worker = this;
   let tagName = msg.tag;
+  let props = msg.props || {};
 
   class OffThreadElement extends Component {
+    static get props() {
+      return props;
+    }
+
     constructor() {
       super();
       this._worker = worker;

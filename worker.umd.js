@@ -192,6 +192,8 @@ function setInstance(fritz, id, instance){
 
 function render(fritz, msg) {
   let id = msg.id;
+  let props = msg.props || {};
+
   let instance = getInstance(fritz, id);
   let events;
   if(!instance) {
@@ -204,6 +206,9 @@ function render(fritz, msg) {
     setInstance(fritz, id, instance);
     events = constructor.observedEvents;
   }
+
+  Object.assign(instance, props);
+
   let tree = instance.render();
   postMessage({
     type: RENDER,
@@ -283,7 +288,8 @@ function define(tag, constructor) {
 
   postMessage({
     type: DEFINE,
-    tag: tag
+    tag: tag,
+    props: constructor.props
   });
 }
 

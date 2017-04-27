@@ -1608,7 +1608,8 @@ const withComponent = (Base = HTMLElement) => class extends withUnique(withRende
     this._worker.postMessage({
       type: RENDER,
       tag: this.localName,
-      id: this._id
+      id: this._id,
+      props: this.props
     });
   }
 
@@ -1642,8 +1643,13 @@ const Component = withComponent();
 function define(fritz, msg) {
   let worker = this;
   let tagName = msg.tag;
+  let props = msg.props || {};
 
   class OffThreadElement extends Component {
+    static get props() {
+      return props;
+    }
+
     constructor() {
       super();
       this._worker = worker;

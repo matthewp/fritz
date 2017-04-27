@@ -5,6 +5,8 @@ import { RENDER } from '../message-types.js';
 
 export function render(fritz, msg) {
   let id = msg.id;
+  let props = msg.props || {};
+
   let instance = getInstance(fritz, id);
   let events;
   if(!instance) {
@@ -17,6 +19,9 @@ export function render(fritz, msg) {
     setInstance(fritz, id, instance);
     events = constructor.observedEvents;
   }
+
+  Object.assign(instance, props);
+
   let tree = instance.render();
   postMessage({
     type: RENDER,

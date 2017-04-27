@@ -26,7 +26,8 @@ function define(tag, constructor) {
 
   postMessage({
     type: DEFINE,
-    tag: tag
+    tag: tag,
+    props: constructor.props
   });
 }
 

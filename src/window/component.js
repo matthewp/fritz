@@ -22,7 +22,8 @@ export const withComponent = (Base = HTMLElement) => class extends withUnique(wi
     this._worker.postMessage({
       type: RENDER,
       tag: this.localName,
-      id: this._id
+      id: this._id,
+      props: this.props
     });
   }
 
