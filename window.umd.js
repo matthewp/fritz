@@ -1590,6 +1590,7 @@ const DEFINE = 'define';
 const TRIGGER = 'trigger';
 const RENDER = 'render';
 const EVENT = 'event';
+const STATE = 'state';
 
 function postEvent(event, inst, handle) {
   let worker = inst._worker;
@@ -1682,13 +1683,29 @@ function getInstance(id, fritz){
   return fritz._instances[id];
 }
 
+function sendState(fritz, worker) {
+  let workers = worker ? [worker] : fritz._workers;
+  let state = fritz.state;
+  workers.forEach(function(worker){
+    worker.postMessage({
+      type: STATE,
+      state: state
+    });
+  });
+}
+
 const fritz = Object.create(null);
 fritz.tags = Object.create(null);
 fritz._id = 1;
 fritz._instances = Object.create(null);
+fritz._workers = [];
 
 function use(worker) {
+  fritz._workers.push(worker);
   worker.addEventListener('message', handleMessage);
+  if(fritz.state) {
+    sendState(fritz, worker);
+  }
 }
 
 function handleMessage(ev) {
@@ -1706,6 +1723,16 @@ function handleMessage(ev) {
 }
 
 fritz.use = use;
+
+Object.defineProperty(fritz, 'state', {
+  set: function(val){
+    this._state = val;
+    sendState(fritz);
+  },
+  get: function(){
+    return this._state;
+  }
+});
 
 return fritz;
 

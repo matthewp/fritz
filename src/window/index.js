@@ -1,13 +1,19 @@
 import { define, render, trigger } from './lifecycle.js';
 import { DEFINE, RENDER, TRIGGER } from '../message-types.js';
+import { sendState } from './cmd.js';
 
 const fritz = Object.create(null);
 fritz.tags = Object.create(null);
 fritz._id = 1;
 fritz._instances = Object.create(null);
+fritz._workers = [];
 
 function use(worker) {
+  fritz._workers.push(worker);
   worker.addEventListener('message', handleMessage);
+  if(fritz.state) {
+    sendState(fritz, worker);
+  }
 }
 
 function handleMessage(ev) {
@@ -25,5 +31,15 @@ function handleMessage(ev) {
 }
 
 fritz.use = use;
+
+Object.defineProperty(fritz, 'state', {
+  set: function(val){
+    this._state = val;
+    sendState(fritz);
+  },
+  get: function(){
+    return this._state;
+  }
+})
 
 export default fritz;

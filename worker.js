@@ -2,6 +2,7 @@ const DEFINE = 'define';
 const TRIGGER = 'trigger';
 const RENDER = 'render';
 const EVENT = 'event';
+const STATE = 'state';
 
 class Component {
   dispatch(ev) {
@@ -254,6 +255,9 @@ function relay(fritz) {
         case EVENT:
           trigger(fritz, msg);
           break;
+        case STATE:
+          fritz.state = msg.state;
+          break;
       }
     });
   }
@@ -287,4 +291,10 @@ function define(tag, constructor) {
   });
 }
 
-export { Component, h };export default fritz;
+let state;
+Object.defineProperty(fritz, 'state', {
+  set: function(val) { state = val; },
+  get: function() { return state; }
+});
+
+export { Component, h, state };export default fritz;

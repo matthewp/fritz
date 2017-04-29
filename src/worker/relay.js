@@ -1,5 +1,5 @@
 import { render, trigger } from './lifecycle.js';
-import { RENDER, EVENT } from '../message-types.js';
+import { RENDER, EVENT, STATE } from '../message-types.js';
 
 let hasListened = false;
 
@@ -15,6 +15,9 @@ export default function relay(fritz) {
           break;
         case EVENT:
           trigger(fritz, msg);
+          break;
+        case STATE:
+          fritz.state = msg.state;
           break;
       }
     });

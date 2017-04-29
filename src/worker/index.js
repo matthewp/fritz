@@ -31,5 +31,11 @@ function define(tag, constructor) {
   });
 }
 
+let state;
+Object.defineProperty(fritz, 'state', {
+  set: function(val) { state = val; },
+  get: function() { return state; }
+});
+
 export default fritz;
-export { Component, h };
+export { Component, h, state };

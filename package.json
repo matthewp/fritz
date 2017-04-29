@@ -5,7 +5,7 @@
   "main": "worker.umd.js",
   "jsnext:main": "worker.js",
   "scripts": {
-    "test": "testee test/basics.html test/events.html --browsers chrome"
+    "test": "testee test/basics.html test/events.html test/props.html test/state.html --browsers chrome"
   },
   "repository": {
     "type": "git",
@@ -18,9 +18,9 @@
   },
   "files": [
     "window.js",
+    "window.umd.js",
     "worker.js",
     "worker.umd.js",
-    "to-string.js"
   ],
   "homepage": "https://github.com/matthewp/fritz#readme",
   "devDependencies": {

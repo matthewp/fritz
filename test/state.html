@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head>
+  <title>State tests</title>
+  <link rel="import" href="../node_modules/mocha-test/mocha-test.html">
+  <style>
+    iframe { display: none; }
+  </style>
+</head>
+<body>
+  <iframe id="basicsFrame" src="./state/index.html"></iframe>
+  <mocha-test>
+    <template>
+      <script>
+        describe('State', function(){
+          const win = basicsFrame.contentWindow;
+          const doc = basicsFrame.contentDocument;
+
+          before(function(done) {
+            setTimeout(done, 100);
+          });
+
+          it('Is available as fritz.state', function(){
+            let shadow = doc.querySelector('stateful-el').shadowRoot;
+            let span = shadow.firstChild;
+            
+            assert.equal(span.localName, 'span');
+            assert.equal(span.textContent, 'Hello Matthew');
+          });
+        });
+      </script>
+    </template>
+  </mocha-test>
+</body>
+</html>
