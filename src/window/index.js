@@ -1,107 +1,45 @@
-import {
-  elementOpen,
-  elementClose,
-  text,
-  patch
-} from 'incremental-dom/index.js';
+import { define, render, trigger } from './lifecycle.js';
+import { DEFINE, RENDER, TRIGGER } from '../message-types.js';
+import { sendState } from './cmd.js';
 
-import makeRequest from './make-request.js';
+const fritz = Object.create(null);
+fritz.tags = Object.create(null);
+fritz._id = 1;
+fritz._instances = Object.create(null);
+fritz._workers = [];
 
-class Framework {
-  constructor() {
-    this._router = null;
-    this._started = false;
-  }
-
-  eventHandler(data) {
-    let self = this;
-
-    return function(ev){
-      ev.preventDefault();
-
-      let ct = ev.currentTarget;
-      let request = makeRequest(data[2], data[3], ct, ev);
-      let push = !ct.dataset.noPush && request.method === 'GET';
-
-      if(push) {
-        history.pushState(request, null, request.url);
-      }
-
-      self.request(request);
-    };
-  }
-
-  get router() {
-    return this._router;
-  }
-
-  set router(val) {
-    this._router = val;
-    if(!this.started) {
-      this.start();
-    }
-  }
-
-  start() {
-    let url = "" + location;
-    this._router.postMessage({
-      type: 'initial',
-      state: this.state,
-      url
-    });
-    history.replaceState({ url, method: 'GET' }, document.title, url);
-
-    this._router.addEventListener('message',
-      ev => this.handle(ev));
-
-    window.addEventListener('popstate',
-      ev => this.popstate(ev));
-  }
-
-  request(request) {
-    request.type = 'request';
-    this._router.postMessage(request);
-  }
-
-  handle(msg) {
-    var ev = msg.data;
-    var bc = ev.tree;
-    var self = this;
-
-    var render = function(){
-      var n;
-      for(var i = 0, len = bc.length; i < len; i++) {
-        n = bc[i];
-        switch(n[0]) {
-          // Open
-          case 1:
-            if(n[3]) {
-              for(var j = 0, jlen = n[3].length; j < jlen; j++) {
-                n[2].push(n[3][j][1], self.eventHandler(n[3][j]));
-              }
-            }
-
-            var openArgs = [n[1], null, null].concat(n[2]);
-            elementOpen.apply(null, openArgs);
-            break;
-          case 2:
-            elementClose(n[1]);
-            break;
-          case 4:
-            text(n[1]);
-            break;
-        }
-      }
-    };
-
-    patch(document.documentElement, render);
-  }
-
-  popstate(ev) {
-    if(ev.state) {
-      this.request(ev.state);
-    }
+function use(worker) {
+  fritz._workers.push(worker);
+  worker.addEventListener('message', handleMessage);
+  if(fritz.state) {
+    sendState(fritz, worker);
   }
 }
 
-export default new Framework();
+function handleMessage(ev) {
+  let msg = ev.data;
+  switch(msg.type) {
+    case DEFINE:
+      define.call(this, fritz, msg);
+      break;
+    case RENDER:
+      render(fritz, msg);
+      break;
+    case TRIGGER:
+      trigger(fritz, msg);
+  }
+}
+
+fritz.use = use;
+
+Object.defineProperty(fritz, 'state', {
+  set: function(val){
+    this._state = val;
+    sendState(fritz);
+  },
+  get: function(){
+    return this._state;
+  }
+})
+
+export default fritz;

@@ -1,5 +1,6 @@
 <!doctype html>
+<basic-app></basic-app>
 <script src="../../window.js"></script>
 <script>
-  fritz.router = new Worker('./router.js');
+  fritz.use(new Worker('./app.js'));
 </script>

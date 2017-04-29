@@ -1,3 +1,9 @@
+(function (global, factory) {
+	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+	typeof define === 'function' && define.amd ? define(factory) :
+	(global.fritz = factory());
+}(this, (function () { 'use strict';
+
 const root = typeof window === 'undefined' ? global : window;
 
 const {
@@ -1728,4 +1734,6 @@ Object.defineProperty(fritz, 'state', {
   }
 });
 
-export default fritz;
+return fritz;
+
+})));

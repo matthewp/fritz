@@ -2,7 +2,7 @@ import signal from './signal.js';
 
 class Tree extends Array {}
 
-export default function(tag, attrs, children){
+export default function h(tag, attrs, children){
   const argsLen = arguments.length;
   if(argsLen === 2) {
     if(typeof attrs !== 'object' || Array.isArray(attrs)) {
@@ -17,6 +17,11 @@ export default function(tag, attrs, children){
   var isFn = typeof tag === 'function';
 
   if(isFn) {
+    var localName = tag.prototype.localName;
+    if(localName) {
+      return h(localName, attrs, children);
+    }
+
     return tag(attrs || {}, children);
   }
 
@@ -25,13 +30,14 @@ export default function(tag, attrs, children){
     var evs;
     attrs = Object.keys(attrs).reduce(function(acc, key){
       var value = attrs[key];
-      acc.push(key);
-      acc.push(value);
 
       var eventInfo = signal(tag, key, value, attrs)
       if(eventInfo) {
         if(!evs) evs = [];
         evs.push(eventInfo);
+      } else {
+        acc.push(key);
+        acc.push(value);
       }
 
       return acc;

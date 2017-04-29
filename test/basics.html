@@ -15,35 +15,25 @@
         describe('Basics', function(){
           const win = basicsFrame.contentWindow;
           const doc = basicsFrame.contentDocument;
+          const docEl = doc.documentElement;
 
           before(function(done) {
             setTimeout(done, 100);
           });
 
           it('Renders the initial page', function(){
-            let div = doc.querySelector('div');
+            let el = doc.querySelector('basic-app');
+            let div = el.shadowRoot.querySelector('#root');
             assert.equal(div.textContent, 'Hello world!');
           });
 
-          it('Clicking a link to another page renders that page', function(done){
-            let anchor = doc.querySelector('a');
-            anchor.dispatchEvent(new Event('click'));
+          it('Renders subelements using the constructor', function(){
+            let el = doc.querySelector('basic-app');
+            let nested = el.shadowRoot.querySelector('another-el');
+            assert.ok(nested, 'The nested element was rendered');
 
-            setTimeout(function(){
-              let other = doc.querySelector('#other');
-              assert.ok(other, 'Rendered the other page');
-              done();
-            }, 50);
-          });
-
-          it('The back button goes the home page', function(done){
-            win.history.back();
-
-            setTimeout(function(){
-              let main = doc.querySelector('#main');
-              assert.ok(main, 'Went back');
-              done();
-            }, 60);
+            let inner = nested.shadowRoot.firstChild;
+            assert.equal(inner.textContent, 'Another el');
           });
         });
       </script>

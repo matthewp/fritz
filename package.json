@@ -1,11 +1,11 @@
 {
   "name": "fritz",
-  "version": "2.0.4",
+  "version": "3.0.0-alpha.0",
   "description": "A crazy webworker framework",
   "main": "worker.umd.js",
   "jsnext:main": "worker.js",
   "scripts": {
-    "test": "testee test/basics.html --browsers chrome"
+    "test": "testee test/basics.html test/events.html test/props.html test/state.html --browsers chrome"
   },
   "repository": {
     "type": "git",
@@ -18,20 +18,30 @@
   },
   "files": [
     "window.js",
+    "window.umd.js",
     "worker.js",
     "worker.umd.js",
-    "to-string.js"
   ],
   "homepage": "https://github.com/matthewp/fritz#readme",
   "devDependencies": {
+    "babel-cli": "^6.24.1",
+    "babel-plugin-syntax-class-properties": "^6.13.0",
+    "babel-plugin-transform-class-properties": "^6.24.1",
+    "babel-plugin-transform-es2015-computed-properties": "^6.24.1",
+    "babel-plugin-transform-es2015-spread": "^6.22.0",
+    "babel-preset-stage-2": "^6.24.1",
     "incremental-dom": "^0.5.1",
     "is-promise": "^2.1.0",
     "mocha-test": "^2.0.2",
     "path-to-regexp": "^1.7.0",
-    "rollup": "^0.36.4",
+    "rollup": "^0.41.4",
+    "rollup-plugin-babel": "^2.7.1",
     "rollup-plugin-commonjs": "^5.0.5",
     "rollup-plugin-node-resolve": "^2.0.0",
     "rollup-plugin-replace": "^1.1.1",
     "testee": "^0.3.0"
+  },
+  "dependencies": {
+    "skatejs": "skatejs/skatejs#build"
   }
 }
