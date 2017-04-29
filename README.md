@@ -1,44 +1,48 @@
 # fritz
 
-A really weird web worker framework.
+A library for rendering custom elements in a web worker.
 
-```jsx
-import fritz from 'fritz';
-import Layout from './Layout.js';
+**worker.js**
 
-const app = fritz();
+```js
+import { Component, h } from 'fritz';
 
-app.use(() => app.state.count = app.state.count || 0);
+class Hello extends Component {
+  static get props() {
+    return {
+      name: { attribute: true }
+    }
+  }
 
-app.get('/', function(req, res){
-  const count = app.state.count;
+  render() {
+    return (
+      <span>Hello {this.name}</span>
+    );
+  }
+}
 
-  res.push(
-    <Layout>
-      <h1>Hello world!</h1>
-
-      <form action="/click" method="POST">
-        <button type="submit">Increment</button>
-      </form>
-      
-      <strong>{count}</strong>
-    </Layout>
-  );
-});
-
-app.post('/click', function(req, res){
-  app.state.count;
-
-  res.push(
-    <Layout>
-      <h1>Hello world!</h1>
-
-      <form action="/click" method="POST">
-        <button type="submit">Increment</button>
-      </form>
-      
-      <strong>{count}</strong>
-    </Layout>
-  );
-});
+fritz.define('x-hello', Hello);
 ```
+
+**index.html**
+
+```html
+<!doctype html>
+
+<x-hello name="world"></x-hello>
+
+<script src="../node_modules/fritz/window.umd.js"></script>
+<script>
+  fritz.use(new Worker("./worker.js"));
+</script>
+```
+
+## Install
+
+```shell
+yarn add fritz
+```
+
+## License
+
+BSD 2 Clause
