@@ -40,7 +40,7 @@ fritz.define('x-hello', Hello);
 ## Install
 
 ```shell
-yarn add fritz
+yarn add fritz@next
 ```
 
 ## License

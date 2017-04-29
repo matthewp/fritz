@@ -20,7 +20,7 @@
     "window.js",
     "window.umd.js",
     "worker.js",
-    "worker.umd.js",
+    "worker.umd.js"
   ],
   "homepage": "https://github.com/matthewp/fritz#readme",
   "devDependencies": {
