@@ -1,4 +1,6 @@
 import { Component } from './component.js';
+import { DESTROY } from '../message-types.js';
+import { getInstance, setInstance, delInstance } from '../util.js';
 
 export function define(fritz, msg) {
   let worker = this;
@@ -14,7 +16,20 @@ export function define(fritz, msg) {
       super();
       this._worker = worker;
       this._id = ++fritz._id;
-      fritz._instances[this._id] = this;
+    }
+
+    connectedCallback() {
+      super.connectedCallback();
+      setInstance(fritz, this._id, this);
+    }
+
+    disconnectedCallback() {
+      super.disconnectedCallback();
+      delInstance(fritz, this._id);
+      this._worker.postMessage({
+        type: DESTROY,
+        id: this._id
+      });
     }
   }
 
@@ -23,7 +38,7 @@ export function define(fritz, msg) {
 
 export function render(fritz, msg){
   let id = msg.id;
-  let instance = fritz._instances[msg.id];
+  let instance = getInstance(fritz, msg.id);
   instance.doRenderCallback(msg.tree);
   if(msg.events) {
     instance.observedEventsCallback(msg.events);
@@ -31,13 +46,9 @@ export function render(fritz, msg){
 };
 
 export function trigger(fritz, msg) {
-  let inst = getInstance(msg.id, fritz);
+  let inst = getInstance(fritz, msg.id);
   let event = new Event(msg.event.type, {
     bubbles: true
   });
   inst.dispatchEvent(event);  
 };
-
-function getInstance(id, fritz){
-  return fritz._instances[id];
-}
