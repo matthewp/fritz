@@ -18,6 +18,8 @@ class Component {
       tree: this.render()
     });
   }
+
+  destroy(){}
 }
 
 export default Component;

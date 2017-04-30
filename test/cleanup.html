@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+<head>
+  <title>Cleanup tests</title>
+  <script src="./helpers.js"></script>
+  <link rel="import" href="../node_modules/mocha-test/mocha-test.html">
+  <style>
+    iframe { display: none; }
+  </style>
+</head>
+<body>
+  <iframe id="basicsFrame" src="./basics/index.html"></iframe>
+  <mocha-test>
+    <template>
+      <script>
+        describe('Cleanup', function(){
+          const win = basicsFrame.contentWindow;
+          const doc = basicsFrame.contentDocument;
+          const testHelpers = makeTestHelpers(win);
+
+          before(function(done) {
+            setTimeout(done, 100);
+          });
+
+          describe('Removing an element', function(){
+            before(function(done){
+              let basicApp = doc.querySelector('basic-app');
+              basicApp.parentNode.removeChild(basicApp);
+              setTimeout(done, 100);
+            });
+
+            it('removes it from the instance store', function(){
+              assert.equal(testHelpers.instanceCount(win), 0, 'There are no instances');
+            });
+          });
+        });
+      </script>
+    </template>
+  </mocha-test>
+</body>
+</html>

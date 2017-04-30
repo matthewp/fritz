@@ -1,5 +1,5 @@
 import Event from './event.js';
-import { getInstance, setInstance } from '../util.js';
+import { getInstance, setInstance, delInstance } from '../util.js';
 import Handle from './handle.js';
 import { RENDER } from '../message-types.js';
 
@@ -56,4 +56,10 @@ export function trigger(fritz, msg){
   } else {
     // TODO warn?
   }
+};
+
+export function destroy(fritz, msg){
+  let instance = getInstance(fritz, msg.id);
+  instance.destroy();
+  delInstance(fritz, msg.id);
 };

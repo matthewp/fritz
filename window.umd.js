@@ -1591,6 +1591,7 @@ const TRIGGER = 'trigger';
 const RENDER = 'render';
 const EVENT = 'event';
 const STATE = 'state';
+const DESTROY = 'destroy';
 
 function postEvent(event, inst, handle) {
   let worker = inst._worker;
@@ -1641,6 +1642,18 @@ const withComponent = (Base = HTMLElement) => class extends withUnique(withRende
 
 const Component = withComponent();
 
+function getInstance(fritz, id){
+  return fritz._instances[id];
+}
+
+function setInstance(fritz, id, instance){
+  fritz._instances[id] = instance;
+}
+
+function delInstance(fritz, id){
+  delete fritz._instances[id];
+}
+
 function define(fritz, msg) {
   let worker = this;
   let tagName = msg.tag;
@@ -1655,7 +1668,20 @@ function define(fritz, msg) {
       super();
       this._worker = worker;
       this._id = ++fritz._id;
-      fritz._instances[this._id] = this;
+    }
+
+    connectedCallback() {
+      super.connectedCallback();
+      setInstance(fritz, this._id, this);
+    }
+
+    disconnectedCallback() {
+      super.disconnectedCallback();
+      delInstance(fritz, this._id);
+      this._worker.postMessage({
+        type: DESTROY,
+        id: this._id
+      });
     }
   }
 
@@ -1664,7 +1690,7 @@ function define(fritz, msg) {
 
 function render(fritz, msg){
   let id = msg.id;
-  let instance = fritz._instances[msg.id];
+  let instance = getInstance(fritz, msg.id);
   instance.doRenderCallback(msg.tree);
   if(msg.events) {
     instance.observedEventsCallback(msg.events);
@@ -1672,15 +1698,11 @@ function render(fritz, msg){
 }
 
 function trigger(fritz, msg) {
-  let inst = getInstance(msg.id, fritz);
+  let inst = getInstance(fritz, msg.id);
   let event = new Event(msg.event.type, {
     bubbles: true
   });
   inst.dispatchEvent(event);  
-}
-
-function getInstance(id, fritz){
-  return fritz._instances[id];
 }
 
 function sendState(fritz, worker) {

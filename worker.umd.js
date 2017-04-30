@@ -9,6 +9,7 @@ const TRIGGER = 'trigger';
 const RENDER = 'render';
 const EVENT = 'event';
 const STATE = 'state';
+const DESTROY = 'destroy';
 
 class Component {
   dispatch(ev) {
@@ -28,6 +29,8 @@ class Component {
       tree: this.render()
     });
   }
+
+  destroy(){}
 }
 
 let Store;
@@ -191,6 +194,10 @@ function setInstance(fritz, id, instance){
   fritz._instances[id] = instance;
 }
 
+function delInstance(fritz, id){
+  delete fritz._instances[id];
+}
+
 function render(fritz, msg) {
   let id = msg.id;
   let props = msg.props || {};
@@ -246,6 +253,12 @@ function trigger(fritz, msg){
   }
 }
 
+function destroy(fritz, msg){
+  let instance = getInstance(fritz, msg.id);
+  instance.destroy();
+  delInstance(fritz, msg.id);
+}
+
 let hasListened = false;
 
 function relay(fritz) {
@@ -263,6 +276,9 @@ function relay(fritz) {
           break;
         case STATE:
           fritz.state = msg.state;
+          break;
+        case DESTROY:
+          destroy(fritz, msg);
           break;
       }
     });
