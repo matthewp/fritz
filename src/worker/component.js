@@ -1,4 +1,5 @@
 import { RENDER, TRIGGER } from '../message-types.js';
+import { renderInstance } from './instance.js';
 
 class Component {
   dispatch(ev) {
@@ -15,7 +16,7 @@ class Component {
     postMessage({
       type: RENDER,
       id: id,
-      tree: this.render()
+      tree: renderInstance(this)
     });
   }
 

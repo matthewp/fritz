@@ -1,3 +1,4 @@
+import { currentInstance } from './instance.js';
 import Handle from './handle.js';
 
 const eventAttrExp = /^on[A-Z]/;
@@ -5,8 +6,9 @@ const eventAttrExp = /^on[A-Z]/;
 function signal(tagName, attrName, attrValue, attrs) {
   if(eventAttrExp.test(attrName)) {
     let eventName = attrName.toLowerCase();
-    let id = Handle.from(attrValue).id;
-    return [1, eventName, id];
+    let handle = Handle.from(attrValue);
+    currentInstance._fritzHandles[handle.id] = handle;
+    return [1, eventName, handle.id];
   }
 }
 
