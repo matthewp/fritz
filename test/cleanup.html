@@ -24,13 +24,40 @@
 
           describe('Removing an element', function(){
             before(function(done){
-              let basicApp = doc.querySelector('basic-app');
-              basicApp.parentNode.removeChild(basicApp);
-              setTimeout(done, 100);
+              testHelpers.runInWorker(function(){
+                let id = Object.keys(fritz._instances)[1];
+                self.anotherInstance = fritz._instances[id];
+              })
+              .then(function(){
+                let basicApp = doc.querySelector('basic-app');
+                basicApp.parentNode.removeChild(basicApp);
+                setTimeout(done, 100);
+              });
             });
 
             it('removes it from the instance store', function(){
               assert.equal(testHelpers.instanceCount(win), 0, 'There are no instances');
+            });
+
+            it('removes worker instance', function(done){
+              testHelpers.runInWorker(function(){
+                return Object.keys(fritz._instances).length;
+              })
+              .then(function(count){
+                assert.equal(count, 0);
+              })
+              .then(done);
+            });
+
+            it('removes all handles', function(done){
+              testHelpers.runInWorker(function(){
+                let inst = self.anotherInstance;
+                return Object.keys(inst._fritzHandles).length;
+              })
+              .then(function(count){
+                assert.equal(count, 0);
+              })
+              .then(done, done);
             });
           });
         });

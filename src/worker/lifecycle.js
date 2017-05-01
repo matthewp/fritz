@@ -2,6 +2,7 @@ import Event from './event.js';
 import { getInstance, setInstance, delInstance } from '../util.js';
 import Handle from './handle.js';
 import { RENDER } from '../message-types.js';
+import { renderInstance } from './instance.js';
 
 export function render(fritz, msg) {
   let id = msg.id;
@@ -12,9 +13,16 @@ export function render(fritz, msg) {
   if(!instance) {
     let constructor = fritz._tags[msg.tag];
     instance = new constructor();
-    Object.defineProperty(instance, '_fritzId', {
-      enumerable: false,
-      value: id
+    Object.defineProperties(instance, {
+      _fritzId: {
+        enumerable: false,
+        value: id
+      },
+      _fritzHandles: {
+        enumerable: false,
+        writable: true,
+        value: Object.create(null)
+      }
     });
     setInstance(fritz, id, instance);
     events = constructor.observedEvents;
@@ -22,7 +30,7 @@ export function render(fritz, msg) {
 
   Object.assign(instance, props);
 
-  let tree = instance.render();
+  let tree = renderInstance(instance);
   postMessage({
     type: RENDER,
     id: id,
@@ -61,5 +69,10 @@ export function trigger(fritz, msg){
 export function destroy(fritz, msg){
   let instance = getInstance(fritz, msg.id);
   instance.destroy();
+  Object.keys(instance._fritzHandles).forEach(function(key){
+    let handle = instance._fritzHandles[key];
+    handle.del();
+  });
+  instance._fritzHandles = Object.create(null);
   delInstance(fritz, msg.id);
 };

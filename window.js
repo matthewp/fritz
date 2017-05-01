@@ -1685,9 +1685,11 @@ function define(fritz, msg) {
 function render(fritz, msg){
   let id = msg.id;
   let instance = getInstance(fritz, msg.id);
-  instance.doRenderCallback(msg.tree);
-  if(msg.events) {
-    instance.observedEventsCallback(msg.events);
+  if(instance !== undefined) {
+    instance.doRenderCallback(msg.tree);
+    if(msg.events) {
+      instance.observedEventsCallback(msg.events);
+    }
   }
 }
 

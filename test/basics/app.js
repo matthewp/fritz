@@ -1,10 +1,13 @@
 importScripts('../../worker.umd.js');
+importScripts('../worker-debug.js');
 
 const { h, Component } = fritz;
 
 class AnotherEl extends Component {
+  doStuff(){}
+
   render() {
-    return h('div', ['Another el']);
+    return h('div', { onClick: this.doStuff }, ['Another el']);
   }
 }
 

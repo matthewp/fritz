@@ -46,6 +46,12 @@ Handle = class {
     this.id = id;
     this.fn = fn;
   }
+
+  del() {
+    let store = Handle.store;
+    store.handleMap.delete(this.fn);
+    store.idMap.delete(this.id);
+  }
 }
 
 export default Handle;

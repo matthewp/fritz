@@ -11,6 +11,15 @@ const EVENT = 'event';
 const STATE = 'state';
 const DESTROY = 'destroy';
 
+let currentInstance = null;
+
+function renderInstance(instance) {
+  currentInstance = instance;
+  let tree = instance.render();
+  currentInstance = null;
+  return tree;
+}
+
 class Component {
   dispatch(ev) {
     let id = this._fritzId;
@@ -26,7 +35,7 @@ class Component {
     postMessage({
       type: RENDER,
       id: id,
-      tree: this.render()
+      tree: renderInstance(this)
     });
   }
 
@@ -82,6 +91,12 @@ Handle = class {
     this.id = id;
     this.fn = fn;
   }
+
+  del() {
+    let store = Handle.store;
+    store.handleMap.delete(this.fn);
+    store.idMap.delete(this.id);
+  }
 };
 
 var Handle$1 = Handle;
@@ -91,8 +106,9 @@ const eventAttrExp = /^on[A-Z]/;
 function signal(tagName, attrName, attrValue, attrs) {
   if(eventAttrExp.test(attrName)) {
     let eventName = attrName.toLowerCase();
-    let id = Handle$1.from(attrValue).id;
-    return [1, eventName, id];
+    let handle = Handle$1.from(attrValue);
+    currentInstance._fritzHandles[handle.id] = handle;
+    return [1, eventName, handle.id];
   }
 }
 
@@ -207,9 +223,16 @@ function render(fritz, msg) {
   if(!instance) {
     let constructor = fritz._tags[msg.tag];
     instance = new constructor();
-    Object.defineProperty(instance, '_fritzId', {
-      enumerable: false,
-      value: id
+    Object.defineProperties(instance, {
+      _fritzId: {
+        enumerable: false,
+        value: id
+      },
+      _fritzHandles: {
+        enumerable: false,
+        writable: true,
+        value: Object.create(null)
+      }
     });
     setInstance(fritz, id, instance);
     events = constructor.observedEvents;
@@ -217,7 +240,7 @@ function render(fritz, msg) {
 
   Object.assign(instance, props);
 
-  let tree = instance.render();
+  let tree = renderInstance(instance);
   postMessage({
     type: RENDER,
     id: id,
@@ -256,6 +279,11 @@ function trigger(fritz, msg){
 function destroy(fritz, msg){
   let instance = getInstance(fritz, msg.id);
   instance.destroy();
+  Object.keys(instance._fritzHandles).forEach(function(key){
+    let handle = instance._fritzHandles[key];
+    handle.del();
+  });
+  instance._fritzHandles = Object.create(null);
   delInstance(fritz, msg.id);
 }
 
