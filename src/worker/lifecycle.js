@@ -58,7 +58,7 @@ export function trigger(fritz, msg){
     method.call(inst, event);
     response.type = RENDER;
     response.id = msg.id;
-    response.tree = inst.render();
+    response.tree = renderInstance(inst);
     response.event = event.serialize();
     postMessage(response);
   } else {
