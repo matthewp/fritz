@@ -17,7 +17,9 @@
           const doc = basicsFrame.contentDocument;
 
           before(function(done) {
-            setTimeout(done, 100);
+            win.customElements.whenDefined('stateful-el').then(_ => {
+              setTimeout(done, 100);
+            });
           });
 
           it('Is available as fritz.state', function(){
