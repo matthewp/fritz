@@ -310,6 +310,7 @@ function relay(fritz) {
 const fritz = Object.create(null);
 fritz.Component = Component;
 fritz.define = define;
+fritz.mount = mount;
 fritz.h = h;
 fritz._tags = Object.create(null);
 fritz._instances = Object.create(null);
@@ -333,6 +334,10 @@ function define(tag, constructor) {
     tag: tag,
     props: constructor.props
   });
+}
+
+function mount(vdom, selector){
+
 }
 
 let state;
