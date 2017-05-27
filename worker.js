@@ -9,7 +9,7 @@ let currentInstance = null;
 
 function renderInstance(instance) {
   currentInstance = instance;
-  let tree = instance.render();
+  let tree = instance.render(instance);
   currentInstance = null;
   return tree;
 }
@@ -317,6 +317,11 @@ fritz._instances = Object.create(null);
 function define(tag, constructor) {
   if(constructor === undefined) {
     throw new Error('fritz.define expects 2 arguments');
+  }
+  if(constructor.prototype.render === undefined) {
+    let render = constructor;
+    constructor = class extends Component{};
+    constructor.prototype.render = render;
   }
 
   fritz._tags[tag] = constructor;

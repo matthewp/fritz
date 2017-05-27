@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<title>fritz - Take your UI off the main thread</title>
+<link rel="preload" href="./app.js" as="worker">
+<link rel="preload" href="./main.js" as="script">
+<style>
+  :root {
+    --gray: #BAC1B8;
+    --cadetblue: #58A4B0;
+    --jet: #303030;
+    --cyan: #0C7C59;
+    --vermilion: #D64933; 
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 100;
+    background-color: var(--gray);
+    margin: 0;
+  }
+</style>
+
+<its-fritz-yall></its-fritz-yall>
+
+<script src="./main.js"></script>
