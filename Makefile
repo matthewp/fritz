@@ -1,4 +1,4 @@
-.PHONY: window worker watch compile-skate all
+.PHONY: window worker watch site site-watch site-main site-dev all
 
 all: worker window
 
@@ -18,3 +18,15 @@ watch:
 
 dev:
 	make serve & make watch
+
+site:
+	node_modules/.bin/rollup -o docs/app.js -c docs/rollup.config.js -f iife docs/src/app.js
+
+site-main:
+	node_modules/.bin/rollup -o docs/main.js -c docs/rollup.config.js -f iife docs/src/main.js
+
+site-watch:
+	find docs/src -name "*.*" | entr make site
+
+site-dev:
+	make serve & make site-watch

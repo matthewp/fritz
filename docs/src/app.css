@@ -1,0 +1,74 @@
+:host {
+  display: block;
+}
+
+/*
+main {
+  max-width: 85%;
+  margin: auto;
+}
+*/
+
+.intro {
+  padding: 2.7777777777777777rem 2.2222222222222223rem 1.6666666666666667rem 2.2222222222222223rem;
+}
+
+/* intro */
+.intro {
+  text-align: center;
+}
+
+.fritz-flame {
+  width: 14rem;
+  border-radius: 0.8rem;
+}
+
+.github {
+  display: inline-block;
+  background: blue;
+  text-align: center;
+  width: 11rem;
+  padding: 0.5rem 0;
+  margin: 0.5rem 1rem;
+  font-size: 150%;
+  font-weight: 100;
+}
+
+.github, .github:visited {
+  color: #fff;
+  background-color: var(--vermilion);
+  text-decoration: none;
+}
+
+code-file {
+  display: block;
+  width: 60%;
+  margin: auto;
+  text-align: initial;
+  font-size: 130%;
+}
+
+code-file:nth-of-type(1) {
+  margin-top: 4rem;
+}
+/* end intro */
+
+footer {
+  background-color: #0C7C59;
+  height: 7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 120%;
+}
+
+footer p {
+  margin: 0;
+}
+
+footer a,
+footer a:visited {
+  color: #fff;
+  font-weight: 600;
+}

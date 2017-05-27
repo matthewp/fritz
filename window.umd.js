@@ -1554,6 +1554,18 @@ var patch = patchInner;
 var elementOpen_1 = elementOpen;
 var elementClose_1 = elementClose;
 var text_1 = text;
+var symbols_1 = symbols;
+var attributes_1 = attributes;
+
+var attributesSet = attributes_1[symbols_1.default];
+attributes_1[symbols_1.default] = preferProps;
+
+function preferProps(element, name, value){
+  if(name in element)
+    element[name] = value;
+  else
+    attributesSet(element, name, value);
+}
 
 function render$1(bc, component){
   var n;

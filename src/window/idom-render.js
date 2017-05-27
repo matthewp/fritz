@@ -1,9 +1,21 @@
 import {
+  attributes,
   elementOpen,
   elementClose,
+  symbols,
   text,
   patch
 } from 'incremental-dom';
+
+var attributesSet = attributes[symbols.default];
+attributes[symbols.default] = preferProps;
+
+function preferProps(element, name, value){
+  if(name in element)
+    element[name] = value;
+  else
+    attributesSet(element, name, value);
+}
 
 function render(bc, component){
   var n;
