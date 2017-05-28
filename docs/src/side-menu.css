@@ -1,0 +1,42 @@
+:host {
+  display: block;
+}
+
+.wrapper {
+  transition: transform .5s;
+}
+
+.wrapper.open {
+  transform: translate3d(300px, 0, 0);
+}
+
+.menu, .content {
+  position: relative;
+  left: 0;
+}
+
+.menu {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 300px;
+  transform: translate3d(-100%,0,0);
+}
+
+.hamburger {
+  font-size: 125%;
+  position: fixed;
+  top: 1rem;
+  left: 2rem;
+  z-index: 2;
+  transition: opacity .3s;
+}
+
+.hamburger, .hamburger:visited {
+  color: var(--jet);
+  text-decoration: none;
+}
+
+.open .hamburger {
+  opacity: 0;
+}

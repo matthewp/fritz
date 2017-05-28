@@ -385,6 +385,54 @@ class CodeFile extends Component {
 
 fritz.define('code-file', CodeFile);
 
+var styles$2 = ":host {\n  display: block;\n}\n\n.wrapper {\n  transition: transform .5s;\n}\n\n.wrapper.open {\n  transform: translate3d(300px, 0, 0);\n}\n\n.menu, .content {\n  position: relative;\n  left: 0;\n}\n\n.menu {\n  position: absolute;\n  top: 0;\n  left: 0;\n  width: 300px;\n  transform: translate3d(-100%,0,0);\n}\n\n.hamburger {\n  font-size: 125%;\n  position: fixed;\n  top: 1rem;\n  left: 2rem;\n  z-index: 2;\n  transition: opacity .3s;\n}\n\n.hamburger, .hamburger:visited {\n  color: var(--jet);\n  text-decoration: none;\n}\n\n.open .hamburger {\n  opacity: 0;\n}";
+
+class SideMenu extends Component {
+  constructor() {
+    super();
+    this.open = false;
+  }
+
+  toggle() {
+    this.open = !this.open;
+  }
+
+  maybeClose() {
+    if (this.open) this.open = false;
+  }
+
+  render({ open }) {
+    var wrapperClasses = 'wrapper' + (open ? ' open' : '');
+
+    return h(
+      'div',
+      { 'class': wrapperClasses },
+      h(
+        'style',
+        null,
+        styles$2
+      ),
+      h(
+        'div',
+        { 'class': 'menu' },
+        h('slot', { name: 'menu' })
+      ),
+      h(
+        'a',
+        { 'class': 'hamburger', href: '#', onClick: this.toggle },
+        '\u2630'
+      ),
+      h(
+        'div',
+        { 'class': 'content', onClick: this.maybeClose },
+        h('slot', { name: 'content' })
+      )
+    );
+  }
+}
+
+fritz.define('side-menu', SideMenu);
+
 // https://coolors.co/bac1b8-58a4b0-303030-0c7c59-d64933
 
 const jsCode = `
@@ -414,50 +462,59 @@ const htmlCode = `
 
 function main() {
   return h(
-    'main',
+    'side-menu',
     null,
     h(
-      'style',
-      null,
-      styles
+      'aside',
+      { slot: 'menu' },
+      'Here'
     ),
     h(
-      'div',
-      { 'class': 'intro' },
+      'main',
+      { slot: 'content' },
       h(
-        'header',
-        { 'class': 'title' },
-        h(
-          'h1',
-          null,
-          'fritz'
-        ),
-        h('img', { 'class': 'fritz-flame', src: './frankenstein-fritz-flame.png', title: 'Fritz, with a flame' }),
-        h(
-          'h2',
-          null,
-          'Take your UI off the main thread.'
-        )
-      ),
-      h(
-        'a',
-        { 'class': 'github', href: 'https://github.com/matthewp/fritz' },
-        'GitHub'
-      ),
-      h('code-file', { name: 'worker.js', code: jsCode }),
-      h('code-file', { name: 'index.html', code: htmlCode })
-    ),
-    h(
-      'footer',
-      null,
-      h(
-        'p',
+        'style',
         null,
-        'Made with \uD83C\uDF83 by ',
+        styles
+      ),
+      h(
+        'div',
+        { 'class': 'intro' },
+        h(
+          'header',
+          { 'class': 'title' },
+          h(
+            'h1',
+            null,
+            'fritz'
+          ),
+          h('img', { 'class': 'fritz-flame', src: './frankenstein-fritz-flame.png', title: 'Fritz, with a flame' }),
+          h(
+            'h2',
+            null,
+            'Take your UI off the main thread.'
+          )
+        ),
         h(
           'a',
-          { href: 'https://twitter.com/matthewcp' },
-          '@matthewcp'
+          { 'class': 'github', href: 'https://github.com/matthewp/fritz' },
+          'GitHub'
+        ),
+        h('code-file', { name: 'worker.js', code: jsCode }),
+        h('code-file', { name: 'index.html', code: htmlCode })
+      ),
+      h(
+        'footer',
+        null,
+        h(
+          'p',
+          null,
+          'Made with \uD83C\uDF83 by ',
+          h(
+            'a',
+            { href: 'https://twitter.com/matthewcp' },
+            '@matthewcp'
+          )
         )
       )
     )
