@@ -1,4 +1,5 @@
 import fritz, { Component, h } from '../../worker';
+import About from './about.js';
 import styles from './app.css';
 import './code-file.js';
 
@@ -34,9 +35,9 @@ function main() {
     <main>  
       <style>{styles}</style>
 
-      <div class="intro">
+      <section class="intro shadow-section">
         <header class="title">
-          <h1>fritz</h1>
+          <h1 class="primary-title">Fritz</h1>
           <img class="fritz-flame" src="./frankenstein-fritz-flame.png" title="Fritz, with a flame" />
           <h2>Take your UI off the main thread.</h2>
         </header>
@@ -45,7 +46,9 @@ function main() {
 
         <code-file name="worker.js" code={jsCode}></code-file>
         <code-file name="index.html" code={htmlCode}></code-file>
-      </div>
+      </section>
+
+      <About/>
 
       <footer>
         <p>Made with 🎃 by <a href="https://twitter.com/matthewcp">@matthewcp</a></p>
