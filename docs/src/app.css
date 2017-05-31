@@ -70,7 +70,7 @@ code-snippet, code-file {
 
 @media only screen and (max-width: 768px) {
   .intro code-file {
-    width: 85%;
+    width: 100%;
     font-size: 90%;
   }
 }
