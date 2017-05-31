@@ -1,8 +1,5 @@
-(function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-	typeof define === 'function' && define.amd ? define(factory) :
-	(global.fritz = factory());
-}(this, (function () { 'use strict';
+(function () {
+'use strict';
 
 const DEFINE = 'define';
 const TRIGGER = 'trigger';
@@ -39,7 +36,7 @@ class Component {
     });
   }
 
-  destroy(){}
+  destroy() {}
 }
 
 let Store;
@@ -55,7 +52,7 @@ Store = class {
   from(fn) {
     let handle;
     let id = this.handleMap.get(fn);
-    if(id == null) {
+    if (id == null) {
       id = this.id++;
       handle = new Handle(id, fn);
       this.handleMap.set(fn, id);
@@ -73,7 +70,7 @@ Store = class {
 
 Handle = class {
   static get store() {
-    if(!this._store) {
+    if (!this._store) {
       this._store = new Store();
     }
     return this._store;
@@ -104,7 +101,7 @@ var Handle$1 = Handle;
 const eventAttrExp = /^on[A-Z]/;
 
 function signal(tagName, attrName, attrValue, attrs) {
-  if(eventAttrExp.test(attrName)) {
+  if (eventAttrExp.test(attrName)) {
     let eventName = attrName.toLowerCase();
     let handle = Handle$1.from(attrValue);
     currentInstance._fritzHandles[handle.id] = handle;
@@ -114,23 +111,22 @@ function signal(tagName, attrName, attrValue, attrs) {
 
 class Tree extends Array {}
 
-function h(tag, attrs, children){
+function h(tag, attrs, children) {
   const argsLen = arguments.length;
-  if(argsLen === 2) {
-    if(typeof attrs !== 'object' || Array.isArray(attrs)) {
+  if (argsLen === 2) {
+    if (typeof attrs !== 'object' || Array.isArray(attrs)) {
       children = attrs;
       attrs = null;
     }
-  } else if(argsLen > 3 || (children instanceof Tree) ||
-    typeof children === 'string') {
+  } else if (argsLen > 3 || children instanceof Tree || typeof children === 'string') {
     children = Array.prototype.slice.call(arguments, 2);
   }
 
   var isFn = typeof tag === 'function';
 
-  if(isFn) {
+  if (isFn) {
     var localName = tag.prototype.localName;
-    if(localName) {
+    if (localName) {
       return h(localName, attrs, children);
     }
 
@@ -138,14 +134,14 @@ function h(tag, attrs, children){
   }
 
   var tree = new Tree();
-  if(attrs) {
+  if (attrs) {
     var evs;
-    attrs = Object.keys(attrs).reduce(function(acc, key){
+    attrs = Object.keys(attrs).reduce(function (acc, key) {
       var value = attrs[key];
 
       var eventInfo = signal(tag, key, value, attrs);
-      if(eventInfo) {
-        if(!evs) evs = [];
+      if (eventInfo) {
+        if (!evs) evs = [];
         evs.push(eventInfo);
       } else {
         acc.push(key);
@@ -157,23 +153,23 @@ function h(tag, attrs, children){
   }
 
   var open = [1, tag];
-  if(attrs) {
+  if (attrs) {
     open.push(attrs);
   }
-  if(evs) {
+  if (evs) {
     open.push(evs);
   }
   tree.push(open);
 
-  if(children) {
-    children.forEach(function(child){
+  if (children) {
+    children.forEach(function (child) {
       var type = typeof child;
-      if(type === 'string' || type === 'number') {
+      if (type === 'string' || type === 'number') {
         tree.push([4, child]);
         return;
       }
 
-      while(child && child.length) {
+      while (child && child.length) {
         tree.push(child.shift());
       }
     });
@@ -203,15 +199,15 @@ class Event extends Serializable {
   }
 }
 
-function getInstance(fritz, id){
+function getInstance(fritz, id) {
   return fritz._instances[id];
 }
 
-function setInstance(fritz, id, instance){
+function setInstance(fritz, id, instance) {
   fritz._instances[id] = instance;
 }
 
-function delInstance(fritz, id){
+function delInstance(fritz, id) {
   delete fritz._instances[id];
 }
 
@@ -221,7 +217,7 @@ function render(fritz, msg) {
 
   let instance = getInstance(fritz, id);
   let events;
-  if(!instance) {
+  if (!instance) {
     let constructor = fritz._tags[msg.tag];
     instance = new constructor();
     Object.defineProperties(instance, {
@@ -250,19 +246,19 @@ function render(fritz, msg) {
   });
 }
 
-function trigger(fritz, msg){
+function trigger(fritz, msg) {
   let inst = getInstance(fritz, msg.id);
   let response = Object.create(null);
 
   let method;
-  if(msg.handle != null) {
+  if (msg.handle != null) {
     method = Handle$1.get(msg.handle).fn;
   } else {
     let methodName = 'on' + msg.name[0].toUpperCase() + msg.name.substr(1);
     method = inst[methodName];
   }
 
-  if(method) {
+  if (method) {
     let event = new Event(msg.name);
     event.value = msg.value;
 
@@ -277,10 +273,10 @@ function trigger(fritz, msg){
   }
 }
 
-function destroy(fritz, msg){
+function destroy(fritz, msg) {
   let instance = getInstance(fritz, msg.id);
   instance.destroy();
-  Object.keys(instance._fritzHandles).forEach(function(key){
+  Object.keys(instance._fritzHandles).forEach(function (key) {
     let handle = instance._fritzHandles[key];
     handle.del();
   });
@@ -291,12 +287,12 @@ function destroy(fritz, msg){
 let hasListened = false;
 
 function relay(fritz) {
-  if(!hasListened) {
+  if (!hasListened) {
     hasListened = true;
 
-    self.addEventListener('message', function(ev){
+    self.addEventListener('message', function (ev) {
       let msg = ev.data;
-      switch(msg.type) {
+      switch (msg.type) {
         case RENDER:
           render(fritz, msg);
           break;
@@ -314,31 +310,31 @@ function relay(fritz) {
   }
 }
 
-const fritz$1 = Object.create(null);
-fritz$1.Component = Component;
-fritz$1.define = define;
-fritz$1.h = h;
-fritz$1._tags = Object.create(null);
-fritz$1._instances = Object.create(null);
+const fritz = Object.create(null);
+fritz.Component = Component;
+fritz.define = define;
+fritz.h = h;
+fritz._tags = Object.create(null);
+fritz._instances = Object.create(null);
 
 function define(tag, constructor) {
-  if(constructor === undefined) {
+  if (constructor === undefined) {
     throw new Error('fritz.define expects 2 arguments');
   }
-  if(constructor.prototype.render === undefined) {
+  if (constructor.prototype.render === undefined) {
     let render = constructor;
-    constructor = class extends Component{};
+    constructor = class extends Component {};
     constructor.prototype.render = render;
   }
 
-  fritz$1._tags[tag] = constructor;
+  fritz._tags[tag] = constructor;
 
   Object.defineProperty(constructor.prototype, 'localName', {
     enumerable: false,
     value: tag
   });
 
-  relay(fritz$1);
+  relay(fritz);
 
   postMessage({
     type: DEFINE,
@@ -348,11 +344,75 @@ function define(tag, constructor) {
 }
 
 let state;
-Object.defineProperty(fritz$1, 'state', {
-  set: function(val) { state = val; },
-  get: function() { return state; }
+Object.defineProperty(fritz, 'state', {
+  set: function (val) {
+    state = val;
+  },
+  get: function () {
+    return state;
+  }
 });
 
-return fritz$1;
+importScripts('https://cdn.rawgit.com/WebReflection/dbmonster/master/data.js');
 
-})));
+const styles = ``;
+
+function row(db) {
+  var rows = [h('td', { 'class': 'dbname' }, [db.name]), h('td', { class: 'query-count' }, [h('span', { class: getCountClassName(db) }, [db.queries.length])])].concat(db.topFiveQueries.map(db => h('td', { 'class': elapsedClassName(db.elapsed) }, [db.elapsed, h('div', { 'class': 'popover left' }, [h('div', { 'class': 'popover-content' }, [db.query]), h('div', { 'class': 'arrow' })])])));
+
+  return h('tr', rows);
+}
+
+class App extends Component {
+  constructor() {
+    super();
+
+    this.dbs = getData();
+    //this.updateOften();
+  }
+
+  updateOften() {
+    setInterval(_ => {
+      this.dbs = getData();
+      this.update();
+    }, 100);
+  }
+
+  render() {
+    var dbs = this.dbs;
+
+    return h('div', [h('style', [styles]), h('div', { 'class': 'table table-striped latest-data' }, [h('div', { 'class': 'tbody' }, dbs.map(row))])]);
+  }
+}
+
+fritz.define('db-monster', App);
+
+/*
+	  <table class="table table-striped latest-data">
+		<tbody>
+		{{#each dbs}}
+			<tr>
+			  <td class="dbname">
+				{{name}}
+			  </td>
+			  <td class="query-count">
+				<span class="{{countClassName}}">
+					{{queryCount}}
+				</span>
+			  </td>
+			  {{#each topFiveQueries}}
+				<td class="Query {{className}}">
+					{{elapsed}}
+				  <div class="popover left">
+					<div class="popover-content">{{query}}</div>
+					<div class="arrow"></div>
+				  </div>
+				</td>
+			  {{/each}}
+			</tr>
+		  {{/each}}
+		</tbody>
+	  </table>
+*/
+
+}());

@@ -1567,7 +1567,7 @@ function preferProps(element, name, value){
     attributesSet(element, name, value);
 }
 
-function render$1(bc, component){
+function render(bc, component){
   var n;
   for(var i = 0, len = bc.length; i < len; i++) {
     n = bc[i];
@@ -1595,7 +1595,7 @@ function render$1(bc, component){
 }
 
 function idomRender(vdom, root, component) {
-  patch(root, () => render$1(vdom, component));
+  patch(root, () => render(vdom, component));
 }
 
 const DEFINE = 'define';
@@ -1666,6 +1666,37 @@ function delInstance(fritz, id){
   delete fritz._instances[id];
 }
 
+let rafId = null;
+
+function schedule(fritz, msg) {
+  let work = fritz._work;
+  work.push(msg);
+  if(!rafId) {
+    rafId = requestAnimationFrame(function cycle(){
+      let start = new Date();
+      do {
+        let msg = work.shift();
+        render$1(fritz, msg);
+      } while(new Date() - start < 16 && work.length);
+
+      if(work.length)
+        requestAnimationFrame(cycle);
+      else
+        rafId = null;
+    });
+  }
+}
+
+function render$1(fritz, msg) {
+  let instance = getInstance(fritz, msg.id);
+  if(instance !== undefined) {
+    instance.doRenderCallback(msg.tree);
+    if(msg.events) {
+      instance.observedEventsCallback(msg.events);
+    }
+  }
+}
+
 function define(fritz, msg) {
   let worker = this;
   let tagName = msg.tag;
@@ -1700,17 +1731,6 @@ function define(fritz, msg) {
   customElements.define(tagName, OffThreadElement);
 }
 
-function render(fritz, msg){
-  let id = msg.id;
-  let instance = getInstance(fritz, msg.id);
-  if(instance !== undefined) {
-    instance.doRenderCallback(msg.tree);
-    if(msg.events) {
-      instance.observedEventsCallback(msg.events);
-    }
-  }
-}
-
 function trigger(fritz, msg) {
   let inst = getInstance(fritz, msg.id);
   let event = new Event(msg.event.type, {
@@ -1735,6 +1755,7 @@ fritz.tags = Object.create(null);
 fritz._id = 1;
 fritz._instances = Object.create(null);
 fritz._workers = [];
+fritz._work = [];
 
 function use(worker) {
   fritz._workers.push(worker);
@@ -1751,7 +1772,7 @@ function handleMessage(ev) {
       define.call(this, fritz, msg);
       break;
     case RENDER:
-      render(fritz, msg);
+      schedule(fritz, msg);
       break;
     case TRIGGER:
       trigger(fritz, msg);

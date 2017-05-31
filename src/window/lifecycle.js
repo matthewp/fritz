@@ -2,6 +2,8 @@ import { Component } from './component.js';
 import { DESTROY } from '../message-types.js';
 import { getInstance, setInstance, delInstance } from '../util.js';
 
+export { default as render } from './scheduler.js';
+
 export function define(fritz, msg) {
   let worker = this;
   let tagName = msg.tag;
@@ -35,17 +37,6 @@ export function define(fritz, msg) {
 
   customElements.define(tagName, OffThreadElement);
 }
-
-export function render(fritz, msg){
-  let id = msg.id;
-  let instance = getInstance(fritz, msg.id);
-  if(instance !== undefined) {
-    instance.doRenderCallback(msg.tree);
-    if(msg.events) {
-      instance.observedEventsCallback(msg.events);
-    }
-  }
-};
 
 export function trigger(fritz, msg) {
   let inst = getInstance(fritz, msg.id);

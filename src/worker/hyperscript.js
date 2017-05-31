@@ -55,7 +55,8 @@ export default function h(tag, attrs, children){
 
   if(children) {
     children.forEach(function(child){
-      if(typeof child === "string") {
+      var type = typeof child;
+      if(type === 'string' || type === 'number') {
         tree.push([4, child]);
         return;
       }
