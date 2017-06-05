@@ -1,9 +1,29 @@
 <!doctype html>
 <html lang="en">
 
+<button id="start">Start</button>
+
 <db-monster></db-monster>
 
 <script src="../../../window.umd.js"></script>
 <script>
   fritz.use(new Worker('./app.js'));
+  const dbmonster = document.querySelector('db-monster');
+  const theInterval = 100;
+  let iID;
+
+  start.onclick = () => {
+    const isStopped = start.textContent === 'Start';
+
+    if(isStopped) {
+      iID = setInterval(_ => {
+        const i = dbmonster.counter || 0;
+        dbmonster.counter = i + 1;
+      }, theInterval);
+      start.textContent = 'Stop';
+    } else {
+      clearInterval(iID);
+      start.textContent = 'Start';
+    }
+  };
 </script>

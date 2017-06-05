@@ -353,66 +353,42 @@ Object.defineProperty(fritz, 'state', {
   }
 });
 
-importScripts('https://cdn.rawgit.com/WebReflection/dbmonster/master/data.js');
+var styles = ".row-container {\n  display: flex;\n}\n\n.table-cell {\n  flex: 1;\n}";
 
-const styles = ``;
-
-function row(db) {
-  var rows = [h('td', { 'class': 'dbname' }, [db.name]), h('td', { class: 'query-count' }, [h('span', { class: getCountClassName(db) }, [db.queries.length])])].concat(db.topFiveQueries.map(db => h('td', { 'class': elapsedClassName(db.elapsed) }, [db.elapsed, h('div', { 'class': 'popover left' }, [h('div', { 'class': 'popover-content' }, [db.query]), h('div', { 'class': 'arrow' })])])));
-
-  return h('tr', rows);
-}
-
-class App extends Component {
-  constructor() {
-    super();
-
-    this.dbs = getData();
-    //this.updateOften();
+class TableRow extends Component {
+  static get props() {
+    return { db: {} };
   }
 
-  updateOften() {
-    setInterval(_ => {
-      this.dbs = getData();
-      this.update();
-    }, 100);
+  render({ db }) {
+    var rows = [h('style', [styles]), h('div', { 'class': 'table-cell dbname' }, [db.name]), h('div', { class: 'table-cell query-count' }, [h('span', { class: getCountClassName(db) }, [db.queries.length])])].concat(db.topFiveQueries.map(db => h('div', { 'class': 'table-cell ' + elapsedClassName(db.elapsed) }, [db.elapsed, h('div', { 'class': 'popover left' }, [h('div', { 'class': 'popover-content' }, [db.query]), h('div', { 'class': 'arrow' })])])));
+
+    return h('div', { 'class': 'row-container' }, rows);
+  }
+}
+
+fritz.define('table-row', TableRow);
+
+var styles$1 = ".table {\n  font-family: \"Helvetica Neue\",Helvetica,Arial,sans-serif;\n  font-size: 14px;\n  line-height: 1.42857143;\n  color: #333;\n  background-color: #fff;\n}\n\n#link {\n  position: fixed;\n  top: 0; right: 0;\n  font-size: 12px;\n  padding: 5px 10px;\n  background: rgba(255,255,255,0.85);\n  z-index: 5;\n  box-shadow: 0 0 8px rgba(0,0,0,0.6);\n}\n  #link .center {\n    display: block;\n    text-align: center;\n  }\n\n.Query {\n  position: relative;\n}\n\n.Query:hover .popover {\n  left: -100%;\n  width: 100%;\n  display: block;\n}";
+
+importScripts('https://cdn.rawgit.com/WebReflection/dbmonster/master/data.js');
+
+class App extends Component {
+  static get props() {
+    return { counter: {} };
+  }
+
+  constructor() {
+    super();
   }
 
   render() {
-    var dbs = this.dbs;
+    var dbs = getData();
 
-    return h('div', [h('style', [styles]), h('div', { 'class': 'table table-striped latest-data' }, [h('div', { 'class': 'tbody' }, dbs.map(row))])]);
+    return h('div', [h('style', [styles$1]), h('div', { 'class': 'table table-striped latest-data' }, [h('div', { 'class': 'tbody' }, dbs.map(db => h('table-row', { db: db })))])]);
   }
 }
 
 fritz.define('db-monster', App);
-
-/*
-	  <table class="table table-striped latest-data">
-		<tbody>
-		{{#each dbs}}
-			<tr>
-			  <td class="dbname">
-				{{name}}
-			  </td>
-			  <td class="query-count">
-				<span class="{{countClassName}}">
-					{{queryCount}}
-				</span>
-			  </td>
-			  {{#each topFiveQueries}}
-				<td class="Query {{className}}">
-					{{elapsed}}
-				  <div class="popover left">
-					<div class="popover-content">{{query}}</div>
-					<div class="arrow"></div>
-				  </div>
-				</td>
-			  {{/each}}
-			</tr>
-		  {{/each}}
-		</tbody>
-	  </table>
-*/
 
 }());
