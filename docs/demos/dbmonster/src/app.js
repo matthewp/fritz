@@ -5,22 +5,16 @@ import styles from './app.css';
 importScripts('https://cdn.rawgit.com/WebReflection/dbmonster/master/data.js');
 
 class App extends Component {
-  constructor() {
-    super();
-
-    this.dbs = getData();
-    //this.updateOften();
+  static get props() {
+    return { counter: {} };
   }
 
-  updateOften() {
-    setInterval(_ => {
-      this.dbs = getData();
-      this.update();
-    }, 100);
+  constructor() {
+    super();
   }
 
   render() {
-    var dbs = this.dbs;
+    var dbs = getData();
 
     return h('div', [
       h('style', [styles]),

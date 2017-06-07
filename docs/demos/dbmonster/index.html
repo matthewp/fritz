@@ -8,15 +8,16 @@
 <script src="../../../window.umd.js"></script>
 <script>
   fritz.use(new Worker('./app.js'));
-  const dbmonster = document.querySelector('db-monster');
   const theInterval = 100;
   let iID;
 
   start.onclick = () => {
     const isStopped = start.textContent === 'Start';
+    const dbmonster = document.querySelector('db-monster');
 
     if(isStopped) {
       iID = setInterval(_ => {
+        console.log("HERRR");
         const i = dbmonster.counter || 0;
         dbmonster.counter = i + 1;
       }, theInterval);
