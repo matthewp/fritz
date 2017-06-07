@@ -35,6 +35,13 @@
             let inner = nested.shadowRoot.firstChild;
             assert.equal(inner.textContent, 'Another el');
           });
+
+          it('Renders hyperscript that uses numbers', function(){
+            let el = doc.querySelector('basic-app');
+            let mathel = el.shadowRoot.querySelector('math-el');
+            let inner = mathel.shadowRoot.firstChild;
+            assert.equal(inner.textContent, '15 of 15');
+          })
         });
       </script>
     </template>
