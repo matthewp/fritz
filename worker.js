@@ -161,8 +161,8 @@ function h(tag, attrs, children){
 
   if(children) {
     children.forEach(function(child){
-      if(typeof child === "string") {
-        tree.push([4, child]);
+      if(typeof child !== 'undefined' && !Array.isArray(child)) {
+        tree.push([4, child + '']);
         return;
       }
 
