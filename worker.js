@@ -177,25 +177,6 @@ function h(tag, attrs, children){
   return tree;
 }
 
-class Serializable {
-  serialize() {
-    let out = Object.create(null);
-    return Object.assign(out, this);
-  }
-}
-
-class Event extends Serializable {
-  constructor(type) {
-    super();
-    this.type = type;
-    this.defaultPrevented = false;
-  }
-
-  preventDefault() {
-    this.defaultPrevented = true;
-  }
-}
-
 function getInstance(fritz, id){
   return fritz._instances[id];
 }
@@ -256,14 +237,12 @@ function trigger(fritz, msg){
   }
 
   if(method) {
-    let event = new Event(msg.name);
-    event.value = msg.value;
-
+    let event = msg.event;
     method.call(inst, event);
     response.type = RENDER;
     response.id = msg.id;
     response.tree = renderInstance(inst);
-    response.event = event.serialize();
+    response.event = event;
     postMessage(response);
   } else {
     // TODO warn?

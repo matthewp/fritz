@@ -23,7 +23,6 @@
           it('clicking a link changes the text', function(done){
             let shadow = doc.querySelector('event-element').shadowRoot;
             let anchor = shadow.querySelector('a');
-
             anchor.dispatchEvent(new Event('click'));
 
             setTimeout(function(){
@@ -31,6 +30,9 @@
               assert.ok(clicked, 'rendering changed');
               done();
             }, 50);
+
+            let spec = shadow.querySelector('#foo');
+            assert.equal(spec.textContent, 'bar', 'This element was updated');
           });
         });
 

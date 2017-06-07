@@ -1,4 +1,3 @@
-import Event from './event.js';
 import { getInstance, setInstance, delInstance } from '../util.js';
 import Handle from './handle.js';
 import { RENDER } from '../message-types.js';
@@ -52,14 +51,12 @@ export function trigger(fritz, msg){
   }
 
   if(method) {
-    let event = new Event(msg.name);
-    event.value = msg.value;
-
+    let event = msg.event;
     method.call(inst, event);
     response.type = RENDER;
     response.id = msg.id;
     response.tree = renderInstance(inst);
-    response.event = event.serialize();
+    response.event = event;
     postMessage(response);
   } else {
     // TODO warn?

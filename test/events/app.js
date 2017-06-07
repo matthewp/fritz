@@ -3,8 +3,17 @@ importScripts('../../worker.umd.js');
 const { h, Component } = fritz;
 
 class EventEl extends Component {
+  constructor() {
+    super();
+    this.foo = 'none';
+  }
+
   myHandler() {
     this.clicked = true;
+  }
+
+  handleSpecial(ev) {
+    this.foo = ev.detail.foo;
   }
 
   render() {
@@ -12,10 +21,15 @@ class EventEl extends Component {
       return h('div', {'class': 'clicked'}, ['link clicked']);
     }
 
-    return h('a', {
-      href: '/foo',
-      onClick: this.myHandler
-    }, ['Click me']);
+    return h('div', [
+      h('a', {
+        href: '/foo',
+        onClick: this.myHandler
+      }, ['Click me']),
+
+      h('div', {id: 'foo'}, [this.foo]),
+      h('special-el', {onSpecial: this.handleSpecial}, [])
+    ]);
   }
 }
 
