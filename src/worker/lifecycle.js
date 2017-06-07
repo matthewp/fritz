@@ -38,12 +38,6 @@ export function render(fritz, msg) {
   });
 };
 
-function createEvent(data) {
-  let ev = Object.create(null);
-  Object.assign(ev, data);
-  return ev;
-}
-
 export function trigger(fritz, msg){
   let inst = getInstance(fritz, msg.id);
   let response = Object.create(null);
