@@ -1604,10 +1604,13 @@ function postEvent(event, inst, handle) {
   let id = inst._id;
   worker.postMessage({
     type: EVENT,
-    name: event.type,
+    event: {
+      type: event.type,
+      detail: event.detail,
+      value: event.target.value
+    },
     id: id,
     handle: handle,
-    value: event.target.value
   });
 }
 
