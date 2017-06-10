@@ -11,8 +11,8 @@ class Hello extends Component {
     };
   }
 
-  render() {
-    return h('span', [`Hello ${this.name}`]);
+  render({name}) {
+    return h('span', [`Hello ${name}`]);
   }
 }
 

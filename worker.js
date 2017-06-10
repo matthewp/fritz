@@ -1,44 +1,3 @@
-const DEFINE = 'define';
-const TRIGGER = 'trigger';
-const RENDER = 'render';
-const EVENT = 'event';
-const STATE = 'state';
-const DESTROY = 'destroy';
-
-let currentInstance = null;
-
-function renderInstance(instance) {
-  currentInstance = instance;
-  let tree = instance.render(instance);
-  currentInstance = null;
-  return tree;
-}
-
-class Component {
-  dispatch(ev) {
-    let id = this._fritzId;
-    postMessage({
-      type: TRIGGER,
-      event: ev,
-      id: id
-    });
-  }
-
-  // Force an update, will change to setState()
-  update() {
-    let id = this._fritzId;
-    postMessage({
-      type: RENDER,
-      id: id,
-      tree: renderInstance(this)
-    });
-  }
-
-  componentWillUpdate(){}
-
-  destroy(){}
-}
-
 function getInstance(fritz, id){
   return fritz._instances[id];
 }
@@ -53,6 +12,89 @@ function delInstance(fritz, id){
 
 function isFunction(val) {
   return typeof val === 'function';
+}
+
+const defer = Promise.resolve().then.bind(Promise.resolve());
+
+const DEFINE = 'define';
+const TRIGGER = 'trigger';
+const RENDER = 'render';
+const EVENT = 'event';
+const STATE = 'state';
+const DESTROY = 'destroy';
+
+let currentInstance = null;
+
+function renderInstance(instance) {
+  currentInstance = instance;
+  let tree = instance.render(instance.props, instance.state);
+  currentInstance = null;
+  return tree;
+}
+
+let queue = [];
+
+function enqueueRender(instance) {
+  if(!instance._dirty && (instance._dirty = true) && queue.push(instance)==1) {
+    defer(rerender);
+  }
+}
+
+function rerender() {
+	let p, list = queue;
+	queue = [];
+	while ( (p = list.pop()) ) {
+		if (p._dirty) render(p);
+	}
+}
+
+function render(instance) {
+  if(instance.shouldComponentUpdate() !== false) {
+    instance.componentWillUpdate();
+    instance._dirty = false;
+
+    postMessage({
+      type: RENDER,
+      id: instance._fritzId,
+      tree: renderInstance(instance)
+    });
+  }
+}
+
+class Component {
+  constructor() {
+    this.state = {};
+    this.props = {};
+  }
+
+  dispatch(ev) {
+    let id = this._fritzId;
+    postMessage({
+      type: TRIGGER,
+      event: ev,
+      id: id
+    });
+  }
+
+  setState(state) {
+    let s = this.state;
+    Object.assign(s, isFunction(state) ? state(s, this.props) : state);
+    enqueueRender(this);
+  }
+
+  // Force an update, will change to setState()
+  update() {
+    console.warn('update() is deprecated. Use setState() instead.');
+    this.setState({});
+  }
+
+  shouldComponentUpdate() {
+    return true;
+  }
+
+  componentWillUpdate(){}
+
+  componentWillUnmount(){}
 }
 
 let Store;
@@ -196,7 +238,7 @@ function h(tag, attrs, children){
   return tree;
 }
 
-function render(fritz, msg) {
+function render$1(fritz, msg) {
   let id = msg.id;
   let props = msg.props || {};
 
@@ -217,22 +259,11 @@ function render(fritz, msg) {
       }
     });
     setInstance(fritz, id, instance);
-    events = constructor.observedEvents;
   }
 
-  // TODO this should go into instance.props in the future.
-  Object.assign(instance, props);
+  Object.assign(instance.props, props);
 
-  // TODO check for a shouldComponentUpdate
-  instance.componentWillUpdate();
-
-  let tree = renderInstance(instance);
-  postMessage({
-    type: RENDER,
-    id: id,
-    tree: tree,
-    events: events
-  });
+  enqueueRender(instance);
 }
 
 function trigger(fritz, msg){
@@ -250,11 +281,8 @@ function trigger(fritz, msg){
   if(method) {
     let event = msg.event;
     method.call(inst, event);
-    response.type = RENDER;
-    response.id = msg.id;
-    response.tree = renderInstance(inst);
-    response.event = event;
-    postMessage(response);
+
+    enqueueRender(inst);
   } else {
     // TODO warn?
   }
@@ -262,7 +290,7 @@ function trigger(fritz, msg){
 
 function destroy(fritz, msg){
   let instance = getInstance(fritz, msg.id);
-  instance.destroy();
+  instance.componentWillUnmount();
   Object.keys(instance._fritzHandles).forEach(function(key){
     let handle = instance._fritzHandles[key];
     handle.del();
@@ -281,7 +309,7 @@ function relay(fritz) {
       let msg = ev.data;
       switch(msg.type) {
         case RENDER:
-          render(fritz, msg);
+          render$1(fritz, msg);
           break;
         case EVENT:
           trigger(fritz, msg);
@@ -326,7 +354,8 @@ function define(tag, constructor) {
   postMessage({
     type: DEFINE,
     tag: tag,
-    props: constructor.props
+    props: constructor.props,
+    events: constructor.events
   });
 }
 

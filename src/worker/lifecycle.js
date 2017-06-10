@@ -1,7 +1,6 @@
 import { getInstance, setInstance, delInstance } from '../util.js';
 import Handle from './handle.js';
-import { RENDER } from '../message-types.js';
-import { renderInstance } from './instance.js';
+import { enqueueRender } from './instance.js';
 
 export function render(fritz, msg) {
   let id = msg.id;
@@ -24,22 +23,11 @@ export function render(fritz, msg) {
       }
     });
     setInstance(fritz, id, instance);
-    events = constructor.observedEvents;
   }
 
-  // TODO this should go into instance.props in the future.
-  Object.assign(instance, props);
+  Object.assign(instance.props, props);
 
-  // TODO check for a shouldComponentUpdate
-  instance.componentWillUpdate();
-
-  let tree = renderInstance(instance);
-  postMessage({
-    type: RENDER,
-    id: id,
-    tree: tree,
-    events: events
-  });
+  enqueueRender(instance);
 };
 
 export function trigger(fritz, msg){
@@ -57,11 +45,8 @@ export function trigger(fritz, msg){
   if(method) {
     let event = msg.event;
     method.call(inst, event);
-    response.type = RENDER;
-    response.id = msg.id;
-    response.tree = renderInstance(inst);
-    response.event = event;
-    postMessage(response);
+
+    enqueueRender(inst);
   } else {
     // TODO warn?
   }
@@ -69,7 +54,7 @@ export function trigger(fritz, msg){
 
 export function destroy(fritz, msg){
   let instance = getInstance(fritz, msg.id);
-  instance.destroy();
+  instance.componentWillUnmount();
   Object.keys(instance._fritzHandles).forEach(function(key){
     let handle = instance._fritzHandles[key];
     handle.del();

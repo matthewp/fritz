@@ -1573,6 +1573,8 @@ function isFunction(val) {
   return typeof val === 'function';
 }
 
+const defer = Promise.resolve().then.bind(Promise.resolve());
+
 var eventAttrExp = /^on[a-z]/;
 
 var attributesSet = attributes_1[symbols_1.default];
@@ -1665,12 +1667,6 @@ const withComponent = (Base = HTMLElement) => class extends withUnique(withRende
     idomRender(vdom, shadowRoot, this);
   }
 
-  observedEventsCallback(events) {
-    events.forEach(eventName => {
-      this.shadowRoot.addEventListener(eventName, this);
-    });
-  }
-
   addEventCallback(handleId, eventProp) {
     var key = eventProp + '/' + handleId;
     var fn;
@@ -1717,6 +1713,7 @@ function define(fritz, msg) {
   let worker = this;
   let tagName = msg.tag;
   let props = msg.props || {};
+  let events = msg.events || [];
 
   class OffThreadElement extends Component {
     static get props() {
@@ -1732,11 +1729,17 @@ function define(fritz, msg) {
     connectedCallback() {
       super.connectedCallback();
       setInstance(fritz, this._id, this);
+      events.forEach(eventName => {
+        this.shadowRoot.addEventListener(eventName, this);
+      });
     }
 
     disconnectedCallback() {
       super.disconnectedCallback();
       delInstance(fritz, this._id);
+      events.forEach(eventName => {
+        this.shadowRoot.removeEventListener(eventName, this);
+      });
       this._worker.postMessage({
         type: DESTROY,
         id: this._id
@@ -1752,9 +1755,6 @@ function render(fritz, msg){
   let instance = getInstance(fritz, msg.id);
   if(instance !== undefined) {
     instance.doRenderCallback(msg.tree);
-    if(msg.events) {
-      instance.observedEventsCallback(msg.events);
-    }
   }
 }
 
