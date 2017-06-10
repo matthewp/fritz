@@ -1,44 +1,3 @@
-const DEFINE = 'define';
-const TRIGGER = 'trigger';
-const RENDER = 'render';
-const EVENT = 'event';
-const STATE = 'state';
-const DESTROY = 'destroy';
-
-let currentInstance = null;
-
-function renderInstance(instance) {
-  currentInstance = instance;
-  let tree = instance.render(instance);
-  currentInstance = null;
-  return tree;
-}
-
-class Component {
-  dispatch(ev) {
-    let id = this._fritzId;
-    postMessage({
-      type: TRIGGER,
-      event: ev,
-      id: id
-    });
-  }
-
-  // Force an update, will change to setState()
-  update() {
-    let id = this._fritzId;
-    postMessage({
-      type: RENDER,
-      id: id,
-      tree: renderInstance(this)
-    });
-  }
-
-  componentWillUpdate(){}
-
-  destroy(){}
-}
-
 function getInstance(fritz, id){
   return fritz._instances[id];
 }
@@ -53,6 +12,73 @@ function delInstance(fritz, id){
 
 function isFunction(val) {
   return typeof val === 'function';
+}
+
+const DEFINE = 'define';
+const TRIGGER = 'trigger';
+const RENDER = 'render';
+const EVENT = 'event';
+const STATE = 'state';
+const DESTROY = 'destroy';
+
+let currentInstance = null;
+
+function renderInstance(instance) {
+  currentInstance = instance;
+  let tree = instance.render(instance.props, instance.state);
+  currentInstance = null;
+  return tree;
+}
+
+function enqueueRender(instance, extra) {
+  if(instance.shouldComponentUpdate() !== false) {
+    instance.componentWillUpdate();
+
+    let id = instance._fritzId;
+    let msg = Object.assign({
+      type: RENDER,
+      id: id,
+      tree: renderInstance(instance)
+    }, extra);
+
+    postMessage(msg);
+  }  
+}
+
+class Component {
+  constructor() {
+    this.state = {};
+    this.props = {};
+  }
+
+  dispatch(ev) {
+    let id = this._fritzId;
+    postMessage({
+      type: TRIGGER,
+      event: ev,
+      id: id
+    });
+  }
+
+  setState(state) {
+    let s = this.state;
+    Object.assign(s, isFunction(state) ? state(s, this.props) : state);
+    enqueueRender(this);
+  }
+
+  // Force an update, will change to setState()
+  update() {
+    console.warn('update() is deprecated. Use setState() instead.');
+    this.setState({});
+  }
+
+  shouldComponentUpdate() {
+    return true;
+  }
+
+  componentWillUpdate(){}
+
+  componentWillUnmount(){}
 }
 
 let Store;
@@ -220,19 +246,9 @@ function render(fritz, msg) {
     events = constructor.observedEvents;
   }
 
-  // TODO this should go into instance.props in the future.
-  Object.assign(instance, props);
+  Object.assign(instance.props, props);
 
-  // TODO check for a shouldComponentUpdate
-  instance.componentWillUpdate();
-
-  let tree = renderInstance(instance);
-  postMessage({
-    type: RENDER,
-    id: id,
-    tree: tree,
-    events: events
-  });
+  enqueueRender(instance, { events: events });
 }
 
 function trigger(fritz, msg){
@@ -250,11 +266,8 @@ function trigger(fritz, msg){
   if(method) {
     let event = msg.event;
     method.call(inst, event);
-    response.type = RENDER;
-    response.id = msg.id;
-    response.tree = renderInstance(inst);
-    response.event = event;
-    postMessage(response);
+
+    enqueueRender(inst, { event: event });
   } else {
     // TODO warn?
   }
@@ -262,7 +275,7 @@ function trigger(fritz, msg){
 
 function destroy(fritz, msg){
   let instance = getInstance(fritz, msg.id);
-  instance.destroy();
+  instance.componentWillUnmount();
   Object.keys(instance._fritzHandles).forEach(function(key){
     let handle = instance._fritzHandles[key];
     handle.del();

@@ -5,23 +5,23 @@ const { h, Component } = fritz;
 class EventEl extends Component {
   constructor() {
     super();
-    this.foo = 'none';
+    this.state = { foo: 'none' };
   }
 
   myHandler() {
-    this.clicked = true;
+    this.setState({clicked: true});
   }
 
   handleSpecial(ev) {
-    this.foo = ev.detail.foo;
+    this.setState({foo: ev.detail.foo});
   }
 
   handleThing(ev) {
-    this.thing = ev.detail;
+    this.setState({thing: ev.detail});
   }
 
-  render() {
-    if(this.clicked) {
+  render({}, {clicked, foo, thing}) {
+    if(clicked) {
       return h('div', {'class': 'clicked'}, ['link clicked']);
     }
 
@@ -31,8 +31,8 @@ class EventEl extends Component {
         onClick: this.myHandler
       }, ['Click me']),
 
-      h('div', {id: 'foo'}, [this.foo]),
-      h('div', {id: 'thing'}, [this.thing]),
+      h('div', {id: 'foo'}, [foo]),
+      h('div', {id: 'thing'}, [thing]),
       h('special-el', {onSpecial: this.handleSpecial}, []),
       h('child-el', {onThing: this.handleThing}, [])
     ]);
