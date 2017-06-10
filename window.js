@@ -1640,6 +1640,11 @@ function postEvent(event, inst, handle) {
 }
 
 const withComponent = (Base = HTMLElement) => class extends withUnique(withRender(withProps(Base))) {
+  constructor() {
+    super();
+    this._handlers = Object.create(null);
+  }
+
   rendererCallback (shadowRoot, renderCallback) {
     this._worker.postMessage({
       type: RENDER,
@@ -1660,14 +1665,20 @@ const withComponent = (Base = HTMLElement) => class extends withUnique(withRende
     });
   }
 
-  addEventCallback(handleId) {
+  addEventCallback(handleId, eventProp) {
+    var key = eventProp + '/' + handleId;
+    var fn;
+    if(fn = this._handlers[key]) {
+      return fn;
+    }
+
     // TODO optimize this so functions are reused if possible.
     var self = this;
-    var fn = function(ev){
+    fn = function(ev){
       ev.preventDefault();
       postEvent(ev, self, handleId);
     };
-
+    this._handlers[key] = fn;
     return fn;
   }
 
