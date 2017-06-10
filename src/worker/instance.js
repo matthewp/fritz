@@ -1,4 +1,5 @@
 import { RENDER } from '../message-types.js';
+import { defer } from '../util.js';
 
 export let currentInstance = null;
 
@@ -9,17 +10,31 @@ export function renderInstance(instance) {
   return tree;
 };
 
-export function enqueueRender(instance, extra) {
+let queue = [];
+
+export function enqueueRender(instance) {
+  if(!instance._dirty && (instance._dirty = true) && queue.push(instance)==1) {
+    defer(rerender);
+  }
+}
+
+function rerender() {
+	let p, list = queue;
+	queue = [];
+	while ( (p = list.pop()) ) {
+		if (p._dirty) render(p);
+	}
+}
+
+function render(instance) {
   if(instance.shouldComponentUpdate() !== false) {
     instance.componentWillUpdate();
+    instance._dirty = false;
 
-    let id = instance._fritzId;
-    let msg = Object.assign({
+    postMessage({
       type: RENDER,
-      id: id,
+      id: instance._fritzId,
       tree: renderInstance(instance)
-    }, extra);
-
-    postMessage(msg);
-  }  
+    });
+  }
 }

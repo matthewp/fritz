@@ -40,12 +40,6 @@ export const withComponent = (Base = HTMLElement) => class extends withUnique(wi
     render(vdom, shadowRoot, this);
   }
 
-  observedEventsCallback(events) {
-    events.forEach(eventName => {
-      this.shadowRoot.addEventListener(eventName, this);
-    });
-  }
-
   addEventCallback(handleId, eventProp) {
     var key = eventProp + '/' + handleId;
     var fn;

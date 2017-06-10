@@ -13,3 +13,5 @@ export function delInstance(fritz, id){
 export function isFunction(val) {
   return typeof val === 'function';
 };
+
+export const defer = Promise.resolve().then.bind(Promise.resolve());

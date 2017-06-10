@@ -23,12 +23,11 @@ export function render(fritz, msg) {
       }
     });
     setInstance(fritz, id, instance);
-    events = constructor.observedEvents;
   }
 
   Object.assign(instance.props, props);
 
-  enqueueRender(instance, { events: events });
+  enqueueRender(instance);
 };
 
 export function trigger(fritz, msg){
@@ -47,7 +46,7 @@ export function trigger(fritz, msg){
     let event = msg.event;
     method.call(inst, event);
 
-    enqueueRender(inst, { event: event });
+    enqueueRender(inst);
   } else {
     // TODO warn?
   }

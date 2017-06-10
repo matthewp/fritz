@@ -14,6 +14,8 @@ function isFunction(val) {
   return typeof val === 'function';
 }
 
+const defer = Promise.resolve().then.bind(Promise.resolve());
+
 const DEFINE = 'define';
 const TRIGGER = 'trigger';
 const RENDER = 'render';
@@ -30,19 +32,33 @@ function renderInstance(instance) {
   return tree;
 }
 
-function enqueueRender(instance, extra) {
+let queue = [];
+
+function enqueueRender(instance) {
+  if(!instance._dirty && (instance._dirty = true) && queue.push(instance)==1) {
+    defer(rerender);
+  }
+}
+
+function rerender() {
+	let p, list = queue;
+	queue = [];
+	while ( (p = list.pop()) ) {
+		if (p._dirty) render(p);
+	}
+}
+
+function render(instance) {
   if(instance.shouldComponentUpdate() !== false) {
     instance.componentWillUpdate();
+    instance._dirty = false;
 
-    let id = instance._fritzId;
-    let msg = Object.assign({
+    postMessage({
       type: RENDER,
-      id: id,
+      id: instance._fritzId,
       tree: renderInstance(instance)
-    }, extra);
-
-    postMessage(msg);
-  }  
+    });
+  }
 }
 
 class Component {
@@ -222,7 +238,7 @@ function h(tag, attrs, children){
   return tree;
 }
 
-function render(fritz, msg) {
+function render$1(fritz, msg) {
   let id = msg.id;
   let props = msg.props || {};
 
@@ -243,12 +259,11 @@ function render(fritz, msg) {
       }
     });
     setInstance(fritz, id, instance);
-    events = constructor.observedEvents;
   }
 
   Object.assign(instance.props, props);
 
-  enqueueRender(instance, { events: events });
+  enqueueRender(instance);
 }
 
 function trigger(fritz, msg){
@@ -267,7 +282,7 @@ function trigger(fritz, msg){
     let event = msg.event;
     method.call(inst, event);
 
-    enqueueRender(inst, { event: event });
+    enqueueRender(inst);
   } else {
     // TODO warn?
   }
@@ -294,7 +309,7 @@ function relay(fritz) {
       let msg = ev.data;
       switch(msg.type) {
         case RENDER:
-          render(fritz, msg);
+          render$1(fritz, msg);
           break;
         case EVENT:
           trigger(fritz, msg);
@@ -339,7 +354,8 @@ function define(tag, constructor) {
   postMessage({
     type: DEFINE,
     tag: tag,
-    props: constructor.props
+    props: constructor.props,
+    events: constructor.events
   });
 }
 
