@@ -1557,12 +1557,35 @@ var text_1 = text;
 var symbols_1 = symbols;
 var attributes_1 = attributes;
 
+function getInstance(fritz, id){
+  return fritz._instances[id];
+}
+
+function setInstance(fritz, id, instance){
+  fritz._instances[id] = instance;
+}
+
+function delInstance(fritz, id){
+  delete fritz._instances[id];
+}
+
+function isFunction(val) {
+  return typeof val === 'function';
+}
+
+var eventAttrExp = /^on[a-z]/;
+
 var attributesSet = attributes_1[symbols_1.default];
 attributes_1[symbols_1.default] = preferProps;
 
 function preferProps(element, name, value){
   if(name in element)
     element[name] = value;
+  else if(isFunction(value) && eventAttrExp.test(name) &&
+    isFunction(element.addEventProperty)) {
+    element.addEventProperty(name);
+    element[name] = value;
+  }
   else
     attributesSet(element, name, value);
 }
@@ -1575,9 +1598,11 @@ function render$1(bc, component){
       // Open
       case 1:
         if(n[3]) {
+          var k;
           for(var j = 0, jlen = n[3].length; j < jlen; j++) {
-            let handler = component.addEventCallback(n[3][j][2]);
-            n[2].push(n[3][j][1], handler);
+            k = n[3][j];
+            let handler = component.addEventCallback(k[2], k[1]);
+            n[2].push(k[1], handler);
           }
         }
 
@@ -1621,6 +1646,11 @@ function postEvent(event, inst, handle) {
 }
 
 const withComponent = (Base = HTMLElement) => class extends withUnique(withRender(withProps(Base))) {
+  constructor() {
+    super();
+    this._handlers = Object.create(null);
+  }
+
   rendererCallback (shadowRoot, renderCallback) {
     this._worker.postMessage({
       type: RENDER,
@@ -1641,12 +1671,38 @@ const withComponent = (Base = HTMLElement) => class extends withUnique(withRende
     });
   }
 
-  addEventCallback(handleId) {
+  addEventCallback(handleId, eventProp) {
+    var key = eventProp + '/' + handleId;
+    var fn;
+    if(fn = this._handlers[key]) {
+      return fn;
+    }
+
+    // TODO optimize this so functions are reused if possible.
     var self = this;
-    return function(ev){
+    fn = function(ev){
       ev.preventDefault();
       postEvent(ev, self, handleId);
     };
+    this._handlers[key] = fn;
+    return fn;
+  }
+
+  addEventProperty(name) {
+    var evName = name.substr(2);
+    var priv = '_' + name;
+    var proto = Object.getPrototypeOf(this);
+    Object.defineProperty(proto, name, {
+      get: function(){ return this[priv]; },
+      set: function(val) {
+        var cur;
+        if(cur = this[priv]) {
+          this.removeEventListener(evName, cur);
+        }
+        this[priv] = val;
+        this.addEventListener(evName, val);
+      }
+    });
   }
 
   handleEvent(ev) {
@@ -1656,18 +1712,6 @@ const withComponent = (Base = HTMLElement) => class extends withUnique(withRende
 };
 
 const Component = withComponent();
-
-function getInstance(fritz, id){
-  return fritz._instances[id];
-}
-
-function setInstance(fritz, id, instance){
-  fritz._instances[id] = instance;
-}
-
-function delInstance(fritz, id){
-  delete fritz._instances[id];
-}
 
 function define(fritz, msg) {
   let worker = this;
@@ -1716,9 +1760,15 @@ function render(fritz, msg){
 
 function trigger(fritz, msg) {
   let inst = getInstance(fritz, msg.id);
-  let event = new Event(msg.event.type, {
-    bubbles: true
+  let ev = msg.event;
+  let event = new CustomEvent(ev.type, {
+    bubbles: true,//ev.bubbles,
+    cancelable: ev.cancelable,
+    detail: ev.detail,
+    scoped: ev.scoped,
+    composed: ev.composed
   });
+
   inst.dispatchEvent(event);  
 }
 

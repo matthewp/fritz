@@ -27,7 +27,11 @@ export function render(fritz, msg) {
     events = constructor.observedEvents;
   }
 
+  // TODO this should go into instance.props in the future.
   Object.assign(instance, props);
+
+  // TODO check for a shouldComponentUpdate
+  instance.componentWillUpdate();
 
   let tree = renderInstance(instance);
   postMessage({

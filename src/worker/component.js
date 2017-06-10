@@ -11,6 +11,7 @@ class Component {
     });
   }
 
+  // Force an update, will change to setState()
   update() {
     let id = this._fritzId;
     postMessage({
@@ -19,6 +20,8 @@ class Component {
       tree: renderInstance(this)
     });
   }
+
+  componentWillUpdate(){}
 
   destroy(){}
 }

@@ -49,8 +49,14 @@ export function render(fritz, msg){
 
 export function trigger(fritz, msg) {
   let inst = getInstance(fritz, msg.id);
-  let event = new Event(msg.event.type, {
-    bubbles: true
+  let ev = msg.event;
+  let event = new CustomEvent(ev.type, {
+    bubbles: true,//ev.bubbles,
+    cancelable: ev.cancelable,
+    detail: ev.detail,
+    scoped: ev.scoped,
+    composed: ev.composed
   });
+
   inst.dispatchEvent(event);  
 };

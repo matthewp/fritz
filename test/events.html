@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <head>
-  <title>Basic tests</title>
+  <title>Event tests</title>
   <link rel="import" href="../node_modules/mocha-test/mocha-test.html">
   <style>
     iframe { display: none; }
@@ -33,6 +33,10 @@
 
             let spec = shadow.querySelector('#foo');
             assert.equal(spec.textContent, 'bar', 'This element was updated');
+
+            // Custom events from child components to parents
+            let thing = shadow.querySelector('#thing');
+            assert.equal(thing.textContent, 'hello', 'This element updated');
           });
         });
 

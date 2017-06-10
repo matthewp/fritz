@@ -21,6 +21,11 @@ function postEvent(event, inst, handle) {
 }
 
 export const withComponent = (Base = HTMLElement) => class extends withUnique(withRender(withProps(Base))) {
+  constructor() {
+    super();
+    this._handlers = Object.create(null);
+  }
+
   rendererCallback (shadowRoot, renderCallback) {
     this._worker.postMessage({
       type: RENDER,
@@ -41,12 +46,38 @@ export const withComponent = (Base = HTMLElement) => class extends withUnique(wi
     });
   }
 
-  addEventCallback(handleId) {
+  addEventCallback(handleId, eventProp) {
+    var key = eventProp + '/' + handleId;
+    var fn;
+    if(fn = this._handlers[key]) {
+      return fn;
+    }
+
+    // TODO optimize this so functions are reused if possible.
     var self = this;
-    return function(ev){
+    fn = function(ev){
       ev.preventDefault();
       postEvent(ev, self, handleId);
     };
+    this._handlers[key] = fn;
+    return fn;
+  }
+
+  addEventProperty(name) {
+    var evName = name.substr(2);
+    var priv = '_' + name;
+    var proto = Object.getPrototypeOf(this);
+    Object.defineProperty(proto, name, {
+      get: function(){ return this[priv]; },
+      set: function(val) {
+        var cur;
+        if(cur = this[priv]) {
+          this.removeEventListener(evName, cur);
+        }
+        this[priv] = val;
+        this.addEventListener(evName, val);
+      }
+    });
   }
 
   handleEvent(ev) {
