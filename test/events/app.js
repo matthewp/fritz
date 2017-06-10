@@ -16,6 +16,10 @@ class EventEl extends Component {
     this.foo = ev.detail.foo;
   }
 
+  handleThing(ev) {
+    this.thing = ev.detail;
+  }
+
   render() {
     if(this.clicked) {
       return h('div', {'class': 'clicked'}, ['link clicked']);
@@ -28,12 +32,37 @@ class EventEl extends Component {
       }, ['Click me']),
 
       h('div', {id: 'foo'}, [this.foo]),
-      h('special-el', {onSpecial: this.handleSpecial}, [])
+      h('div', {id: 'thing'}, [this.thing]),
+      h('special-el', {onSpecial: this.handleSpecial}, []),
+      h('child-el', {onThing: this.handleThing}, [])
     ]);
   }
 }
 
 fritz.define('event-element', EventEl);
+
+class ChildEl extends Component {
+  constructor() {
+    super();
+    this.hasDispatched = false;
+  }
+
+  componentWillUpdate() {
+    if(!this.hasDispatched) {
+      // EWWWWW, how would you really do something like this?
+      setTimeout(_ => {
+        this.hasDispatched = true;
+        this.dispatch({ type: 'thing', detail: 'hello' });
+      });
+    }
+  }
+
+  render() {
+    return h('div', ['Child el']);
+  }
+}
+
+fritz.define('child-el', ChildEl);
 
 class InputEl extends Component {
   constructor() {

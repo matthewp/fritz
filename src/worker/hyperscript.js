@@ -1,3 +1,4 @@
+import { isFunction } from '../util.js';
 import signal from './signal.js';
 
 class Tree extends Array {}
@@ -14,7 +15,7 @@ export default function h(tag, attrs, children){
     children = Array.prototype.slice.call(arguments, 2);
   }
 
-  var isFn = typeof tag === 'function';
+  var isFn = isFunction(tag);
 
   if(isFn) {
     var localName = tag.prototype.localName;

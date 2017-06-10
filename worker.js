@@ -24,6 +24,7 @@ class Component {
     });
   }
 
+  // Force an update, will change to setState()
   update() {
     let id = this._fritzId;
     postMessage({
@@ -33,7 +34,25 @@ class Component {
     });
   }
 
+  componentWillUpdate(){}
+
   destroy(){}
+}
+
+function getInstance(fritz, id){
+  return fritz._instances[id];
+}
+
+function setInstance(fritz, id, instance){
+  fritz._instances[id] = instance;
+}
+
+function delInstance(fritz, id){
+  delete fritz._instances[id];
+}
+
+function isFunction(val) {
+  return typeof val === 'function';
 }
 
 let Store;
@@ -120,7 +139,7 @@ function h(tag, attrs, children){
     children = Array.prototype.slice.call(arguments, 2);
   }
 
-  var isFn = typeof tag === 'function';
+  var isFn = isFunction(tag);
 
   if(isFn) {
     var localName = tag.prototype.localName;
@@ -177,18 +196,6 @@ function h(tag, attrs, children){
   return tree;
 }
 
-function getInstance(fritz, id){
-  return fritz._instances[id];
-}
-
-function setInstance(fritz, id, instance){
-  fritz._instances[id] = instance;
-}
-
-function delInstance(fritz, id){
-  delete fritz._instances[id];
-}
-
 function render(fritz, msg) {
   let id = msg.id;
   let props = msg.props || {};
@@ -213,7 +220,11 @@ function render(fritz, msg) {
     events = constructor.observedEvents;
   }
 
+  // TODO this should go into instance.props in the future.
   Object.assign(instance, props);
+
+  // TODO check for a shouldComponentUpdate
+  instance.componentWillUpdate();
 
   let tree = renderInstance(instance);
   postMessage({
