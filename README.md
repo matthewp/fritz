@@ -14,9 +14,9 @@ class Hello extends Component {
     }
   }
 
-  render() {
+  render({name}) {
     return (
-      <span>Hello {this.name}</span>
+      <span>Hello {name}</span>
     );
   }
 }
