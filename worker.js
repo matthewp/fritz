@@ -94,12 +94,11 @@ class Component {
     this.setState({});
   }
 
+  componentWillReceiveProps(){}
   shouldComponentUpdate() {
     return true;
   }
-
   componentWillUpdate(){}
-
   componentWillUnmount(){}
 }
 
