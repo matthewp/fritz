@@ -25,8 +25,6 @@ export function render(fritz, msg) {
     setInstance(fritz, id, instance);
   }
 
-  Object.assign(instance.props, props);
-
   enqueueRender(instance);
 };
 

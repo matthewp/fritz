@@ -12,8 +12,8 @@ export function renderInstance(instance) {
 
 let queue = [];
 
-export function enqueueRender(instance) {
-  if(!instance._dirty && (instance._dirty = true) && queue.push(instance)==1) {
+export function enqueueRender(instance, sentProps) {
+  if(!instance._dirty && (instance._dirty = true) && queue.push([instance, sentProps])==1) {
     defer(rerender);
   }
 }
@@ -22,12 +22,18 @@ function rerender() {
 	let p, list = queue;
 	queue = [];
 	while ( (p = list.pop()) ) {
-		if (p._dirty) render(p);
+		if (p._dirty) render(p[0], p[1]);
 	}
 }
 
-function render(instance) {
-  if(instance.shouldComponentUpdate() !== false) {
+function render(instance, sentProps) {
+  if(sentProps) {
+    var nextProps = Object.assign({}, instance.props, sentProps);
+    instance.componentWillReceiveProps(nextProps);
+    instance.props = nextProps;
+  }
+
+  if(instance.shouldComponentUpdate(nextProps) !== false) {
     instance.componentWillUpdate();
     instance._dirty = false;
 
