@@ -22,7 +22,7 @@ function rerender() {
 	let p, list = queue;
 	queue = [];
 	while ( (p = list.pop()) ) {
-		if (p._dirty) render(p[0], p[1]);
+		if (p[0]._dirty) render(p[0], p[1]);
 	}
 }
 

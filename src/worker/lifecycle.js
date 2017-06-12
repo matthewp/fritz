@@ -25,7 +25,7 @@ export function render(fritz, msg) {
     setInstance(fritz, id, instance);
   }
 
-  enqueueRender(instance);
+  enqueueRender(instance, props);
 };
 
 export function trigger(fritz, msg){

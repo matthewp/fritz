@@ -50,7 +50,7 @@ function rerender() {
 	let p, list = queue;
 	queue = [];
 	while ( (p = list.pop()) ) {
-		if (p._dirty) render(p[0], p[1]);
+		if (p[0]._dirty) render(p[0], p[1]);
 	}
 }
 
@@ -273,7 +273,7 @@ function render$1(fritz, msg) {
     setInstance(fritz, id, instance);
   }
 
-  enqueueRender(instance);
+  enqueueRender(instance, props);
 }
 
 function trigger(fritz, msg){
