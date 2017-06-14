@@ -16,6 +16,8 @@ function isFunction(val) {
 
 const defer = Promise.resolve().then.bind(Promise.resolve());
 
+const sym = typeof Symbol === 'function' ? Symbol : function(v) { return '_' + v };
+
 const DEFINE = 'define';
 const TRIGGER = 'trigger';
 const RENDER = 'render';
@@ -172,7 +174,17 @@ function signal(tagName, attrName, attrValue, attrs) {
   }
 }
 
-class Tree extends Array {}
+const _tree = sym('ftree');
+
+function isTree(obj) {
+  return !!(obj && obj[_tree]);
+}
+
+function createTree() {
+  var out = [];
+  out[_tree] = true;
+  return out;
+}
 
 function h(tag, attrs, children){
   const argsLen = arguments.length;
@@ -181,7 +193,7 @@ function h(tag, attrs, children){
       children = attrs;
       attrs = null;
     }
-  } else if(argsLen > 3 || (children instanceof Tree) ||
+  } else if(argsLen > 3 || isTree(children) ||
     typeof children === 'string') {
     children = Array.prototype.slice.call(arguments, 2);
   }
@@ -197,7 +209,7 @@ function h(tag, attrs, children){
     return tag(attrs || {}, children);
   }
 
-  var tree = new Tree();
+  var tree = createTree();
   if(attrs) {
     var evs;
     attrs = Object.keys(attrs).reduce(function(acc, key){
