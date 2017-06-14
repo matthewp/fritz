@@ -15,3 +15,5 @@ export function isFunction(val) {
 };
 
 export const defer = Promise.resolve().then.bind(Promise.resolve());
+
+export const sym = typeof Symbol === 'function' ? Symbol : function(v) { return '_' + v };

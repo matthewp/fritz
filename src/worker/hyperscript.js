@@ -1,7 +1,6 @@
 import { isFunction } from '../util.js';
 import signal from './signal.js';
-
-class Tree extends Array {}
+import { createTree, isTree } from './tree.js';
 
 export default function h(tag, attrs, children){
   const argsLen = arguments.length;
@@ -10,7 +9,7 @@ export default function h(tag, attrs, children){
       children = attrs;
       attrs = null;
     }
-  } else if(argsLen > 3 || (children instanceof Tree) ||
+  } else if(argsLen > 3 || isTree(children) ||
     typeof children === 'string') {
     children = Array.prototype.slice.call(arguments, 2);
   }
@@ -26,7 +25,7 @@ export default function h(tag, attrs, children){
     return tag(attrs || {}, children);
   }
 
-  var tree = new Tree();
+  var tree = createTree();
   if(attrs) {
     var evs;
     attrs = Object.keys(attrs).reduce(function(acc, key){
