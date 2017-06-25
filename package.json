@@ -5,7 +5,8 @@
   "main": "worker.umd.js",
   "jsnext:main": "worker.js",
   "scripts": {
-    "test": "testee test/basics.html test/events.html test/props.html test/state.html --browsers chrome"
+    "test": "testee test/basics.html test/events.html test/props.html test/state.html --browsers chrome",
+    "prepublishOnly": "make all"
   },
   "repository": {
     "type": "git",
