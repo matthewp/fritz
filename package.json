@@ -1,7 +1,7 @@
 {
   "name": "fritz",
-  "version": "3.0.0-alpha.9",
-  "description": "A crazy webworker framework",
+  "version": "3.0.0",
+  "description": "Create web components that run in a Web Worker",
   "main": "worker.umd.js",
   "jsnext:main": "worker.js",
   "scripts": {
@@ -24,6 +24,13 @@
     "worker.umd.js"
   ],
   "homepage": "https://github.com/matthewp/fritz#readme",
+  "keywords": [
+    "web-components",
+    "webcomponents",
+    "react",
+    "virtualdom",
+    "web-worker"
+  ],
   "devDependencies": {
     "babel-cli": "^6.24.1",
     "babel-plugin-syntax-class-properties": "^6.13.0",
