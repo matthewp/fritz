@@ -88,7 +88,98 @@ fritz.use(worker);
       <p>And that's it!</p>
 
       <h2>In a React app</h2>
-      <p>How</p>
+      <p>Using Fritz components within a <a href="https://facebook.github.io/react/">React</a> application is simple. First step is to update your <code>.babelrc</code> to use h as the pragma:</p>
+      <code-snippet code={`
+{
+  "plugins": [
+    ["transform-react-jsx", { "pragma":"h" }]
+  ]
+}
+`}></code-snippet>
+
+      <p>This will allow you to transform JSX both for the React and Fritz sides of your application. As before, we won't explain how to configure your bundler, but know that you will need to create a worker bundle (that contains Fritz code) and a bundle for your React code.</p>
+
+      <p>React doesn't properly handle passing data to web components, but luckily there is a helper library that fixes the issue for us. Install <a href="https://github.com/skatejs/val">skatejs/val</a> like so:</p>
+      <code-snippet code={'npm install @skatejs/val'}></code-snippet>
+
+      <p>Then create the module that will act as our wrapper:</p>
+
+      <code-file name="val.js" code={`
+import React from 'react';
+import val from '@skatejs/val';
+
+export default val(React.createElement);
+`}></code-file>
+
+      <p>And within your React code, use it:</p>
+
+
+      <code-file name="app.js" code={`
+import React from 'react';
+import ReactDOM from 'react-dom';
+import fritz from 'fritz/window';
+import h from './val.js';
+
+fritz.use(new Worker('/worker.js'));
+
+class Home extends React.Component {
+  render() {
+    return <div>
+      <span>Hello world</span>
+      <worker-component name={"Wilbur"}></worker-component>
+    </div>
+  }
+}
+
+const main = document.querySelector('main');
+ReactDOM.render(<Home/>, main);
+`}></code-file>
+      <p>Note that this imports our implementation of <code>h</code>, which is just a small wrapper around <code>React.createElement</code>. Since we are using h in both the React app and the worker, our babel config remains the same.</p>
+
+      <p>Now we just need to implement <code>&lt;worker-component&gt;</code>.</p>
+
+      <code-file name="app.js" code={`
+import fritz, { Component, h } from 'fritz';
+
+class MyWorkerComponent extends Component {
+  static get props() {
+    return {
+      name: {}
+    };
+  }
+
+  constructor() {
+    super();
+    this.state = { count: 0 };
+  }
+
+  add() {
+    const count = this.state.count + 1;
+    this.setState({count});
+  }
+
+  render({name}, {count}) {
+    return (
+      <section>
+        <div>Hi {name}. This has been clicked {count} times.</div>
+        <a href="#" onClick={this.add}>Add</a>
+      </section>
+    );
+  }
+}
+
+fritz.define('worker-component', MyWorkerComponent);
+`}></code-file>
+
+      <p>A few things worth noting here:</p>
+      <ul>
+        <li>We define <strong>props</strong> that we expect to receive with a static <code>props</code> getter (of course you can use class properties here if using the Babel plugin).</li>
+        <li><code>render</code> receives props and state as its arguments, so you can destruct.</li>
+        <li>Unlike in React and Preact, you can directly pass your class methods as event handlers. Fritz will know to call your component as the <code>this</code> value when calling that function.</li>
+        <li>As always, we finish out component by calling <code>fritz.define</code> to define the custom element tag name.</li>
+      </ul>
+
+      <p>And that's it! Now you can seemlessly use any Fritz components within your React application.</p>
     </section>
   );
 }

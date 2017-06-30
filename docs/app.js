@@ -1,6 +1,28 @@
 (function () {
 'use strict';
 
+function getInstance(fritz, id) {
+  return fritz._instances[id];
+}
+
+function setInstance(fritz, id, instance) {
+  fritz._instances[id] = instance;
+}
+
+function delInstance(fritz, id) {
+  delete fritz._instances[id];
+}
+
+function isFunction(val) {
+  return typeof val === 'function';
+}
+
+const defer = Promise.resolve().then.bind(Promise.resolve());
+
+const sym = typeof Symbol === 'function' ? Symbol : function (v) {
+  return '_' + v;
+};
+
 const DEFINE = 'define';
 const TRIGGER = 'trigger';
 const RENDER = 'render';
@@ -12,12 +34,53 @@ let currentInstance = null;
 
 function renderInstance(instance) {
   currentInstance = instance;
-  let tree = instance.render(instance);
+  let tree = instance.render(instance.props, instance.state);
   currentInstance = null;
   return tree;
 }
 
+let queue = [];
+
+function enqueueRender(instance, sentProps) {
+  if (!instance._dirty && (instance._dirty = true) && queue.push([instance, sentProps]) == 1) {
+    defer(rerender);
+  }
+}
+
+function rerender() {
+  let p,
+      list = queue;
+  queue = [];
+  while (p = list.pop()) {
+    if (p[0]._dirty) render(p[0], p[1]);
+  }
+}
+
+function render(instance, sentProps) {
+  if (sentProps) {
+    var nextProps = Object.assign({}, instance.props, sentProps);
+    instance.componentWillReceiveProps(nextProps);
+    instance.props = nextProps;
+  }
+
+  if (instance.shouldComponentUpdate(nextProps) !== false) {
+    instance.componentWillUpdate();
+    instance._dirty = false;
+
+    postMessage({
+      type: RENDER,
+      id: instance._fritzId,
+      tree: renderInstance(instance)
+    });
+  }
+}
+
 class Component {
+  constructor() {
+    this.state = {};
+    this.props = {};
+  }
+
   dispatch(ev) {
     let id = this._fritzId;
     postMessage({
@@ -27,16 +90,24 @@ class Component {
     });
   }
 
-  update() {
-    let id = this._fritzId;
-    postMessage({
-      type: RENDER,
-      id: id,
-      tree: renderInstance(this)
-    });
+  setState(state) {
+    let s = this.state;
+    Object.assign(s, isFunction(state) ? state(s, this.props) : state);
+    enqueueRender(this);
   }
 
-  destroy() {}
+  // Force an update, will change to setState()
+  update() {
+    console.warn('update() is deprecated. Use setState() instead.');
+    this.setState({});
+  }
+
+  componentWillReceiveProps() {}
+  shouldComponentUpdate() {
+    return true;
+  }
+  componentWillUpdate() {}
+  componentWillUnmount() {}
 }
 
 let Store;
@@ -109,7 +180,17 @@ function signal(tagName, attrName, attrValue, attrs) {
   }
 }
 
-class Tree extends Array {}
+const _tree = sym('ftree');
+
+function isTree(obj) {
+  return !!(obj && obj[_tree]);
+}
+
+function createTree() {
+  var out = [];
+  out[_tree] = true;
+  return out;
+}
 
 function h(tag, attrs, children) {
   const argsLen = arguments.length;
@@ -118,11 +199,11 @@ function h(tag, attrs, children) {
       children = attrs;
       attrs = null;
     }
-  } else if (argsLen > 3 || children instanceof Tree || typeof children === 'string') {
+  } else if (argsLen > 3 || isTree(children) || typeof children === 'string') {
     children = Array.prototype.slice.call(arguments, 2);
   }
 
-  var isFn = typeof tag === 'function';
+  var isFn = isFunction(tag);
 
   if (isFn) {
     var localName = tag.prototype.localName;
@@ -133,7 +214,7 @@ function h(tag, attrs, children) {
     return tag(attrs || {}, children);
   }
 
-  var tree = new Tree();
+  var tree = createTree();
   if (attrs) {
     var evs;
     attrs = Object.keys(attrs).reduce(function (acc, key) {
@@ -163,8 +244,8 @@ function h(tag, attrs, children) {
 
   if (children) {
     children.forEach(function (child) {
-      if (typeof child === "string") {
-        tree.push([4, child]);
+      if (typeof child !== 'undefined' && !Array.isArray(child)) {
+        tree.push([4, child + '']);
         return;
       }
 
@@ -179,38 +260,7 @@ function h(tag, attrs, children) {
   return tree;
 }
 
-class Serializable {
-  serialize() {
-    let out = Object.create(null);
-    return Object.assign(out, this);
-  }
-}
-
-class Event extends Serializable {
-  constructor(type) {
-    super();
-    this.type = type;
-    this.defaultPrevented = false;
-  }
-
-  preventDefault() {
-    this.defaultPrevented = true;
-  }
-}
-
-function getInstance(fritz, id) {
-  return fritz._instances[id];
-}
-
-function setInstance(fritz, id, instance) {
-  fritz._instances[id] = instance;
-}
-
-function delInstance(fritz, id) {
-  delete fritz._instances[id];
-}
-
-function render(fritz, msg) {
+function render$1(fritz, msg) {
   let id = msg.id;
   let props = msg.props || {};
 
@@ -231,18 +281,9 @@ function render(fritz, msg) {
       }
     });
     setInstance(fritz, id, instance);
-    events = constructor.observedEvents;
   }
 
-  Object.assign(instance, props);
-
-  let tree = renderInstance(instance);
-  postMessage({
-    type: RENDER,
-    id: id,
-    tree: tree,
-    events: events
-  });
+  enqueueRender(instance, props);
 }
 
 function trigger(fritz, msg) {
@@ -258,15 +299,10 @@ function trigger(fritz, msg) {
   }
 
   if (method) {
-    let event = new Event(msg.name);
-    event.value = msg.value;
-
+    let event = msg.event;
     method.call(inst, event);
-    response.type = RENDER;
-    response.id = msg.id;
-    response.tree = renderInstance(inst);
-    response.event = event.serialize();
-    postMessage(response);
+
+    enqueueRender(inst);
   } else {
     // TODO warn?
   }
@@ -274,7 +310,7 @@ function trigger(fritz, msg) {
 
 function destroy(fritz, msg) {
   let instance = getInstance(fritz, msg.id);
-  instance.destroy();
+  instance.componentWillUnmount();
   Object.keys(instance._fritzHandles).forEach(function (key) {
     let handle = instance._fritzHandles[key];
     handle.del();
@@ -293,7 +329,7 @@ function relay(fritz) {
       let msg = ev.data;
       switch (msg.type) {
         case RENDER:
-          render(fritz, msg);
+          render$1(fritz, msg);
           break;
         case EVENT:
           trigger(fritz, msg);
@@ -338,7 +374,8 @@ function define(tag, constructor) {
   postMessage({
     type: DEFINE,
     tag: tag,
-    props: constructor.props
+    props: constructor.props,
+    events: constructor.events
   });
 }
 
@@ -352,7 +389,7 @@ Object.defineProperty(fritz, 'state', {
   }
 });
 
-var styles = ".about {\n  background-color: var(--alt-bg);\n  max-width: 80%;\n  margin: auto;\n  font-size: 120%;\n}\n\n.about p {\n  line-height: 2rem;\n}\n\n.about h1 {\n  color: var(--vermilion);\n  font-size: 220%;\n}\n\n.about a, .about a:visited {\n  color: var(--main-color);\n}\n\n.about code-snippet,\n.about code-file {\n  width: 60%;\n}\n\n.about code-file {\n  --box-shadow: none;\n}\n\n@media only screen and (max-width: 768px) {\n  .about code-snippet,\n  .about code-file {\n    width: 100%;\n    font-size: 90%;\n  }\n}";
+var styles = ".about {\n  background-color: var(--alt-bg);\n  max-width: 80%;\n  margin: auto;\n  font-size: 120%;\n}\n\n.about p, .about ul {\n  line-height: 2rem;\n}\n\n.about h1 {\n  color: var(--vermilion);\n  font-size: 220%;\n}\n\n.about a, .about a:visited {\n  color: var(--main-color);\n}\n\n.about code-snippet,\n.about code-file {\n  width: 60%;\n}\n\n.about code-file {\n  --box-shadow: none;\n}\n\n@media only screen and (max-width: 768px) {\n  .about code-snippet,\n  .about code-file {\n    width: 100%;\n    font-size: 90%;\n  }\n}";
 
 const npmInstall = `
 npm install fritz --save
@@ -567,7 +604,202 @@ fritz.use(worker);
     h(
       'p',
       null,
-      'How'
+      'Using Fritz components within a ',
+      h(
+        'a',
+        { href: 'https://facebook.github.io/react/' },
+        'React'
+      ),
+      ' application is simple. First step is to update your ',
+      h(
+        'code',
+        null,
+        '.babelrc'
+      ),
+      ' to use h as the pragma:'
+    ),
+    h('code-snippet', { code: `
+{
+  "plugins": [
+    ["transform-react-jsx", { "pragma":"h" }]
+  ]
+}
+` }),
+    h(
+      'p',
+      null,
+      'This will allow you to transform JSX both for the React and Fritz sides of your application. As before, we won\'t explain how to configure your bundler, but know that you will need to create a worker bundle (that contains Fritz code) and a bundle for your React code.'
+    ),
+    h(
+      'p',
+      null,
+      'React doesn\'t properly handle passing data to web components, but luckily there is a helper library that fixes the issue for us. Install ',
+      h(
+        'a',
+        { href: 'https://github.com/skatejs/val' },
+        'skatejs/val'
+      ),
+      ' like so:'
+    ),
+    h('code-snippet', { code: 'npm install @skatejs/val' }),
+    h(
+      'p',
+      null,
+      'Then create the module that will act as our wrapper:'
+    ),
+    h('code-file', { name: 'val.js', code: `
+import React from 'react';
+import val from '@skatejs/val';
+
+export default val(React.createElement);
+` }),
+    h(
+      'p',
+      null,
+      'And within your React code, use it:'
+    ),
+    h('code-file', { name: 'app.js', code: `
+import React from 'react';
+import ReactDOM from 'react-dom';
+import fritz from 'fritz/window';
+import h from './val.js';
+
+fritz.use(new Worker('/worker.js'));
+
+class Home extends React.Component {
+  render() {
+    return <div>
+      <span>Hello world</span>
+      <worker-component name={"Wilbur"}></worker-component>
+    </div>
+  }
+}
+
+const main = document.querySelector('main');
+ReactDOM.render(<Home/>, main);
+` }),
+    h(
+      'p',
+      null,
+      'Note that this imports our implementation of ',
+      h(
+        'code',
+        null,
+        'h'
+      ),
+      ', which is just a small wrapper around ',
+      h(
+        'code',
+        null,
+        'React.createElement'
+      ),
+      '. Since we are using h in both the React app and the worker, our babel config remains the same.'
+    ),
+    h(
+      'p',
+      null,
+      'Now we just need to implement ',
+      h(
+        'code',
+        null,
+        '<worker-component>'
+      ),
+      '.'
+    ),
+    h('code-file', { name: 'app.js', code: `
+import fritz, { Component, h } from 'fritz';
+
+class MyWorkerComponent extends Component {
+  static get props() {
+    return {
+      name: {}
+    };
+  }
+
+  constructor() {
+    super();
+    this.state = { count: 0 };
+  }
+
+  add() {
+    const count = this.state.count + 1;
+    this.setState({count});
+  }
+
+  render({name}, {count}) {
+    return (
+      <section>
+        <div>Hi {name}. This has been clicked {count} times.</div>
+        <a href="#" onClick={this.add}>Add</a>
+      </section>
+    );
+  }
+}
+
+fritz.define('worker-component', MyWorkerComponent);
+` }),
+    h(
+      'p',
+      null,
+      'A few things worth noting here:'
+    ),
+    h(
+      'ul',
+      null,
+      h(
+        'li',
+        null,
+        'We define ',
+        h(
+          'strong',
+          null,
+          'props'
+        ),
+        ' that we expect to receive with a static ',
+        h(
+          'code',
+          null,
+          'props'
+        ),
+        ' getter (of course you can use class properties here if using the Babel plugin).'
+      ),
+      h(
+        'li',
+        null,
+        h(
+          'code',
+          null,
+          'render'
+        ),
+        ' receives props and state as its arguments, so you can destruct.'
+      ),
+      h(
+        'li',
+        null,
+        'Unlike in React and Preact, you can directly pass your class methods as event handlers. Fritz will know to call your component as the ',
+        h(
+          'code',
+          null,
+          'this'
+        ),
+        ' value when calling that function.'
+      ),
+      h(
+        'li',
+        null,
+        'As always, we finish out component by calling ',
+        h(
+          'code',
+          null,
+          'fritz.define'
+        ),
+        ' to define the custom element tag name.'
+      )
+    ),
+    h(
+      'p',
+      null,
+      'And that\'s it! Now you can seemlessly use any Fritz components within your React application.'
     )
   );
 }

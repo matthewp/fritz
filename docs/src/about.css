@@ -5,7 +5,7 @@
   font-size: 120%;
 }
 
-.about p {
+.about p, .about ul {
   line-height: 2rem;
 }
 

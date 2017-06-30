@@ -1570,11 +1570,34 @@ var text_1 = text;
 var symbols_1 = symbols;
 var attributes_1 = attributes;
 
+function getInstance(fritz, id) {
+  return fritz._instances[id];
+}
+
+function setInstance(fritz, id, instance) {
+  fritz._instances[id] = instance;
+}
+
+function delInstance(fritz, id) {
+  delete fritz._instances[id];
+}
+
+function isFunction(val) {
+  return typeof val === 'function';
+}
+
+const defer = Promise.resolve().then.bind(Promise.resolve());
+
+var eventAttrExp = /^on[a-z]/;
+
 var attributesSet = attributes_1[symbols_1.default];
 attributes_1[symbols_1.default] = preferProps;
 
 function preferProps(element, name, value) {
-  if (name in element) element[name] = value;else attributesSet(element, name, value);
+  if (name in element) element[name] = value;else if (isFunction(value) && eventAttrExp.test(name) && isFunction(element.addEventProperty)) {
+    element.addEventProperty(name);
+    element[name] = value;
+  } else attributesSet(element, name, value);
 }
 
 function render$1(bc, component) {
@@ -1585,9 +1608,11 @@ function render$1(bc, component) {
       // Open
       case 1:
         if (n[3]) {
+          var k;
           for (var j = 0, jlen = n[3].length; j < jlen; j++) {
-            let handler = component.addEventCallback(n[3][j][2]);
-            n[2].push(n[3][j][1], handler);
+            k = n[3][j];
+            let handler = component.addEventCallback(k[2], k[1]);
+            n[2].push(k[1], handler);
           }
         }
 
@@ -1620,14 +1645,22 @@ function postEvent(event, inst, handle) {
   let id = inst._id;
   worker.postMessage({
     type: EVENT,
-    name: event.type,
+    event: {
+      type: event.type,
+      detail: event.detail,
+      value: event.target.value
+    },
     id: id,
-    handle: handle,
-    value: event.target.value
+    handle: handle
   });
 }
 
 const withComponent = (Base = HTMLElement$1) => class extends withUnique(withRender(withProps(Base))) {
+  constructor() {
+    super();
+    this._handlers = Object.create(null);
+  }
+
   rendererCallback(shadowRoot, renderCallback) {
     this._worker.postMessage({
       type: RENDER,
@@ -1642,18 +1675,40 @@ const withComponent = (Base = HTMLElement$1) => class extends withUnique(withRen
     idomRender(vdom, shadowRoot, this);
   }
 
-  observedEventsCallback(events) {
-    events.forEach(eventName => {
-      this.shadowRoot.addEventListener(eventName, this);
-    });
-  }
+  addEventCallback(handleId, eventProp) {
+    var key = eventProp + '/' + handleId;
+    var fn;
+    if (fn = this._handlers[key]) {
+      return fn;
+    }
 
-  addEventCallback(handleId) {
+    // TODO optimize this so functions are reused if possible.
     var self = this;
-    return function (ev) {
+    fn = function (ev) {
       ev.preventDefault();
       postEvent(ev, self, handleId);
     };
+    this._handlers[key] = fn;
+    return fn;
+  }
+
+  addEventProperty(name) {
+    var evName = name.substr(2);
+    var priv = '_' + name;
+    var proto = Object.getPrototypeOf(this);
+    Object.defineProperty(proto, name, {
+      get: function () {
+        return this[priv];
+      },
+      set: function (val) {
+        var cur;
+        if (cur = this[priv]) {
+          this.removeEventListener(evName, cur);
+        }
+        this[priv] = val;
+        this.addEventListener(evName, val);
+      }
+    });
   }
 
   handleEvent(ev) {
@@ -1664,22 +1719,11 @@ const withComponent = (Base = HTMLElement$1) => class extends withUnique(withRen
 
 const Component = withComponent();
 
-function getInstance(fritz, id) {
-  return fritz._instances[id];
-}
-
-function setInstance(fritz, id, instance) {
-  fritz._instances[id] = instance;
-}
-
-function delInstance(fritz, id) {
-  delete fritz._instances[id];
-}
-
 function define$1(fritz, msg) {
   let worker = this;
   let tagName = msg.tag;
   let props = msg.props || {};
+  let events = msg.events || [];
 
   class OffThreadElement extends Component {
     static get props() {
@@ -1695,11 +1739,17 @@ function define$1(fritz, msg) {
     connectedCallback() {
       super.connectedCallback();
       setInstance(fritz, this._id, this);
+      events.forEach(eventName => {
+        this.shadowRoot.addEventListener(eventName, this);
+      });
     }
 
     disconnectedCallback() {
       super.disconnectedCallback();
       delInstance(fritz, this._id);
+      events.forEach(eventName => {
+        this.shadowRoot.removeEventListener(eventName, this);
+      });
       this._worker.postMessage({
         type: DESTROY,
         id: this._id
@@ -1715,17 +1765,20 @@ function render(fritz, msg) {
   let instance = getInstance(fritz, msg.id);
   if (instance !== undefined) {
     instance.doRenderCallback(msg.tree);
-    if (msg.events) {
-      instance.observedEventsCallback(msg.events);
-    }
   }
 }
 
 function trigger(fritz, msg) {
   let inst = getInstance(fritz, msg.id);
-  let event = new Event(msg.event.type, {
-    bubbles: true
+  let ev = msg.event;
+  let event = new CustomEvent(ev.type, {
+    bubbles: true, //ev.bubbles,
+    cancelable: ev.cancelable,
+    detail: ev.detail,
+    scoped: ev.scoped,
+    composed: ev.composed
   });
+
   inst.dispatchEvent(event);
 }
 
