@@ -7,6 +7,7 @@ fritz.tags = Object.create(null);
 fritz._id = 1;
 fritz._instances = Object.create(null);
 fritz._workers = [];
+fritz._work = [];
 
 function use(worker) {
   fritz._workers.push(worker);

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+
+<button id="start">Start</button>
+
+<db-monster></db-monster>
+
+<script src="./memory-stats.js"></script>
+<script src="./monitor.js"></script>
+<script src="../../../window.umd.js"></script>
+<script>
+  fritz.use(new Worker('./app.js'));
+  const theInterval = 0;
+  let iID;
+
+  start.onclick = () => {
+    const isStopped = start.textContent === 'Start';
+    const dbmonster = document.querySelector('db-monster');
+
+    if(isStopped) {
+      iID = setInterval(_ => {
+        const i = dbmonster.counter || 0;
+        dbmonster.counter = i + 1;
+        Monitoring.renderRate.ping();
+      }, theInterval);
+      start.textContent = 'Stop';
+    } else {
+      clearInterval(iID);
+      start.textContent = 'Start';
+    }
+  };
+</script>
