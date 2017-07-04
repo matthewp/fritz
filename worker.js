@@ -132,6 +132,7 @@ function h(tag, attrs, children){
   }
 
   var tree = new Tree();
+  var uniq;
   if(attrs) {
     var evs;
     attrs = Object.keys(attrs).reduce(function(acc, key){
@@ -141,6 +142,8 @@ function h(tag, attrs, children){
       if(eventInfo) {
         if(!evs) evs = [];
         evs.push(eventInfo);
+      } else if(key === 'key') {
+        uniq = value;
       } else {
         acc.push(key);
         acc.push(value);
@@ -150,7 +153,7 @@ function h(tag, attrs, children){
     }, []);
   }
 
-  var open = [1, tag];
+  var open = [1, tag, uniq];
   if(attrs) {
     open.push(attrs);
   }

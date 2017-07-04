@@ -134,6 +134,7 @@ function h(tag, attrs, children) {
   }
 
   var tree = new Tree();
+  var uniq;
   if (attrs) {
     var evs;
     attrs = Object.keys(attrs).reduce(function (acc, key) {
@@ -143,6 +144,8 @@ function h(tag, attrs, children) {
       if (eventInfo) {
         if (!evs) evs = [];
         evs.push(eventInfo);
+      } else if (key === 'key') {
+        uniq = value;
       } else {
         acc.push(key);
         acc.push(value);
@@ -152,7 +155,7 @@ function h(tag, attrs, children) {
     }, []);
   }
 
-  var open = [1, tag];
+  var open = [1, tag, uniq];
   if (attrs) {
     open.push(attrs);
   }
@@ -353,7 +356,7 @@ Object.defineProperty(fritz, 'state', {
   }
 });
 
-var styles = ".row-container {\n  display: flex;\n}\n\n.table-cell {\n  flex: 1;\n}";
+var styles = ".row-container {\n  display: flex;\n  border-top: 1px solid #ddd;\n}\n\n.table-cell {\n  flex: 1;\n  line-height:1.42857143;\n  padding:8px;\n  vertical-align:top;\n}\n\n.label {border-radius:.25em;color:#fff;display:inline;font-size:75%;font-weight:700;line-height:1;padding:.2em .6em .3em;text-align:center;vertical-align:baseline;white-space:nowrap;}\n.label-success {background-color:#5cb85c;}\n.label-warning {background-color:#f0ad4e;}\n\n.popover {background-color:#fff;background-clip:padding-box;border:1px solid #ccc;border:1px solid rgba(0,0,0,.2);border-radius:6px;box-shadow:0 5px 10px rgba(0,0,0,.2);display:none;left:0;max-width:276px;padding:1px;position:absolute;text-align:left;top:0;white-space:normal;z-index:1010;}\n.popover>.arrow:after {border-width:10px;content:\"\";}\n.popover.left {margin-left:-10px;}\n.popover.left > .arrow {border-right-width:0;border-left-color:rgba(0,0,0,.25);margin-top:-11px;right:-11px;top:50%;}\n.popover.left > .arrow:after {border-left-color:#fff;border-right-width:0;bottom:-10px;content:\" \";right:1px;}\n.popover > .arrow {border-width:11px;}\n.popover > .arrow,.popover>.arrow:after {border-color:transparent;border-style:solid;display:block;height:0;position:absolute;width:0;}\n\n.popover-content {padding:9px 14px;}\n\n.Query {position:relative;}\n.Query:hover .popover {display:block;left:-100%;width:100%;}";
 
 class TableRow extends Component {
   static get props() {
@@ -369,7 +372,7 @@ class TableRow extends Component {
 
 fritz.define('table-row', TableRow);
 
-var styles$1 = ".table {\n  font-family: \"Helvetica Neue\",Helvetica,Arial,sans-serif;\n  font-size: 14px;\n  line-height: 1.42857143;\n  color: #333;\n  background-color: #fff;\n}\n\n#link {\n  position: fixed;\n  top: 0; right: 0;\n  font-size: 12px;\n  padding: 5px 10px;\n  background: rgba(255,255,255,0.85);\n  z-index: 5;\n  box-shadow: 0 0 8px rgba(0,0,0,0.6);\n}\n  #link .center {\n    display: block;\n    text-align: center;\n  }\n\n.Query {\n  position: relative;\n}\n\n.Query:hover .popover {\n  left: -100%;\n  width: 100%;\n  display: block;\n}";
+var styles$1 = ".table {\n  font-family: \"Helvetica Neue\",Helvetica,Arial,sans-serif;\n  font-size: 14px;\n  line-height: 1.42857143;\n  color: #333;\n  background-color: #fff;\n}\n\n#link {\n  position: fixed;\n  top: 0; right: 0;\n  font-size: 12px;\n  padding: 5px 10px;\n  background: rgba(255,255,255,0.85);\n  z-index: 5;\n  box-shadow: 0 0 8px rgba(0,0,0,0.6);\n}\n  #link .center {\n    display: block;\n    text-align: center;\n  }\n\n.Query {\n  position: relative;\n}\n\n.Query:hover .popover {\n  left: -100%;\n  width: 100%;\n  display: block;\n}\n\ntable-row {\n  display: block;\n}\n\ntable-row:nth-child(odd) {\n  background: #f9f9f9;\n}";
 
 importScripts('https://cdn.rawgit.com/WebReflection/dbmonster/master/data.js');
 
@@ -385,7 +388,7 @@ class App extends Component {
   render() {
     var dbs = getData();
 
-    return h('div', [h('style', [styles$1]), h('div', { 'class': 'table table-striped latest-data' }, [h('div', { 'class': 'tbody' }, dbs.map(db => h('table-row', { db: db })))])]);
+    return h('div', [h('style', [styles$1]), h('div', { 'class': 'table table-striped latest-data' }, [h('div', { 'class': 'tbody' }, dbs.map(db => h('table-row', { db: db, key: db.name })))])]);
   }
 }
 

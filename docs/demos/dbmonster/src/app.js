@@ -19,7 +19,7 @@ class App extends Component {
     return h('div', [
       h('style', [styles]),
       h('div', {'class':'table table-striped latest-data'}, [
-        h('div', {'class': 'tbody'}, dbs.map(db => h('table-row', {db: db})))
+        h('div', {'class': 'tbody'}, dbs.map(db => h('table-row', {db: db, key: db.name})))
       ])
     ]);
   }

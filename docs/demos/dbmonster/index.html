@@ -5,10 +5,12 @@
 
 <db-monster></db-monster>
 
+<script src="./memory-stats.js"></script>
+<script src="./monitor.js"></script>
 <script src="../../../window.umd.js"></script>
 <script>
   fritz.use(new Worker('./app.js'));
-  const theInterval = 100;
+  const theInterval = 0;
   let iID;
 
   start.onclick = () => {
@@ -17,9 +19,9 @@
 
     if(isStopped) {
       iID = setInterval(_ => {
-        console.log("HERRR");
         const i = dbmonster.counter || 0;
         dbmonster.counter = i + 1;
+        Monitoring.renderRate.ping();
       }, theInterval);
       start.textContent = 'Stop';
     } else {

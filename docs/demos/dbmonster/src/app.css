@@ -29,3 +29,11 @@
   width: 100%;
   display: block;
 }
+
+table-row {
+  display: block;
+}
+
+table-row:nth-child(odd) {
+  background: #f9f9f9;
+}
