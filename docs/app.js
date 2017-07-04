@@ -884,7 +884,13 @@ function main() {
           { 'class': 'primary-title' },
           'Fritz'
         ),
-        h('img', { 'class': 'fritz-flame', src: './frankenstein-fritz-flame.png', title: 'Fritz, with a flame' }),
+        h(
+          'picture',
+          null,
+          h('source', { srcset: './frankenstein-fritz-flame.webp', type: 'image/webp' }),
+          h('source', { srcset: './frankenstein-fritz-flame.png', type: 'image/jpeg' }),
+          h('img', { src: './frankenstein-fritz-flame.png', 'class': 'fritz-flame', title: 'Fritz, with a flame' })
+        ),
         h(
           'h2',
           null,

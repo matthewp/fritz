@@ -20,6 +20,6 @@ site-dev:
 	make serve & make site-watch
 
 site-sw:
-	$(SW) --root=docs --static-file-globs='docs/*({app,main,service-worker-registration}.js|index.html|*.png)'
+	$(SW) --root=docs --static-file-globs='docs/*({app,main,service-worker-registration}.js|index.html|*.{png,webp})'
 
 site-release: site site-sw

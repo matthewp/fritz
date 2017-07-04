@@ -38,7 +38,11 @@ function main() {
       <section class="intro shadow-section">
         <header class="title">
           <h1 class="primary-title">Fritz</h1>
-          <img class="fritz-flame" src="./frankenstein-fritz-flame.png" title="Fritz, with a flame" />
+          <picture>
+            <source srcset="./frankenstein-fritz-flame.webp" type="image/webp"/>
+            <source srcset="./frankenstein-fritz-flame.png" type="image/jpeg"/>
+            <img src="./frankenstein-fritz-flame.png" class="fritz-flame" title="Fritz, with a flame"/>
+          </picture>
           <h2>Take your UI off the main thread.</h2>
         </header>
 
