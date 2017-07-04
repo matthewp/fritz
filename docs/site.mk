@@ -1,6 +1,8 @@
-.PHONY: site site-watch site-worker site-main site-dev
+.PHONY: site site-watch site-worker site-main site-dev site-sw site-release
 
 cur_dir := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+
+SW=./node_modules/.bin/sw-precache
 
 site: site-worker site-main
 
@@ -16,3 +18,8 @@ site-watch:
 
 site-dev:
 	make serve & make site-watch
+
+site-sw:
+	$(SW) --root=docs --static-file-globs='docs/*({app,main,service-worker-registration}.js|index.html|*.png)'
+
+site-release: site site-sw
