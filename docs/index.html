@@ -3,7 +3,9 @@
 <title>Fritz - Take your UI off the main thread</title>
 <link rel="preload" href="./app.js" as="worker">
 <link rel="preload" href="./main.js" as="script">
+<link rel="manifest" href="./manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+<meta name="theme-color" content="#58A4B0"/>
 <style>
   :root {
     --gray: #BAC1B8;
@@ -27,3 +29,8 @@
 
 <script src="./main.js"></script>
 <script src="./service-worker-registration.js" async></script>
+
+<noscript>
+  <h1>Oops!</h1>
+  <p>It looks like you have JavaScript turned off. Since this is a website about a JavaScript library there's no reason to have it off.</p>
+</noscript>
