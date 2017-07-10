@@ -186,6 +186,20 @@ function createTree() {
   return out;
 }
 
+function stringToByteArray(array, offset, string) {
+  var i = 0, len = string.length;
+  array[offset] = len;
+  offset++;
+  while(i < len) {
+    var c = string.charCodeAt(i);
+    array[offset] = c;
+    offset++;
+    i++;
+  }
+}
+
+const AttrKey = 5;
+
 function h(tag, attrs, children){
   const argsLen = arguments.length;
   if(argsLen === 2) {
@@ -198,10 +212,10 @@ function h(tag, attrs, children){
     children = Array.prototype.slice.call(arguments, 2);
   }
 
-  var isFn = isFunction(tag);
+  let isFn = isFunction(tag);
 
   if(isFn) {
-    var localName = tag.prototype.localName;
+    let localName = tag.prototype.localName;
     if(localName) {
       return h(localName, attrs, children);
     }
@@ -211,6 +225,7 @@ function h(tag, attrs, children){
 
   var tree = createTree();
   var uniq;
+  let attrsSize = 0;
   if(attrs) {
     var evs;
     attrs = Object.keys(attrs).reduce(function(acc, key){
@@ -223,8 +238,42 @@ function h(tag, attrs, children){
       } else if(key === 'key') {
         uniq = value;
       } else {
-        acc.push(key);
-        acc.push(value);
+        //acc.push(key);
+        //acc.push(value);
+
+        let keyLen = key.length;
+        let attrSize = keyLen;
+        let valueType = typeof value;
+        switch(valueType) {
+          case 'string':
+            attrSize += value.length;
+            break;
+          case 'number':
+            attrSize += 1;
+            break;
+          default:
+            throw new Error(`Serializing '${valueType}' is not supported.`);
+        }
+
+        attrsSize += attrSize;
+        acc.push(function(array){
+          // do stuff
+          array[0] = AttrKey;
+          stringToByteArray(array, 1, key);
+          let valueOffset = 2 + keyLen;
+          switch(valueType) {
+            case 'string':
+              stringToByteArray(array, valueOffset, value);
+              break;
+            case 'number':
+              array[valueOffset] = value;
+              break;
+            default:
+              // TODO
+              break;
+          }
+          return attrSize;
+        });
       }
 
       return acc;
@@ -233,7 +282,7 @@ function h(tag, attrs, children){
 
   var open = [1, tag, uniq];
   if(attrs) {
-    open.push(attrs);
+    //open.push(attrs);
   }
   if(evs) {
     open.push(evs);
@@ -252,6 +301,26 @@ function h(tag, attrs, children){
       }
     });
   }
+
+  let tagSize = tag.length + 1;
+  let bufferSize = tagSize + attrsSize;
+
+  if(attrsSize) {
+    debugger;
+  }
+
+  let buffer = new ArrayBuffer(bufferSize);
+  let tagArray = new Uint8Array(buffer, 0, tagSize);
+  stringToByteArray(tagArray, 0, tag);
+
+  if(attrs) {
+    let attrsOffset = tagSize;
+    let attrsArray = new Uint8Array(buffer, attrsOffset, attrsSize);
+    attrs.forEach(function(fn){
+      attrsOffset += fn(attrsArray);
+    });
+  }
+
 
   tree.push([2, tag]);
 
