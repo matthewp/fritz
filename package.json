@@ -51,6 +51,7 @@
     "rollup-plugin-replace": "^1.1.1",
     "rollup-plugin-string": "^2.0.2",
     "skatejs": "skatejs/skatejs#build",
+    "skatejs-dom-diff": "^1.0.0",
     "sw-precache": "^5.2.0",
     "testee": "^0.3.0"
   }

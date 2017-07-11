@@ -21,25 +21,25 @@ class TableRow extends Component {
   render({ db }) {
     var rows = [
       h('style', [styles]),
-      h('div', {'class': 'table-cell dbname'}, [db.name]),
-      h('div', {class:'table-cell query-count'}, [
-        h('span', {class:getCountClassName(db)}, [
+      h('div', {'className': 'table-cell dbname'}, [db.name]),
+      h('div', {className:'table-cell query-count'}, [
+        h('span', {className:getCountClassName(db)}, [
           db.queries.length
         ])
       ])
     ].concat(db.topFiveQueries.map(db => (
-      h('div', {'class': 'table-cell ' + elapsedClassName(db.elapsed)}, [
+      h('div', {'className': 'table-cell ' + elapsedClassName(db.elapsed)}, [
         formatElapsed(db.elapsed),
-        h('div', {'class': 'popover left'}, [
-          h('div', {'class': 'popover-content'}, [
+        h('div', {'className': 'popover left'}, [
+          h('div', {'className': 'popover-content'}, [
             db.query
           ]),
-          h('div', {'class': 'arrow'})
+          h('div', {'className': 'arrow'})
         ])
       ])
     )))
 
-    return h('div', {'class': 'row-container'}, rows);
+    return h('div', {'className': 'row-container'}, rows);
   }
 }
 

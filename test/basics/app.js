@@ -25,8 +25,8 @@ class BasicApp extends Component {
   render() {
     return h('div', {id:'root'}, [
       'Hello world!',
-      h(AnotherEl),
-      h(MathEl)
+      //h(AnotherEl),
+      //h(MathEl)
     ]);
   }
 }
