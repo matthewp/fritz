@@ -23,221 +23,320 @@ const EVENT = 'event';
 const STATE = 'state';
 const DESTROY = 'destroy';
 
-const APPEND_CHILD = 1;
-const REMOVE_CHILD = 2;
-const REMOVE_ATTRIBUTE = 3;
-const REPLACE_CHILD = 4;
-const SET_ATTRIBUTE = 5;
-const SET_EVENT = 6;
-const SET_PROPERTY = 7;
-const TEXT_CONTENT = 8;
+// import { ATTR_KEY } from '../constants';
+// import { isSameNodeType, isNamedNode } from './index';
+// import { buildComponentFromVNode } from './component';
+// import { createNode, setAccessor } from '../dom/index';
+// import { unmountComponent } from './component';
+// import options from '../options';
+// import { removeNode } from '../dom';
 
-const empty = v => v == null;
-
-var compareAttributes = function (src, tar) {
-  const { attributes: srcValues } = src;
-  const { attributes: tarValues } = tar;
-  const instructions = [];
-
-  for (let name in srcValues) {
-    if (empty(tarValues[name])) {
-      instructions.push({
-        data: { name },
-        target: tar,
-        source: src,
-        type: REMOVE_ATTRIBUTE
-      });
-    }
-  }
-
-  for (let name in tarValues) {
-    const srcValue = srcValues[name];
-    const tarValue = tarValues[name];
-
-    // Only add attributes that have changed.
-    if (srcValue !== tarValue && !empty(tarValues[name])) {
-      instructions.push({
-        data: { name },
-        target: tar,
-        source: src,
-        type: SET_ATTRIBUTE
-      });
-    }
-  }
-
-  return instructions;
-};
-
-var compareEvents = function (src, tar) {
-  const tarEvents = tar.events;
-  const srcEvents = src.events;
-  const instructions = [];
-
-  // Remove any source events that aren't in the target before seeing if
-  // we need to add any from the target.
-  if (srcEvents) {
-    for (let name in srcEvents) {
-      const srcEvent = srcEvents[name];
-      const tarEvent = tarEvents[name];
-      if (!tarEvent || srcEvent !== tarEvent) {
-        instructions.push({
-          data: { name },
-          target: tar,
-          source: src,
-          type: SET_EVENT
-        });
-      }
-    }
-  }
-
-  // After instructing to remove any old events, we then can instruct to add
-  // new events. This prevents the new events from being removed from earlier
-  // instructions.
-  if (tarEvents) {
-    for (let name in tarEvents) {
-      const srcEvent = srcEvents[name];
-      const tarEvent = tarEvents[name];
-      if (srcEvent !== tarEvent) {
-        instructions.push({
-          data: { name, value: tarEvent },
-          target: tar,
-          source: src,
-          type: SET_EVENT
-        });
-      }
-    }
-  }
-
-  return instructions;
-};
-
-var compareProperties = function (src, tar) {
-  const { properties: srcValues } = src;
-  const { properties: tarValues } = tar;
-  const instructions = [];
-
-  for (let name in srcValues) {
-    const srcValue = srcValues[name];
-    const tarValue = tarValues[name];
-    if (srcValue !== tarValue) {
-      instructions.push({
-        data: { name },
-        target: tar,
-        source: src,
-        type: SET_PROPERTY
-      });
-    }
-  }
-
-  for (let name in tarValues) {
-    const srcValue = srcValues[name];
-    const tarValue = tarValues[name];
-    if (srcValue !== tarValue) {
-      instructions.push({
-        data: { name },
-        target: tar,
-        source: src,
-        type: SET_PROPERTY
-      });
-    }
-  }
-
-  return instructions;
-};
-
-var compareElement = function (src, tar) {
-  if (src.localName === tar.localName) {
-    return compareAttributes(src, tar)
-      .concat(compareEvents(src, tar))
-      .concat(compareProperties(src, tar));
-  }
-};
-
-var compareText = function (src, tar) {
-  if (src.textContent === tar.textContent) {
-    return [];
-  }
-
-  return [{
-    target: tar,
-    source: src,
-    type: TEXT_CONTENT
-  }];
-};
-
-const NODE_ELEMENT = 1;
-const NODE_TEXT = 3;
-
-var compareNode = function (src, tar) {
-  const tarType = tar.nodeType;
-  const srcType = src.nodeType;
-
-  if (tarType !== srcType) {
-    return [];
-  } else if (tarType === NODE_ELEMENT) {
-    return compareElement(src, tar);
-  } else if (tarType === NODE_TEXT) {
-    return compareText(src, tar);
-  }
-
-  return [];
-};
-
-function diffNode (source, target) {
-  let nodeInstructions = compareNode(source, target);
-
-  // If there are instructions (even an empty array) it means the node can be
-  // diffed and doesn't have to be replaced. If the instructions are falsy
-  // it means that the nodes are not similar (cannot be changed) and must be
-  // replaced instead.
-  if (nodeInstructions) {
-    return nodeInstructions.concat(diff(source, target));
-  }
-
-  return [{
-    target,
-    source,
-    type: REPLACE_CHILD
-  }];
+function isNamedNode(node, nodeName) {
+	return node.normalizedNodeName===nodeName || (node.nodeName && 
+		node.nodeName.toLowerCase()===nodeName.toLowerCase());
 }
 
-function diff (src, tar) {
-  let instructions = [];
+/** Queue of components that have been mounted and are awaiting componentDidMount */
+const mounts = [];
 
-  const srcChs = src.childNodes;
-  const tarChs = tar.childNodes;
-  const srcChsLen = srcChs ? srcChs.length : 0;
-  const tarChsLen = tarChs ? tarChs.length : 0;
+/** Diff recursion count, used to track the end of the diff cycle. */
+let diffLevel = 0;
 
-  for (let a = 0; a < tarChsLen; a++) {
-    const curSrc = srcChs[a];
-    const curtar = tarChs[a];
+/** Global flag indicating if the diff is currently within an SVG */
+let isSvgMode = false;
 
-    // If there is no matching target node it means we need to remove the
-    // current source node from the source.
-    if (!curSrc) {
-      instructions.push({
-        target: tarChs[a],
-        source: src,
-        type: APPEND_CHILD
-      });
-      continue;
-    }
+/** Global flag indicating if the diff is performing hydration */
+let hydrating = false;
 
-    instructions = instructions.concat(diffNode(curSrc, curtar));
-  }
+/** Invoke queued componentDidMount lifecycle methods */
+function flushMounts() {
+	let c;
+	while ((c=mounts.pop())) {
+		if (options.afterMount) options.afterMount(c);
+		if (c.componentDidMount) c.componentDidMount();
+	}
+}
 
-  if (tarChsLen < srcChsLen) {
-    for (let a = tarChsLen; a < srcChsLen; a++) {
-      instructions.push({
-        target: srcChs[a],
-        source: src,
-        type: REMOVE_CHILD
-      });
-    }
-  }
 
-  return instructions;
+/** Apply differences in a given vnode (and it's deep children) to a real DOM Node.
+ *	@param {Element} [dom=null]		A DOM node to mutate into the shape of the `vnode`
+ *	@param {VNode} vnode			A VNode (with descendants forming a tree) representing the desired DOM structure
+ *	@returns {Element} dom			The created/mutated element
+ *	@private
+ */
+function diff(dom, vnode, context, mountAll, parent, componentRoot) {
+	// diffLevel having been 0 here indicates initial entry into the diff (not a subdiff)
+	if (!diffLevel++) {
+		// when first starting the diff, check if we're diffing an SVG or within an SVG
+		isSvgMode = parent!=null && parent.ownerSVGElement!==undefined;
+
+		// hydration is indicated by the existing element to be diffed not having a prop cache
+		hydrating = false; // TODO what was this for? -> dom!=null && !(ATTR_KEY in dom);
+	}
+
+	let ret = idiff(dom, vnode, context, mountAll, componentRoot);
+
+	// append the element if its a new parent
+	if (parent && ret.parentNode!==parent) parent.appendChild(ret);
+
+	// diffLevel being reduced to 0 means we're exiting the diff
+	if (!--diffLevel) {
+		hydrating = false;
+		// invoke queued componentDidMount lifecycle methods
+		if (!componentRoot) flushMounts();
+	}
+
+	return ret;
+}
+
+
+/** Internals of `diff()`, separated to allow bypassing diffLevel / mount flushing. */
+function idiff(dom, vnode, context, mountAll, componentRoot) {
+	let out = dom,
+		prevSvgMode = isSvgMode;
+
+	// empty values (null, undefined, booleans) render as empty Text nodes
+	if (vnode==null || typeof vnode==='boolean') vnode = '';
+
+
+	// Fast case: Strings & Numbers create/update Text nodes.
+	if (typeof vnode==='string' || typeof vnode==='number') {
+
+		// update if it's already a Text node:
+		if (dom && dom.splitText!==undefined && dom.parentNode && (!dom._component || componentRoot)) {
+			/* istanbul ignore if */ /* Browser quirk that can't be covered: https://github.com/developit/preact/commit/fd4f21f5c45dfd75151bd27b4c217d8003aa5eb9 */
+			if (dom.nodeValue!=vnode) {
+				dom.nodeValue = vnode;
+			}
+		}
+		else {
+			// it wasn't a Text node: replace it with one and recycle the old Element
+			out = document.createTextNode(vnode);
+			if (dom) {
+				if (dom.parentNode) dom.parentNode.replaceChild(out, dom);
+				recollectNodeTree(dom, true);
+			}
+		}
+
+		out[ATTR_KEY] = true;
+
+		return out;
+	}
+
+
+	// If the VNode represents a Component, perform a component diff:
+	let vnodeName = vnode.nodeName;
+	if (typeof vnodeName==='function') {
+		return buildComponentFromVNode(dom, vnode, context, mountAll);
+	}
+
+
+	// Tracks entering and exiting SVG namespace when descending through the tree.
+	isSvgMode = vnodeName==='svg' ? true : vnodeName==='foreignObject' ? false : isSvgMode;
+
+
+	// If there's no existing element or it's the wrong type, create a new one:
+	vnodeName = String(vnodeName);
+	if (!dom || !isNamedNode(dom, vnodeName)) {
+		out = createNode(vnodeName, isSvgMode);
+
+		if (dom) {
+			// move children into the replacement node
+			while (dom.firstChild) out.appendChild(dom.firstChild);
+
+			// if the previous Element was mounted into the DOM, replace it inline
+			if (dom.parentNode) dom.parentNode.replaceChild(out, dom);
+
+			// recycle the old element (skips non-Element node types)
+			recollectNodeTree(dom, true);
+		}
+	}
+
+
+	let fc = out.firstChild,
+		props = out[ATTR_KEY],
+		vchildren = vnode.children;
+
+	if (props==null) {
+		props = out[ATTR_KEY] = {};
+		for (let a=out.attributes, i=a.length; i--; ) props[a[i].name] = a[i].value;
+	}
+
+	// Optimization: fast-path for elements containing a single TextNode:
+	if (!hydrating && vchildren && vchildren.length===1 && typeof vchildren[0]==='string' && fc!=null && fc.splitText!==undefined && fc.nextSibling==null) {
+		if (fc.nodeValue!=vchildren[0]) {
+			fc.nodeValue = vchildren[0];
+		}
+	}
+	// otherwise, if there are existing or new children, diff them:
+	else if (vchildren && vchildren.length || fc!=null) {
+		innerDiffNode(out, vchildren, context, mountAll, hydrating || props.dangerouslySetInnerHTML!=null);
+	}
+
+
+	// Apply attributes/props from VNode to the DOM Element:
+	diffAttributes(out, vnode.attributes, props);
+
+
+	// restore previous SVG mode: (in case we're exiting an SVG namespace)
+	isSvgMode = prevSvgMode;
+
+	return out;
+}
+
+
+/** Apply child and attribute changes between a VNode and a DOM Node to the DOM.
+ *	@param {Element} dom			Element whose children should be compared & mutated
+ *	@param {Array} vchildren		Array of VNodes to compare to `dom.childNodes`
+ *	@param {Object} context			Implicitly descendant context object (from most recent `getChildContext()`)
+ *	@param {Boolean} mountAll
+ *	@param {Boolean} isHydrating	If `true`, consumes externally created elements similar to hydration
+ */
+function innerDiffNode(dom, vchildren, context, mountAll, isHydrating) {
+	let originalChildren = dom.childNodes,
+		children = [],
+		keyed = {},
+		keyedLen = 0,
+		min = 0,
+		len = originalChildren.length,
+		childrenLen = 0,
+		vlen = vchildren ? vchildren.length : 0,
+		j, c, f, vchild, child;
+
+	// Build up a map of keyed children and an Array of unkeyed children:
+	if (len!==0) {
+		for (let i=0; i<len; i++) {
+			let child = originalChildren[i],
+				props = child[ATTR_KEY],
+				key = vlen && props ? child._component ? child._component.__key : props.key : null;
+			if (key!=null) {
+				keyedLen++;
+				keyed[key] = child;
+			}
+			else if (props || (child.splitText!==undefined ? (isHydrating ? child.nodeValue.trim() : true) : isHydrating)) {
+				children[childrenLen++] = child;
+			}
+		}
+	}
+
+	if (vlen!==0) {
+		for (let i=0; i<vlen; i++) {
+			vchild = vchildren[i];
+			child = null;
+
+			// attempt to find a node based on key matching
+			let key = vchild.key;
+			if (key!=null) {
+				if (keyedLen && keyed[key]!==undefined) {
+					child = keyed[key];
+					keyed[key] = undefined;
+					keyedLen--;
+				}
+			}
+			// attempt to pluck a node of the same type from the existing children
+			else if (!child && min<childrenLen) {
+				for (j=min; j<childrenLen; j++) {
+					if (children[j]!==undefined && isSameNodeType(c = children[j], vchild, isHydrating)) {
+						child = c;
+						children[j] = undefined;
+						if (j===childrenLen-1) childrenLen--;
+						if (j===min) min++;
+						break;
+					}
+				}
+			}
+
+			// morph the matched/found/created DOM child to match vchild (deep)
+			child = idiff(child, vchild, context, mountAll);
+
+			f = originalChildren[i];
+			if (child && child!==dom && child!==f) {
+				if (f==null) {
+					dom.appendChild(child);
+				}
+				else if (child===f.nextSibling) {
+					removeNode(f);
+				}
+				else {
+					dom.insertBefore(child, f);
+				}
+			}
+		}
+	}
+
+
+	// remove unused keyed children:
+	if (keyedLen) {
+		for (let i in keyed) if (keyed[i]!==undefined) recollectNodeTree(keyed[i], false);
+	}
+
+	// remove orphaned unkeyed children:
+	while (min<=childrenLen) {
+		if ((child = children[childrenLen--])!==undefined) recollectNodeTree(child, false);
+	}
+}
+
+
+
+/** Recursively recycle (or just unmount) a node an its descendants.
+ *	@param {Node} node						DOM node to start unmount/removal from
+ *	@param {Boolean} [unmountOnly=false]	If `true`, only triggers unmount lifecycle, skips removal
+ */
+function recollectNodeTree(node, unmountOnly) {
+	let component = node._component;
+	if (component) {
+		// if node is owned by a Component, unmount that component (ends up recursing back here)
+		unmountComponent(component);
+	}
+	else {
+		// If the node's VNode had a ref function, invoke it with null here.
+		// (this is part of the React spec, and smart for unsetting references)
+		if (node[ATTR_KEY]!=null && node[ATTR_KEY].ref) node[ATTR_KEY].ref(null);
+
+		if (unmountOnly===false || node[ATTR_KEY]==null) {
+			removeNode(node);
+		}
+
+		removeChildren(node);
+	}
+}
+
+
+/** Recollect/unmount all children.
+ *	- we use .lastChild here because it causes less reflow than .firstChild
+ *	- it's also cheaper than accessing the .childNodes Live NodeList
+ */
+function removeChildren(node) {
+	node = node.lastChild;
+	while (node) {
+		let next = node.previousSibling;
+		recollectNodeTree(node, true);
+		node = next;
+	}
+}
+
+
+/** Apply differences in attributes from a VNode to the given DOM Element.
+ *	@param {Element} dom		Element with attributes to diff `attrs` against
+ *	@param {Object} attrs		The desired end-state key-value attribute pairs
+ *	@param {Object} old			Current/previous attributes (from previous VNode or element's prop cache)
+ */
+function diffAttributes(dom, attrs, old) {
+	let name;
+
+	// remove attributes no longer present on the vnode by setting them to undefined
+	for (name in old) {
+		if (!(attrs && attrs[name]!=null) && old[name]!=null) {
+			setAccessor(dom, name, old[name], old[name] = undefined, isSvgMode);
+		}
+	}
+
+	// add new & update changed attributes
+	for (name in attrs) {
+		if (name!=='children' && name!=='innerHTML' && (!(name in old) || attrs[name]!==(name==='value' || name==='checked' ? dom[name] : old[name]))) {
+			setAccessor(dom, name, old[name], old[name] = attrs[name], isSvgMode);
+		}
+	}
 }
 
 let currentInstance = null;
@@ -275,19 +374,14 @@ function render(instance, sentProps) {
   if(instance.shouldComponentUpdate(nextProps) !== false) {
     instance.componentWillUpdate();
     instance._dirty = false;
-    let tree = renderInstance(instance);
-    let instr;
-    if(instance._tree) {
-      instr = diff(instance._tree, tree);
-      tree = null;
-    }
-    instance._tree = tree;
+    let vnode = renderInstance(instance);
+    let patches = diff(instance._vnode || {}, vnode);
+    instance._vnode = vnode;
 
     postMessage({
       type: RENDER,
       id: instance._fritzId,
-      tree: tree,
-      instr: instr
+      patches: patches
     });
   }
 }
@@ -327,164 +421,59 @@ class Component {
   componentWillUnmount(){}
 }
 
-const nodeType = 3;
-var createTextNode = function (textContent) {
-  return { nodeType, textContent };
-};
+function VNode(){}
 
-// eslint-disable-next-line no-undef
-var root = self || global;
+const options$1 = {};
 
-// Because weak map polyfills either are too big or don't use native if
-// available properly.
+const stack = [];
+const EMPTY_CHILDREN = [];
 
-let index = 0;
-const prefix = '__WEAK_MAP_POLYFILL_';
+var h = function(nodeName, attributes) {
+	let children=EMPTY_CHILDREN, lastSimple, child, simple, i;
+	for (i=arguments.length; i-- > 2; ) {
+		stack.push(arguments[i]);
+	}
+	if (attributes && attributes.children!=null) {
+		if (!stack.length) stack.push(attributes.children);
+		delete attributes.children;
+	}
+	while (stack.length) {
+		if ((child = stack.pop()) && child.pop!==undefined) {
+			for (i=child.length; i--; ) stack.push(child[i]);
+		}
+		else {
+			if (typeof child==='boolean') child = null;
 
-var WeakMap$1 = (function () {
-  if (typeof WeakMap !== 'undefined') {
-    return WeakMap;
-  }
+			if ((simple = typeof nodeName!=='function')) {
+				if (child==null) child = '';
+				else if (typeof child==='number') child = String(child);
+				else if (typeof child!=='string') simple = false;
+			}
 
-  function Polyfill () {
-    this.key = prefix + index;
-    ++index;
-  }
+			if (simple && lastSimple) {
+				children[children.length-1] += child;
+			}
+			else if (children===EMPTY_CHILDREN) {
+				children = [child];
+			}
+			else {
+				children.push(child);
+			}
 
-  Polyfill.prototype = {
-    get (obj) {
-      return obj[this.key];
-    },
-    set (obj, val) {
-      obj[this.key] = val;
-    }
-  };
+			lastSimple = simple;
+		}
+	}
 
-  return Polyfill;
-})();
+	let p = new VNode();
+	p.nodeName = nodeName;
+	p.children = children;
+	p.attributes = attributes==null ? undefined : attributes;
+	p.key = attributes==null ? undefined : attributes.key;
 
-let { HTMLElement } = root;
-if(!HTMLElement) HTMLElement = function(){};
-const localNameMap = new WeakMap$1();
+	// if a "vnode hook" is defined, pass every created VNode to it
+	if (options$1.vnode!==undefined) options$1.vnode(p);
 
-function ensureNodes (arr) {
-  let out = [];
-  if (!Array.isArray(arr)) {
-    arr = [arr];
-  }
-  arr.filter(Boolean).forEach(function (item) {
-    if (Array.isArray(item)) {
-      out = out.concat(ensureNodes(item));
-    } else if (typeof item === 'object') {
-      out.push(translateFromReact(item));
-    } else {
-      out.push(createTextNode(item));
-    }
-  });
-  return out;
-}
-
-function ensureObject (val) {
-  return val && typeof val === 'object' ? val : {};
-}
-
-function isNode (arg) {
-  return arg && (typeof arg === 'string' || Array.isArray(arg) || typeof arg.nodeType === 'number' || isReactNode(arg));
-}
-
-function isReactNode (item) {
-  return item && item.type && item.props;
-}
-
-function translateFromReact (item) {
-  if (isReactNode(item)) {
-    const props = item.props;
-    const chren = ensureNodes(props.children);
-    delete props.children;
-    return {
-      attributes: props,
-      childNodes: chren,
-      localName: item.type,
-      nodeType: 1
-    };
-  }
-  return item;
-}
-
-let count = 0;
-var h$1 = function (localName, props, ...chren) {
-  const isPropsNode = isNode(props);
-
-  if (isPropsNode) {
-    chren = ensureNodes([props].concat(chren));
-    props = {
-      attributes: {},
-      events: {},
-      properties: {}
-    };
-  } else {
-    props = ensureObject(props);
-    chren = ensureNodes(chren);
-  }
-
-  // If it's a function that isn't an HTMLElement constructor. We test for a
-  // common property since this may be used in a worker / non browser
-  // environment.
-  if (localName.prototype instanceof HTMLElement) {
-    const cache = localNameMap.get(localName);
-    if (cache) {
-      return cache;
-    }
-    // eslint-disable-next-line new-cap
-    const tempLocalName = new localName().localName;
-    localNameMap.set(localName, tempLocalName);
-    localName = tempLocalName;
-  } else if (typeof localName === 'function') {
-    return localName(props, chren);
-  }
-
-  const node = {
-    __id: ++count,
-    childNodes: chren,
-    localName,
-    nodeType: 1
-  };
-
-  // Special props
-  //
-  // - aria: object that sets aria-* attributes
-  // - attributes: object of attributes to set
-  // - data: object that sets data-* attributes
-  // - events: object of event listeners to set
-  const { aria, attributes, data, events } = props;
-
-  node.attributes = ensureObject(attributes);
-  node.events = ensureObject(events);
-  node.properties = ensureObject(props);
-
-  const { attributes: nodeAttributes } = node;
-
-  // Aria attributes
-  if (typeof aria === 'object') {
-    for (let name in aria) {
-      nodeAttributes[`aria-${name}`] = aria[name];
-    }
-  }
-
-  // Data attributes
-  if (typeof data === 'object') {
-    for (let name in data) {
-      nodeAttributes[`data-${name}`] = data[name];
-    }
-  }
-
-  // Clean up special props.
-  delete props.aria;
-  delete props.attributes;
-  delete props.data;
-  delete props.events;
-
-  return node;
+	return p;
 };
 
 let Store;
@@ -634,7 +623,7 @@ function relay(fritz) {
 const fritz = Object.create(null);
 fritz.Component = Component;
 fritz.define = define;
-fritz.h = h$1;
+fritz.h = h;
 fritz._tags = Object.create(null);
 fritz._instances = Object.create(null);
 
@@ -671,4 +660,4 @@ Object.defineProperty(fritz, 'state', {
   get: function() { return state; }
 });
 
-export { Component, h$1 as h, state };export default fritz;
+export { Component, h, state };export default fritz;

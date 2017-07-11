@@ -1,34 +1,3 @@
-(function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-	typeof define === 'function' && define.amd ? define(factory) :
-	(global.fritz = factory());
-}(this, (function () { 'use strict';
-
-function getInstance(fritz, id){
-  return fritz._instances[id];
-}
-
-function setInstance(fritz, id, instance){
-  fritz._instances[id] = instance;
-}
-
-function delInstance(fritz, id){
-  delete fritz._instances[id];
-}
-
-function isFunction(val) {
-  return typeof val === 'function';
-}
-
-const defer = Promise.resolve().then.bind(Promise.resolve());
-
-const DEFINE = 'define';
-const TRIGGER = 'trigger';
-const RENDER = 'render';
-const EVENT = 'event';
-const STATE = 'state';
-const DESTROY = 'destroy';
-
 // import { ATTR_KEY } from '../constants';
 // import { isSameNodeType, isNamedNode } from './index';
 // import { buildComponentFromVNode } from './component';
@@ -43,10 +12,10 @@ function isNamedNode(node, nodeName) {
 }
 
 /** Queue of components that have been mounted and are awaiting componentDidMount */
-const mounts = [];
+export const mounts = [];
 
 /** Diff recursion count, used to track the end of the diff cycle. */
-let diffLevel = 0;
+export let diffLevel = 0;
 
 /** Global flag indicating if the diff is currently within an SVG */
 let isSvgMode = false;
@@ -55,7 +24,7 @@ let isSvgMode = false;
 let hydrating = false;
 
 /** Invoke queued componentDidMount lifecycle methods */
-function flushMounts() {
+export function flushMounts() {
 	let c;
 	while ((c=mounts.pop())) {
 		if (options.afterMount) options.afterMount(c);
@@ -70,7 +39,7 @@ function flushMounts() {
  *	@returns {Element} dom			The created/mutated element
  *	@private
  */
-function diff(dom, vnode, context, mountAll, parent, componentRoot) {
+export function diff(dom, vnode, context, mountAll, parent, componentRoot) {
 	// diffLevel having been 0 here indicates initial entry into the diff (not a subdiff)
 	if (!diffLevel++) {
 		// when first starting the diff, check if we're diffing an SVG or within an SVG
@@ -288,7 +257,7 @@ function innerDiffNode(dom, vchildren, context, mountAll, isHydrating) {
  *	@param {Node} node						DOM node to start unmount/removal from
  *	@param {Boolean} [unmountOnly=false]	If `true`, only triggers unmount lifecycle, skips removal
  */
-function recollectNodeTree(node, unmountOnly) {
+export function recollectNodeTree(node, unmountOnly) {
 	let component = node._component;
 	if (component) {
 		// if node is owned by a Component, unmount that component (ends up recursing back here)
@@ -312,7 +281,7 @@ function recollectNodeTree(node, unmountOnly) {
  *	- we use .lastChild here because it causes less reflow than .firstChild
  *	- it's also cheaper than accessing the .childNodes Live NodeList
  */
-function removeChildren(node) {
+export function removeChildren(node) {
 	node = node.lastChild;
 	while (node) {
 		let next = node.previousSibling;
@@ -344,328 +313,3 @@ function diffAttributes(dom, attrs, old) {
 		}
 	}
 }
-
-let currentInstance = null;
-
-function renderInstance(instance) {
-  currentInstance = instance;
-  let tree = instance.render(instance.props, instance.state);
-  currentInstance = null;
-  return tree;
-}
-
-let queue = [];
-
-function enqueueRender(instance, sentProps) {
-  if(!instance._dirty && (instance._dirty = true) && queue.push([instance, sentProps])==1) {
-    defer(rerender);
-  }
-}
-
-function rerender() {
-	let p, list = queue;
-	queue = [];
-	while ( (p = list.pop()) ) {
-		if (p[0]._dirty) render(p[0], p[1]);
-	}
-}
-
-function render(instance, sentProps) {
-  if(sentProps) {
-    var nextProps = Object.assign({}, instance.props, sentProps);
-    instance.componentWillReceiveProps(nextProps);
-    instance.props = nextProps;
-  }
-
-  if(instance.shouldComponentUpdate(nextProps) !== false) {
-    instance.componentWillUpdate();
-    instance._dirty = false;
-    let vnode = renderInstance(instance);
-    let patches = diff(instance._vnode || {}, vnode);
-    instance._vnode = vnode;
-
-    postMessage({
-      type: RENDER,
-      id: instance._fritzId,
-      patches: patches
-    });
-  }
-}
-
-class Component {
-  constructor() {
-    this.state = {};
-    this.props = {};
-  }
-
-  dispatch(ev) {
-    let id = this._fritzId;
-    postMessage({
-      type: TRIGGER,
-      event: ev,
-      id: id
-    });
-  }
-
-  setState(state) {
-    let s = this.state;
-    Object.assign(s, isFunction(state) ? state(s, this.props) : state);
-    enqueueRender(this);
-  }
-
-  // Force an update, will change to setState()
-  update() {
-    console.warn('update() is deprecated. Use setState() instead.');
-    this.setState({});
-  }
-
-  componentWillReceiveProps(){}
-  shouldComponentUpdate() {
-    return true;
-  }
-  componentWillUpdate(){}
-  componentWillUnmount(){}
-}
-
-function VNode(){}
-
-const options$1 = {};
-
-const stack = [];
-const EMPTY_CHILDREN = [];
-
-var h = function(nodeName, attributes) {
-	let children=EMPTY_CHILDREN, lastSimple, child, simple, i;
-	for (i=arguments.length; i-- > 2; ) {
-		stack.push(arguments[i]);
-	}
-	if (attributes && attributes.children!=null) {
-		if (!stack.length) stack.push(attributes.children);
-		delete attributes.children;
-	}
-	while (stack.length) {
-		if ((child = stack.pop()) && child.pop!==undefined) {
-			for (i=child.length; i--; ) stack.push(child[i]);
-		}
-		else {
-			if (typeof child==='boolean') child = null;
-
-			if ((simple = typeof nodeName!=='function')) {
-				if (child==null) child = '';
-				else if (typeof child==='number') child = String(child);
-				else if (typeof child!=='string') simple = false;
-			}
-
-			if (simple && lastSimple) {
-				children[children.length-1] += child;
-			}
-			else if (children===EMPTY_CHILDREN) {
-				children = [child];
-			}
-			else {
-				children.push(child);
-			}
-
-			lastSimple = simple;
-		}
-	}
-
-	let p = new VNode();
-	p.nodeName = nodeName;
-	p.children = children;
-	p.attributes = attributes==null ? undefined : attributes;
-	p.key = attributes==null ? undefined : attributes.key;
-
-	// if a "vnode hook" is defined, pass every created VNode to it
-	if (options$1.vnode!==undefined) options$1.vnode(p);
-
-	return p;
-};
-
-let Store;
-let Handle;
-
-Store = class {
-  constructor() {
-    this.handleMap = new WeakMap();
-    this.idMap = new Map();
-    this.id = 0;
-  }
-
-  from(fn) {
-    let handle;
-    let id = this.handleMap.get(fn);
-    if(id == null) {
-      id = this.id++;
-      handle = new Handle(id, fn);
-      this.handleMap.set(fn, id);
-      this.idMap.set(id, handle);
-    } else {
-      handle = this.idMap.get(id);
-    }
-    return handle;
-  }
-
-  get(id) {
-    return this.idMap.get(id);
-  }
-};
-
-Handle = class {
-  static get store() {
-    if(!this._store) {
-      this._store = new Store();
-    }
-    return this._store;
-  }
-
-  static from(fn) {
-    return this.store.from(fn);
-  }
-
-  static get(id) {
-    return this.store.get(id);
-  }
-
-  constructor(id, fn) {
-    this.id = id;
-    this.fn = fn;
-  }
-
-  del() {
-    let store = Handle.store;
-    store.handleMap.delete(this.fn);
-    store.idMap.delete(this.id);
-  }
-};
-
-var Handle$1 = Handle;
-
-function render$1(fritz, msg) {
-  let id = msg.id;
-  let props = msg.props || {};
-
-  let instance = getInstance(fritz, id);
-  let events;
-  if(!instance) {
-    let constructor = fritz._tags[msg.tag];
-    instance = new constructor();
-    Object.defineProperties(instance, {
-      _fritzId: {
-        enumerable: false,
-        value: id
-      },
-      _fritzHandles: {
-        enumerable: false,
-        writable: true,
-        value: Object.create(null)
-      }
-    });
-    setInstance(fritz, id, instance);
-  }
-
-  enqueueRender(instance, props);
-}
-
-function trigger(fritz, msg){
-  let inst = getInstance(fritz, msg.id);
-  let response = Object.create(null);
-
-  let method;
-  if(msg.handle != null) {
-    method = Handle$1.get(msg.handle).fn;
-  } else {
-    let methodName = 'on' + msg.name[0].toUpperCase() + msg.name.substr(1);
-    method = inst[methodName];
-  }
-
-  if(method) {
-    let event = msg.event;
-    method.call(inst, event);
-
-    enqueueRender(inst);
-  } else {
-    // TODO warn?
-  }
-}
-
-function destroy(fritz, msg){
-  let instance = getInstance(fritz, msg.id);
-  instance.componentWillUnmount();
-  Object.keys(instance._fritzHandles).forEach(function(key){
-    let handle = instance._fritzHandles[key];
-    handle.del();
-  });
-  instance._fritzHandles = Object.create(null);
-  delInstance(fritz, msg.id);
-}
-
-let hasListened = false;
-
-function relay(fritz) {
-  if(!hasListened) {
-    hasListened = true;
-
-    self.addEventListener('message', function(ev){
-      let msg = ev.data;
-      switch(msg.type) {
-        case RENDER:
-          render$1(fritz, msg);
-          break;
-        case EVENT:
-          trigger(fritz, msg);
-          break;
-        case STATE:
-          fritz.state = msg.state;
-          break;
-        case DESTROY:
-          destroy(fritz, msg);
-          break;
-      }
-    });
-  }
-}
-
-const fritz$1 = Object.create(null);
-fritz$1.Component = Component;
-fritz$1.define = define;
-fritz$1.h = h;
-fritz$1._tags = Object.create(null);
-fritz$1._instances = Object.create(null);
-
-function define(tag, constructor) {
-  if(constructor === undefined) {
-    throw new Error('fritz.define expects 2 arguments');
-  }
-  if(constructor.prototype.render === undefined) {
-    let render = constructor;
-    constructor = class extends Component{};
-    constructor.prototype.render = render;
-  }
-
-  fritz$1._tags[tag] = constructor;
-
-  Object.defineProperty(constructor.prototype, 'localName', {
-    enumerable: false,
-    value: tag
-  });
-
-  relay(fritz$1);
-
-  postMessage({
-    type: DEFINE,
-    tag: tag,
-    props: constructor.props,
-    events: constructor.events
-  });
-}
-
-let state;
-Object.defineProperty(fritz$1, 'state', {
-  set: function(val) { state = val; },
-  get: function() { return state; }
-});
-
-return fritz$1;
-
-})));

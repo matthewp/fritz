@@ -1,6 +1,6 @@
 import { RENDER } from '../message-types.js';
 import { defer } from '../util.js';
-import diff from 'skatejs-dom-diff/src/diff/main.js';
+import { diff } from './diff/diff.js';
 
 export let currentInstance = null;
 
@@ -37,19 +37,14 @@ function render(instance, sentProps) {
   if(instance.shouldComponentUpdate(nextProps) !== false) {
     instance.componentWillUpdate();
     instance._dirty = false;
-    let tree = renderInstance(instance);
-    let instr;
-    if(instance._tree) {
-      instr = diff(instance._tree, tree);
-      tree = null;
-    }
-    instance._tree = tree;
+    let vnode = renderInstance(instance);
+    let patches = diff(instance._vnode || {}, vnode);
+    instance._vnode = vnode;
 
     postMessage({
       type: RENDER,
       id: instance._fritzId,
-      tree: tree,
-      instr: instr
+      patches: patches
     });
   }
 }
