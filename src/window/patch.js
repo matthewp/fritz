@@ -6,13 +6,22 @@ export function patch(patches, root) {
   var index = 0, last = patches.length - 1;
 
   do {
-    var opcode = patches[index];
-    var indices = patches[++index];
-    var value = patches[++index];
+    var opcode = patches[index++];
+    var indices = patches[index++];
+    var value = patches[index++];
     var parent = findNode(root, indices);
+    var doc = parent.ownerDocument;
     switch(opcode) {
       case CREATE_ELEMENT:
-        var child = document.createElement(value);
+        var child;
+        switch(value[0]) {
+          case 1:
+            child = doc.createElement(value[1]);
+            break;
+          case 3:
+            child = doc.createTextNode(value[1]);
+            break;
+        }
         parent.appendChild(child);
         break;
     }

@@ -62,7 +62,6 @@ class PatchOp {
 }
 
 const CREATE_ELEMENT = 1;
-const APPEND_ELEMENT = 2;
 
 // import { ATTR_KEY } from '../constants';
 // import { isSameNodeType, isNamedNode } from './index';
@@ -80,25 +79,13 @@ function isNamedNode(node, nodeName) {
 }
 
 /** Queue of components that have been mounted and are awaiting componentDidMount */
-const mounts = [];
+
 
 /** Diff recursion count, used to track the end of the diff cycle. */
-let diffLevel = 0;
 
-/** Global flag indicating if the diff is currently within an SVG */
-let isSvgMode = false;
-
-/** Global flag indicating if the diff is performing hydration */
-let hydrating = false;
 
 /** Invoke queued componentDidMount lifecycle methods */
-function flushMounts() {
-	let c;
-	while ((c=mounts.pop())) {
-		if (options.afterMount) options.afterMount(c);
-		if (c.componentDidMount) c.componentDidMount();
-	}
-}
+
 
 
 /** Apply differences in a given vnode (and it's deep children) to a real DOM Node.
@@ -108,27 +95,11 @@ function flushMounts() {
  *	@private
  */
 function diff(dom, vnode, context, mountAll, parent, componentRoot) {
-	// diffLevel having been 0 here indicates initial entry into the diff (not a subdiff)
-	if (!diffLevel++) {
-		// when first starting the diff, check if we're diffing an SVG or within an SVG
-		isSvgMode = parent!=null && parent.ownerSVGElement!==undefined;
-
-		// hydration is indicated by the existing element to be diffed not having a prop cache
-		hydrating = false; // TODO what was this for? -> dom!=null && !(ATTR_KEY in dom);
-	}
-
 	let patch = new PatchOp();
 	let ret = idiff(dom, vnode, context, mountAll, componentRoot, patch, [0]);
 
 	// append the element if its a new parent
 	if (parent && ret.parentNode!==parent) parent.appendChild(ret);
-
-	// diffLevel being reduced to 0 means we're exiting the diff
-	if (!--diffLevel) {
-		hydrating = false;
-		// invoke queued componentDidMount lifecycle methods
-		if (!componentRoot) flushMounts();
-	}
 
 	return patch;
 }
@@ -136,8 +107,7 @@ function diff(dom, vnode, context, mountAll, parent, componentRoot) {
 
 /** Internals of `diff()`, separated to allow bypassing diffLevel / mount flushing. */
 function idiff(dom, vnode, context, mountAll, componentRoot, patch, indices) {
-	let out = dom,
-		prevSvgMode = isSvgMode;
+	let out = dom;
 
 	// empty values (null, undefined, booleans) render as empty Text nodes
 	if (vnode==null || typeof vnode==='boolean') vnode = '';
@@ -177,16 +147,11 @@ function idiff(dom, vnode, context, mountAll, componentRoot, patch, indices) {
 	}
 
 
-	// Tracks entering and exiting SVG namespace when descending through the tree.
-	isSvgMode = vnodeName==='svg' ? true : vnodeName==='foreignObject' ? false : isSvgMode;
-
-
 	// If there's no existing element or it's the wrong type, create a new one:
 	vnodeName = String(vnodeName);
 	if (!dom || !isNamedNode(dom, vnodeName)) {
-		patch.add(CREATE_ELEMENT, indices, vnodeName);
-		debugger;
-		out = createNode(vnodeName, isSvgMode);
+		patch.add(CREATE_ELEMENT, indices, [1, vnodeName]);
+		out = createNode(vnodeName);
 
 		if (dom) {
 			// move children into the replacement node
@@ -211,23 +176,19 @@ function idiff(dom, vnode, context, mountAll, componentRoot, patch, indices) {
 	}
 
 	// Optimization: fast-path for elements containing a single TextNode:
-	if (!hydrating && vchildren && vchildren.length===1 && typeof vchildren[0]==='string' && fc!=null && fc.splitText!==undefined && fc.nextSibling==null) {
+	if (vchildren && vchildren.length===1 && typeof vchildren[0]==='string' && fc!=null && fc.splitText!==undefined && fc.nextSibling==null) {
 		if (fc.nodeValue!=vchildren[0]) {
 			fc.nodeValue = vchildren[0];
 		}
 	}
 	// otherwise, if there are existing or new children, diff them:
 	else if (vchildren && vchildren.length || fc!=null) {
-		innerDiffNode(out, vchildren, context, mountAll, hydrating || props.dangerouslySetInnerHTML!=null, patch, indices);
+		innerDiffNode(out, vchildren, context, mountAll, patch, indices);
 	}
 
 
 	// Apply attributes/props from VNode to the DOM Element:
 	diffAttributes(out, vnode.attributes, props);
-
-
-	// restore previous SVG mode: (in case we're exiting an SVG namespace)
-	isSvgMode = prevSvgMode;
 
 	return out;
 }
@@ -238,9 +199,8 @@ function idiff(dom, vnode, context, mountAll, componentRoot, patch, indices) {
  *	@param {Array} vchildren		Array of VNodes to compare to `dom.childNodes`
  *	@param {Object} context			Implicitly descendant context object (from most recent `getChildContext()`)
  *	@param {Boolean} mountAll
- *	@param {Boolean} isHydrating	If `true`, consumes externally created elements similar to hydration
  */
-function innerDiffNode(dom, vchildren, context, mountAll, isHydrating, patch, indices) {
+function innerDiffNode(dom, vchildren, context, mountAll, patch, indices) {
 	let originalChildren = dom.children,
 		children = [],
 		keyed = {},
@@ -261,7 +221,7 @@ function innerDiffNode(dom, vchildren, context, mountAll, isHydrating, patch, in
 				keyedLen++;
 				keyed[key] = child;
 			}
-			else if (props || (child.splitText!==undefined ? (isHydrating ? child.nodeValue.trim() : true) : isHydrating)) {
+			else if (props || (child.splitText!==undefined ? true : false)) {
 				children[childrenLen++] = child;
 			}
 		}
@@ -284,7 +244,7 @@ function innerDiffNode(dom, vchildren, context, mountAll, isHydrating, patch, in
 			// attempt to pluck a node of the same type from the existing children
 			else if (!child && min<childrenLen) {
 				for (j=min; j<childrenLen; j++) {
-					if (children[j]!==undefined && isSameNodeType(c = children[j], vchild, isHydrating)) {
+					if (children[j]!==undefined && isSameNodeType(c = children[j], vchild)) {
 						child = c;
 						children[j] = undefined;
 						if (j===childrenLen-1) childrenLen--;
@@ -303,7 +263,10 @@ function innerDiffNode(dom, vchildren, context, mountAll, isHydrating, patch, in
 
 				if (f==null) {
 					//dom.appendChild(child);
-					patch.add(APPEND_ELEMENT, childIndice, child.nodeName);
+					if(child.nodeValue)
+						patch.add(CREATE_ELEMENT, childIndice, [3, child.nodeValue]);
+					else
+						patch.add(CREATE_ELEMENT, childIndice, [1, child.nodeName]);
 					append(dom, child);
 				}
 				else if (child===f.nextSibling) {
@@ -381,14 +344,14 @@ function diffAttributes(dom, attrs, old) {
 	// remove attributes no longer present on the vnode by setting them to undefined
 	for (name in old) {
 		if (!(attrs && attrs[name]!=null) && old[name]!=null) {
-			setAccessor(dom, name, old[name], old[name] = undefined, isSvgMode);
+			setAccessor(dom, name, old[name], old[name] = undefined);
 		}
 	}
 
 	// add new & update changed attributes
 	for (name in attrs) {
 		if (name!=='children' && name!=='innerHTML' && (!(name in old) || attrs[name]!==(name==='value' || name==='checked' ? dom[name] : old[name]))) {
-			setAccessor(dom, name, old[name], old[name] = attrs[name], isSvgMode);
+			setAccessor(dom, name, old[name], old[name] = attrs[name]);
 		}
 	}
 }
