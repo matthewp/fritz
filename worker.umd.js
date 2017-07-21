@@ -68,10 +68,15 @@ function render(instance, sentProps) {
     instance.componentWillUpdate();
     instance._dirty = false;
 
+    // Diffing
+    let vnode = renderInstance(instance);
+    let changeList = diff(instance._vnode, vnode);
+    instance._vnode = vnode;
+
     postMessage({
       type: RENDER,
       id: instance._fritzId,
-      tree: renderInstance(instance)
+      patches: changeList.valueOf()
     });
   }
 }

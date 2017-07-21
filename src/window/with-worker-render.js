@@ -1,6 +1,7 @@
 import { idomRender as render } from './idom-render.js';
 import { withRenderer } from '@matthewp/skatejs/dist/esnext/with-renderer';
 import { RENDER } from '../message-types.js';
+import { patch } from './patch.js';
 
 export function withWorkerRender(Base = HTMLElement) {
   return class extends withRenderer(Base) {
@@ -23,10 +24,10 @@ export function withWorkerRender(Base = HTMLElement) {
     beforeRender() {}
     afterRender() {}
 
-    doRenderCallback(vdom) {
+    doRenderCallback(patches) {
       this.beforeRender();
-      let shadowRoot = this.shadowRoot;
-      render(vdom, shadowRoot, this);
+      let root = this.shadowRoot;
+      patch(patches, root);
       this.afterRender();
     }
   }

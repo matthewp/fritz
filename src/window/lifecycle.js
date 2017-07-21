@@ -20,7 +20,7 @@ export function define(fritz, msg) {
 export function render(fritz, msg) {
   let instance = getInstance(fritz, msg.id);
   if(instance !== undefined) {
-    instance.doRenderCallback(msg.tree);
+    instance.doRenderCallback(msg.patches);
   }
 };
 
