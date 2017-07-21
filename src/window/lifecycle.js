@@ -1,8 +1,6 @@
 import { Component } from './component.js';
 import { DESTROY } from '../message-types.js';
 import { getInstance, setInstance, delInstance } from '../util.js';
-import mount from 'skatejs-dom-diff/src/mount.js';
-import patch from 'skatejs-dom-diff/src/patch.js';
 
 export function define(fritz, msg) {
   let worker = this;
@@ -48,11 +46,6 @@ export function define(fritz, msg) {
 export function render(fritz, msg) {
   let instance = getInstance(fritz, msg.id);
   if(instance !== undefined) {
-    if(msg.instr) {
-      patch(msg.instr);
-    } else {
-      mount(msg.tree, instance.shadowRoot);
-    }
     //instance.doRenderCallback(msg.tree);
 
     /*if(msg.events) {

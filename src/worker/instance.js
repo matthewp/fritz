@@ -38,13 +38,13 @@ function render(instance, sentProps) {
     instance.componentWillUpdate();
     instance._dirty = false;
     let vnode = renderInstance(instance);
-    let patches = diff(instance._vnode || {}, vnode);
+    let patchOp = diff(instance._vnode, vnode);
     instance._vnode = vnode;
 
     postMessage({
       type: RENDER,
       id: instance._fritzId,
-      patches: patches
+      patches: patchOp.valueOf()
     });
   }
 }

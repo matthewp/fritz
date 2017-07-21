@@ -23,6 +23,40 @@ const EVENT = 'event';
 const STATE = 'state';
 const DESTROY = 'destroy';
 
+function VNode(){}
+
+function createNode(nodeName, isSvg){
+  var v = new VNode();
+  v.nodeName = nodeName;
+  v.isSvg = isSvg;
+  v.children = [];
+  v.attributes = [];
+  return v;
+}
+
+class PatchOp {
+  constructor() {
+    this.index = 0;
+    this.patches = [];
+  }
+
+  move(val) {
+    this.patches[this.index++] = val;
+  }
+
+  add(opCode, id, val) {
+    this.move(opCode);
+    this.move(id);
+    this.move(val);
+  }
+
+  valueOf() {
+    return this.patches;
+  }
+}
+
+const CREATE_ELEMENT = 1;
+
 // import { ATTR_KEY } from '../constants';
 // import { isSameNodeType, isNamedNode } from './index';
 // import { buildComponentFromVNode } from './component';
@@ -30,6 +64,8 @@ const DESTROY = 'destroy';
 // import { unmountComponent } from './component';
 // import options from '../options';
 // import { removeNode } from '../dom';
+
+const ATTR_KEY = Symbol('fritz.attrkey');
 
 function isNamedNode(node, nodeName) {
 	return node.normalizedNodeName===nodeName || (node.nodeName && 
@@ -74,7 +110,8 @@ function diff(dom, vnode, context, mountAll, parent, componentRoot) {
 		hydrating = false; // TODO what was this for? -> dom!=null && !(ATTR_KEY in dom);
 	}
 
-	let ret = idiff(dom, vnode, context, mountAll, componentRoot);
+	let patch = new PatchOp();
+	let ret = idiff(dom, vnode, context, mountAll, componentRoot, patch, [0]);
 
 	// append the element if its a new parent
 	if (parent && ret.parentNode!==parent) parent.appendChild(ret);
@@ -86,12 +123,12 @@ function diff(dom, vnode, context, mountAll, parent, componentRoot) {
 		if (!componentRoot) flushMounts();
 	}
 
-	return ret;
+	return patch;
 }
 
 
 /** Internals of `diff()`, separated to allow bypassing diffLevel / mount flushing. */
-function idiff(dom, vnode, context, mountAll, componentRoot) {
+function idiff(dom, vnode, context, mountAll, componentRoot, patch, indices) {
 	let out = dom,
 		prevSvgMode = isSvgMode;
 
@@ -111,7 +148,9 @@ function idiff(dom, vnode, context, mountAll, componentRoot) {
 		}
 		else {
 			// it wasn't a Text node: replace it with one and recycle the old Element
-			out = document.createTextNode(vnode);
+			//out = document.createTextNode(vnode);
+			out = new VNode();
+			out.nodeValue = vnode;
 			if (dom) {
 				if (dom.parentNode) dom.parentNode.replaceChild(out, dom);
 				recollectNodeTree(dom, true);
@@ -138,6 +177,7 @@ function idiff(dom, vnode, context, mountAll, componentRoot) {
 	// If there's no existing element or it's the wrong type, create a new one:
 	vnodeName = String(vnodeName);
 	if (!dom || !isNamedNode(dom, vnodeName)) {
+		patch.add(CREATE_ELEMENT, indices, vnodeName);
 		out = createNode(vnodeName, isSvgMode);
 
 		if (dom) {
@@ -170,7 +210,7 @@ function idiff(dom, vnode, context, mountAll, componentRoot) {
 	}
 	// otherwise, if there are existing or new children, diff them:
 	else if (vchildren && vchildren.length || fc!=null) {
-		innerDiffNode(out, vchildren, context, mountAll, hydrating || props.dangerouslySetInnerHTML!=null);
+		innerDiffNode(out, vchildren, context, mountAll, hydrating || props.dangerouslySetInnerHTML!=null, patch, indices);
 	}
 
 
@@ -192,8 +232,8 @@ function idiff(dom, vnode, context, mountAll, componentRoot) {
  *	@param {Boolean} mountAll
  *	@param {Boolean} isHydrating	If `true`, consumes externally created elements similar to hydration
  */
-function innerDiffNode(dom, vchildren, context, mountAll, isHydrating) {
-	let originalChildren = dom.childNodes,
+function innerDiffNode(dom, vchildren, context, mountAll, isHydrating, patch, indices) {
+	let originalChildren = dom.children,
 		children = [],
 		keyed = {},
 		keyedLen = 0,
@@ -247,18 +287,21 @@ function innerDiffNode(dom, vchildren, context, mountAll, isHydrating) {
 			}
 
 			// morph the matched/found/created DOM child to match vchild (deep)
-			child = idiff(child, vchild, context, mountAll);
+			child = idiff(child, vchild, context, mountAll, null, patch, indices.concat([i]));
 
 			f = originalChildren[i];
 			if (child && child!==dom && child!==f) {
 				if (f==null) {
-					dom.appendChild(child);
+					//dom.appendChild(child);
+					append(dom, child);
 				}
 				else if (child===f.nextSibling) {
-					removeNode(f);
+					//removeNode(f);
+					remove(dom, f);
 				}
 				else {
-					dom.insertBefore(child, f);
+					//dom.insertBefore(child, f);
+					insertBefore(dom, child, f);
 				}
 			}
 		}
@@ -339,6 +382,24 @@ function diffAttributes(dom, attrs, old) {
 	}
 }
 
+function append(parent, child) {
+	parent.children.push(child);
+}
+
+function insertBefore(parent, child, ref) {
+	var idx = parent.children.indexOf(ref);
+	parent.splice(idx - 1, 0, child);
+}
+
+function remove(parent, child){
+	var idx = parent.children.indexOf(child);
+	parent.children.splice(idx, 1);
+}
+
+function setAccessor() {
+	// TODO implement
+}
+
 let currentInstance = null;
 
 function renderInstance(instance) {
@@ -375,13 +436,13 @@ function render(instance, sentProps) {
     instance.componentWillUpdate();
     instance._dirty = false;
     let vnode = renderInstance(instance);
-    let patches = diff(instance._vnode || {}, vnode);
+    let patchOp = diff(instance._vnode, vnode);
     instance._vnode = vnode;
 
     postMessage({
       type: RENDER,
       id: instance._fritzId,
-      patches: patches
+      patches: patchOp.valueOf()
     });
   }
 }
@@ -420,8 +481,6 @@ class Component {
   componentWillUpdate(){}
   componentWillUnmount(){}
 }
-
-function VNode(){}
 
 const options$1 = {};
 
