@@ -62,6 +62,7 @@ class PatchOp {
 }
 
 const CREATE_ELEMENT = 1;
+const APPEND_ELEMENT = 2;
 
 // import { ATTR_KEY } from '../constants';
 // import { isSameNodeType, isNamedNode } from './index';
@@ -184,6 +185,7 @@ function idiff(dom, vnode, context, mountAll, componentRoot, patch, indices) {
 	vnodeName = String(vnodeName);
 	if (!dom || !isNamedNode(dom, vnodeName)) {
 		patch.add(CREATE_ELEMENT, indices, vnodeName);
+		debugger;
 		out = createNode(vnodeName, isSvgMode);
 
 		if (dom) {
@@ -293,12 +295,15 @@ function innerDiffNode(dom, vchildren, context, mountAll, isHydrating, patch, in
 			}
 
 			// morph the matched/found/created DOM child to match vchild (deep)
-			child = idiff(child, vchild, context, mountAll, null, patch, indices.concat([i]));
+			var childIndice = indices.concat([i]);
+			child = idiff(child, vchild, context, mountAll, null, patch, childIndice);
 
 			f = originalChildren[i];
 			if (child && child!==dom && child!==f) {
+
 				if (f==null) {
 					//dom.appendChild(child);
+					patch.add(APPEND_ELEMENT, childIndice, child.nodeName);
 					append(dom, child);
 				}
 				else if (child===f.nextSibling) {

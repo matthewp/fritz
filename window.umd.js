@@ -1637,6 +1637,37 @@ const EVENT = 'event';
 const STATE = 'state';
 const DESTROY = 'destroy';
 
+const CREATE_ELEMENT = 1;
+
+function patch$1(patches, root) {
+  var index = 0, last = patches.length - 1;
+
+  do {
+    var opcode = patches[index];
+    var indices = patches[++index];
+    var value = patches[++index];
+    var parent = findNode(root, indices);
+    switch(opcode) {
+      case CREATE_ELEMENT:
+        var child = document.createElement(value);
+        parent.appendChild(child);
+        break;
+    }
+
+  } while (index < last);
+}
+
+function findNode(node, indices) {
+  var index;
+  for(var i = 1, len = indices.length; i < len; i++) {
+    index = indices[i];
+    if(index !== undefined) {
+      node = node.childNodes[index];
+    }
+  }
+  return node;
+}
+
 function postEvent(event, inst, handle) {
   let worker = inst._worker;
   let id = inst._id;
@@ -1670,6 +1701,11 @@ const withComponent = (Base = HTMLElement) => class extends withUnique(withRende
   doRenderCallback(vdom) {
     let shadowRoot = this.shadowRoot;
     idomRender(vdom, shadowRoot, this);
+  }
+
+  doRenderCallback2(patches) {
+    let shadowRoot = this.shadowRoot;
+    patch$1(patches, shadowRoot);
   }
 
   addEventCallback(handleId, eventProp) {
@@ -1758,6 +1794,7 @@ function define(fritz, msg) {
 function render(fritz, msg) {
   let instance = getInstance(fritz, msg.id);
   if(instance !== undefined) {
+    instance.doRenderCallback2(msg.patches);
     //instance.doRenderCallback(msg.tree);
 
     /*if(msg.events) {
