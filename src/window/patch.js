@@ -1,5 +1,6 @@
 import {
-  CREATE_ELEMENT
+  CREATE_ELEMENT,
+  SET_ATTR
 } from '../opcodes.js';
 
 export function patch(patches, root) {
@@ -23,6 +24,9 @@ export function patch(patches, root) {
             break;
         }
         parent.appendChild(child);
+        break;
+      case SET_ATTR:
+        parent.setAttribute(value[0], value[1]);
         break;
     }
 

@@ -1639,6 +1639,8 @@ const DESTROY = 'destroy';
 
 const CREATE_ELEMENT = 1;
 
+const SET_ATTR = 3;
+
 function patch$1(patches, root) {
   var index = 0, last = patches.length - 1;
 
@@ -1660,6 +1662,9 @@ function patch$1(patches, root) {
             break;
         }
         parent.appendChild(child);
+        break;
+      case SET_ATTR:
+        parent.setAttribute(value[0], value[1]);
         break;
     }
 

@@ -63,6 +63,8 @@ class PatchOp {
 
 const CREATE_ELEMENT = 1;
 
+const SET_ATTR = 3;
+
 // import { ATTR_KEY } from '../constants';
 // import { isSameNodeType, isNamedNode } from './index';
 // import { buildComponentFromVNode } from './component';
@@ -186,9 +188,9 @@ function idiff(dom, vnode, context, mountAll, componentRoot, patch, indices) {
 		innerDiffNode(out, vchildren, context, mountAll, patch, indices);
 	}
 
-
 	// Apply attributes/props from VNode to the DOM Element:
-	diffAttributes(out, vnode.attributes, props);
+	debugger;
+	diffAttributes(out, vnode.attributes, props, patch, indices);
 
 	return out;
 }
@@ -338,20 +340,22 @@ function removeChildren(node) {
  *	@param {Object} attrs		The desired end-state key-value attribute pairs
  *	@param {Object} old			Current/previous attributes (from previous VNode or element's prop cache)
  */
-function diffAttributes(dom, attrs, old) {
+function diffAttributes(dom, attrs, old, patch, indices) {
 	let name;
 
 	// remove attributes no longer present on the vnode by setting them to undefined
 	for (name in old) {
 		if (!(attrs && attrs[name]!=null) && old[name]!=null) {
 			setAccessor(dom, name, old[name], old[name] = undefined);
+			// TODO patch to remove attr
 		}
 	}
 
 	// add new & update changed attributes
 	for (name in attrs) {
 		if (name!=='children' && name!=='innerHTML' && (!(name in old) || attrs[name]!==(name==='value' || name==='checked' ? dom[name] : old[name]))) {
-			setAccessor(dom, name, old[name], old[name] = attrs[name]);
+			//setAccessor(dom, name, old[name], old[name] = attrs[name]);
+			patch.add(SET_ATTR, indices, [name, attrs[name]]);
 		}
 	}
 }
@@ -368,10 +372,6 @@ function insertBefore(parent, child, ref) {
 function remove(parent, child){
 	var idx = parent.children.indexOf(child);
 	parent.children.splice(idx, 1);
-}
-
-function setAccessor() {
-	// TODO implement
 }
 
 let currentInstance = null;
