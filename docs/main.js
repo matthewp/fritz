@@ -1600,6 +1600,11 @@ function preferProps(element, name, value) {
   } else attributesSet(element, name, value);
 }
 
+const TAG = 1;
+const ID = 2;
+const ATTRS = 3;
+const EVENTS = 4;
+
 function render$1(bc, component) {
   var n;
   for (var i = 0, len = bc.length; i < len; i++) {
@@ -1607,16 +1612,16 @@ function render$1(bc, component) {
     switch (n[0]) {
       // Open
       case 1:
-        if (n[3]) {
+        if (n[EVENTS]) {
           var k;
-          for (var j = 0, jlen = n[3].length; j < jlen; j++) {
-            k = n[3][j];
+          for (var j = 0, jlen = n[EVENTS].length; j < jlen; j++) {
+            k = n[EVENTS][j];
             let handler = component.addEventCallback(k[2], k[1]);
-            n[2].push(k[1], handler);
+            n[ATTRS].push(k[1], handler);
           }
         }
 
-        var openArgs = [n[1], null, null].concat(n[2]);
+        var openArgs = [n[TAG], n[ID], null].concat(n[ATTRS]);
         elementOpen_1.apply(null, openArgs);
         break;
       case 2:
@@ -1761,10 +1766,12 @@ function define$1(fritz, msg) {
 }
 
 function render(fritz, msg) {
-  let id = msg.id;
   let instance = getInstance(fritz, msg.id);
   if (instance !== undefined) {
     instance.doRenderCallback(msg.tree);
+    if (msg.events) {
+      instance.observedEventsCallback(msg.events);
+    }
   }
 }
 
@@ -1798,6 +1805,7 @@ fritz.tags = Object.create(null);
 fritz._id = 1;
 fritz._instances = Object.create(null);
 fritz._workers = [];
+fritz._work = [];
 
 function use(worker) {
   fritz._workers.push(worker);
