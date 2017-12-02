@@ -258,6 +258,28 @@ function h(tag, attrs, children){
   return tree;
 }
 
+function html(fritz, strings, ...values) {
+  return templateDefined(fritz, strings) ?
+    createResult(values) :
+    createResult(values, strings);
+}
+
+function templateDefined(fritz, strings) {
+  let templates = fritz._templates;
+  return templates.has(strings);
+}
+
+function createResult(values, strings) {
+  let result = Object.create(null);
+  result.values = values;
+  if(strings) {
+    result.type = 1;
+    result.strings = strings;
+  } else {
+    result.type = 2;
+  }
+}
+
 function render$1(fritz, msg) {
   let id = msg.id;
   let props = msg.props || {};
@@ -347,6 +369,8 @@ const fritz = Object.create(null);
 fritz.Component = Component;
 fritz.define = define;
 fritz.h = h;
+fritz.html = html.bind(null, fritz);
+fritz._templates = new WeakSet();
 fritz._tags = Object.create(null);
 fritz._instances = Object.create(null);
 
@@ -383,4 +407,6 @@ Object.defineProperty(fritz, 'state', {
   get: function() { return state; }
 });
 
-export { Component, h, state };export default fritz;
+Object.freeze(fritz);
+
+export { Component, h, html, state };export default fritz;

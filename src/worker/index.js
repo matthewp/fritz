@@ -1,5 +1,6 @@
 import Component from './component.js';
 import h from './hyperscript.js';
+import html from './html.js';
 import relay from './relay.js';
 import { DEFINE } from '../message-types.js';
 
@@ -7,6 +8,8 @@ const fritz = Object.create(null);
 fritz.Component = Component;
 fritz.define = define;
 fritz.h = h;
+fritz.html = html.bind(null, fritz);
+fritz._templates = new WeakSet();
 fritz._tags = Object.create(null);
 fritz._instances = Object.create(null);
 
@@ -43,5 +46,7 @@ Object.defineProperty(fritz, 'state', {
   get: function() { return state; }
 });
 
+Object.freeze(fritz);
+
 export default fritz;
-export { Component, h, state };
+export { Component, h, html, state };

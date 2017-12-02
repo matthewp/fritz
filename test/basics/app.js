@@ -1,17 +1,24 @@
 importScripts('../../worker.umd.js');
 importScripts('../worker-debug.js');
 
-const { h, Component } = fritz;
+const { html, Component } = fritz;
 
 class AnotherEl extends Component {
   doStuff(){}
 
   render() {
+    return html`
+      <div onClick=${this.doStuff}>
+        Another el
+      </div>
+    `;
     return h('div', { onClick: this.doStuff }, ['Another el']);
   }
 }
 
 fritz.define('another-el', AnotherEl);
+
+/*
 
 class MathEl extends Component {
   render() {
@@ -20,14 +27,22 @@ class MathEl extends Component {
 }
 
 fritz.define('math-el', MathEl);
+*/
 
 class BasicApp extends Component {
   render() {
+    return html`
+      <div id="root">
+        Hello world!
+      </div>
+    `;
+    /*
     return h('div', {id:'root'}, [
       'Hello world!',
       h(AnotherEl),
       h(MathEl)
     ]);
+    */
   }
 }
 
