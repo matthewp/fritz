@@ -28,7 +28,7 @@ export function define(fritz, msg) {
     }
 
     disconnectedCallback() {
-      super.disconnectedCallback();
+      if(super.disconnectedCallback) super.disconnectedCallback();
       delInstance(fritz, this._id);
       events.forEach(eventName => {
         this.shadowRoot.removeEventListener(eventName, this);
@@ -64,5 +64,5 @@ export function trigger(fritz, msg) {
     composed: ev.composed
   });
 
-  inst.dispatchEvent(event);  
+  inst.dispatchEvent(event);
 };

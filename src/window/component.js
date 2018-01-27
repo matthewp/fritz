@@ -1,7 +1,5 @@
-import { HTMLElement } from 'skatejs/es-latest/util';
-import { withProps } from 'skatejs/es-latest/with-props';
-import { withRender } from 'skatejs/es-latest/with-render';
-import { withUnique } from 'skatejs/es-latest/with-unique';
+import { withUpdate } from 'skatejs/dist/esnext/with-update';
+import { withRenderer } from 'skatejs/dist/esnext/with-renderer';
 import { idomRender as render } from './idom-render.js';
 import { EVENT, RENDER } from '../message-types.js';
 
@@ -20,13 +18,13 @@ function postEvent(event, inst, handle) {
   });
 }
 
-export const withComponent = (Base = HTMLElement) => class extends withUnique(withRender(withProps(Base))) {
+export const withComponent = (Base = HTMLElement) => class extends withRenderer(withUpdate(Base)) {
   constructor() {
     super();
     this._handlers = Object.create(null);
   }
 
-  rendererCallback (shadowRoot, renderCallback) {
+  renderer() {
     this._worker.postMessage({
       type: RENDER,
       tag: this.localName,

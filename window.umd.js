@@ -4,110 +4,33 @@
 	(global.fritz = factory());
 }(this, (function () { 'use strict';
 
-const root = typeof window === 'undefined' ? global : window;
-
-const {
-  customElements: customElements$1,
-  HTMLElement = null,
-  Object: Object$1,
-  MutationObserver
-} = root;
-const {
-  getOwnPropertyNames,
-  getOwnPropertySymbols
-} = Object$1;
-
 function dashCase(str) {
-  return str.split(/([_A-Z])/).reduce((one, two, idx) => {
+  return typeof str === 'string' ? str.split(/([_A-Z])/).reduce((one, two, idx) => {
     const dash = !one || idx % 2 === 0 ? '' : '-';
     two = two === '_' ? '' : two;
     return `${one}${dash}${two.toLowerCase()}`;
-  });
-}
-
-function debounce(cbFunc) {
-  let scheduled = false;
-  let i = 0;
-  let cbArgs = [];
-  const elem = document.createElement('span');
-  const observer = new MutationObserver(() => {
-    cbFunc(...cbArgs);
-    scheduled = false;
-    cbArgs = null;
-  });
-
-  observer.observe(elem, { childList: true });
-
-  return (...args) => {
-    cbArgs = args;
-    if (!scheduled) {
-      scheduled = true;
-      elem.textContent = `${i}`;
-      i += 1;
-    }
-  };
+  }) : str;
 }
 
 const empty = val => val == null;
-const { freeze } = Object$1;
 
-function keys(obj = {}) {
-  const names = getOwnPropertyNames(obj);
-  return getOwnPropertySymbols ? names.concat(getOwnPropertySymbols(obj)) : names;
+function keys(obj) {
+  obj = obj || {};
+  const names = Object.getOwnPropertyNames(obj);
+  return Object.getOwnPropertySymbols ? names.concat(Object.getOwnPropertySymbols(obj)) : names;
 }
 
+let symbolCount = 0;
 function sym(description) {
-  return typeof Symbol === 'function' ? Symbol(description ? String(description) : undefined) : uniqueId(description);
+  description = String(description || ++symbolCount);
+  return typeof Symbol === 'function' ? Symbol(description) : `__skate_${description}`;
 }
 
-function uniqueId(description) {
-  return (description ? String(description) : '') + 'xxxxxxxx'.replace(/[xy]/g, c => {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : r & 0x3 | 0x8;
-    return v.toString(16);
-  });
-}
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-var _extends$1 = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-const _definedProps = sym('_definedProps');
-const _normPropDef = sym('_normPropDef');
-const _syncingAttributeToProperty = sym('_syncingAttributeToProperty');
-const _syncingPropertyToAttribute = sym('_syncingPropertyToAttribute');
-
-const _updateDebounced = sym('_updateDebounced');
-
-function defineProps(Ctor) {
-  if (Ctor[_definedProps]) {
-    return;
-  }
-  Ctor[_definedProps] = true;
-
-  const { prototype } = Ctor;
-  const props = normPropDefs(Ctor);
-
-  Object.defineProperties(prototype, keys(props).reduce((prev, curr) => {
-    const { attribute: { target }, coerce, default: def, serialize } = props[curr];
-    const _value = sym(curr);
-    prev[curr] = {
-      configurable: true,
-      get() {
-        const val = this[_value];
-        return val == null ? def : val;
-      },
-      set(val) {
-        this[_value] = coerce(val);
-        syncPropertyToAttribute(this, target, serialize, val);
-        this[_updateDebounced]();
-      }
-    };
-    return prev;
-  }, {}));
-}
-
-function normAttribute(name, prop) {
+function normaliseAttributeDefinition(name, prop) {
   const { attribute } = prop;
-  const obj = typeof attribute === 'object' ? _extends$1({}, attribute) : {
+  const obj = typeof attribute === 'object' ? _extends({}, attribute) : {
     source: attribute,
     target: attribute
   };
@@ -120,10 +43,10 @@ function normAttribute(name, prop) {
   return obj;
 }
 
-function normPropDef(name, prop) {
+function normalisePropertyDefinition(name, prop) {
   const { coerce, default: def, deserialize, serialize } = prop;
   return {
-    attribute: normAttribute(name, prop),
+    attribute: normaliseAttributeDefinition(name, prop),
     coerce: coerce || (v => v),
     default: def,
     deserialize: deserialize || (v => v),
@@ -131,72 +54,117 @@ function normPropDef(name, prop) {
   };
 }
 
-function normPropDefs(Ctor) {
-  return Ctor[_normPropDef] || (Ctor[_normPropDef] = keys(Ctor.props).reduce((prev, curr) => {
-    prev[curr] = normPropDef(curr, Ctor.props[curr] || {});
-    return prev;
-  }, {}));
-}
-
 function syncAttributeToProperty(elem, name, value) {
-  if (elem[_syncingPropertyToAttribute]) {
+  if (elem._syncingPropertyToAttribute) {
     return;
   }
-  const propDefs = normPropDefs(elem.constructor);
+  const propDefs = elem.constructor._propsNormalised;
   for (let propName in propDefs) {
     const { attribute: { source }, deserialize } = propDefs[propName];
     if (source === name) {
-      elem[_syncingAttributeToProperty] = propName;
+      elem._syncingAttributeToProperty = propName;
       elem[propName] = value == null ? value : deserialize(value);
-      elem[_syncingAttributeToProperty] = null;
+      elem._syncingAttributeToProperty = null;
     }
   }
 }
 
 function syncPropertyToAttribute(elem, target, serialize, val) {
-  if (target && elem[_syncingAttributeToProperty] !== target) {
+  if (target && elem._syncingAttributeToProperty !== target) {
     const serialized = serialize(val);
-    elem[_syncingPropertyToAttribute] = true;
+    elem._syncingPropertyToAttribute = true;
     if (serialized == null) {
       elem.removeAttribute(target);
     } else {
       elem.setAttribute(target, serialized);
     }
-    elem[_syncingPropertyToAttribute] = false;
+    elem._syncingPropertyToAttribute = false;
   }
 }
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+function defineProps(constructor) {
+  if (constructor.hasOwnProperty('_propsNormalised')) return;
+  const { props } = constructor;
+  keys(props).forEach(name => {
+    let func = props[name];
+    if (typeof func !== 'function') func = prop(func);
+    func({ constructor }, name);
+  });
+}
 
-// Unfortunately the polyfills still seem to double up on lifecycle calls. In
-// order to get around this, we need guards to prevent us from executing them
-// more than once for a given state.
-const _connected = sym('_connected');
-const _constructed = sym('_constructed');
+function delay(fn) {
+  if (window.Promise) {
+    Promise.resolve().then(fn);
+  } else {
+    setTimeout(fn);
+  }
+}
 
-const _observedAttributes = sym('_observedAttributes');
-const _prevProps = sym('_prevProps');
-const _props = sym('_props');
-const _updateCallback = sym('_updateCallback');
-const _updating = sym('_updating');
+function prop(definition) {
+  const propertyDefinition = definition || {};
 
-const withProps = (Base = HTMLElement) => {
-  return class extends Base {
-    static get observedAttributes() {
-      const props = normPropDefs(this);
-      return keys(props).map(k => props[k].attribute).filter(Boolean).map(a => a.source).concat(this[_observedAttributes] || []);
+  // Allows decorators, or imperative definitions.
+  const func = function ({ constructor }, name) {
+    const normalised = normalisePropertyDefinition(name, propertyDefinition);
+    const _value = sym(name);
+
+    // Ensure that we can cache properties. We have to do this so the _props object literal doesn't modify parent
+    // classes or share the instance anywhere where it's not intended to be shared explicitly in userland code.
+    if (!constructor.hasOwnProperty('_propsNormalised')) {
+      constructor._propsNormalised = {};
     }
 
-    static set observedAttributes(attrs) {
-      this[_observedAttributes] = attrs;
+    // Cache the value so we can reference when syncing the attribute to the property.
+    constructor._propsNormalised[name] = normalised;
+
+    if (normalised.attribute.source) {
+      constructor._observedAttributes.push(normalised.attribute.source);
+    }
+
+    Object.defineProperty(constructor.prototype, name, {
+      configurable: true,
+      get() {
+        const val = this[_value];
+        return val == null ? normalised.default : val;
+      },
+      set(val) {
+        this[_value] = normalised.coerce(val);
+        syncPropertyToAttribute(this, normalised.attribute.target, normalised.serialize, val);
+        this.triggerUpdate();
+      }
+    });
+  };
+
+  // Allows easy extension of pre-defined props { ...prop(), ...{} }.
+  Object.keys(propertyDefinition).forEach(key => func[key] = propertyDefinition[key]);
+
+  return func;
+}
+
+const withUpdate = (Base = HTMLElement) => {
+  var _class, _temp2;
+
+  return _temp2 = _class = class extends Base {
+    constructor(...args) {
+      var _temp;
+
+      return _temp = super(...args), this._prevProps = {}, this._prevState = {}, this._state = {}, _temp;
+    }
+
+    static get observedAttributes() {
+      // We have to define props here because observedAttributes are retrieved
+      // only once when the custom element is defined. If we did this only in
+      // the constructor, then props would not link to attributes.
+      defineProps(this);
+      return this._observedAttributes;
     }
 
     static get props() {
-      return this[_props];
+      return this._props;
     }
 
     static set props(props) {
-      this[_props] = props;
+      this._props = props;
     }
 
     get props() {
@@ -211,162 +179,126 @@ const withProps = (Base = HTMLElement) => {
       keys(props).forEach(k => k in ctorProps && (this[k] = props[k]));
     }
 
-    constructor() {
-      super();
-
-      this[_updateCallback] = () => {
-        if (this[_updating] || !this[_connected]) {
-          return;
-        }
-
-        // Flag as rendering. This prevents anything from trying to render - or
-        // queueing a render - while there is a pending render.
-        this[_updating] = true;
-
-        // Prev / next props for prop lifecycle callbacks.
-        const prev = this[_prevProps];
-        const next = this[_prevProps] = this.props;
-
-        // Always call set, but only call changed if the props updated.
-        this.propsSetCallback(next, prev);
-        if (this.propsUpdatedCallback(next, prev)) {
-          this.propsChangedCallback(next, prev);
-        }
-
-        this[_updating] = false;
-      };
-
-      if (this[_constructed]) return;
-      this[_constructed] = true;
-      const { constructor } = this;
-      defineProps(constructor);
-      this[_updateDebounced] = debounce(this[_updateCallback]);
+    get state() {
+      return this._state;
     }
 
-    connectedCallback() {
-      if (this[_connected]) return;
-      this[_connected] = true;
-      if (super.connectedCallback) super.connectedCallback();
-      this[_updateDebounced]();
-    }
-
-    disconnectedCallback() {
-      if (!this[_connected]) return;
-      this[_connected] = false;
-      if (super.disconnectedCallback) super.disconnectedCallback();
-    }
-
-    // Called when props actually change.
-    propsChangedCallback() {}
-
-    // Called whenever props are set, even if they don't change.
-    propsSetCallback() {}
-
-    // Called to see if the props changed.
-    propsUpdatedCallback(next, prev) {
-      return !prev || keys(prev).some(k => prev[k] !== next[k]);
+    set state(state) {
+      this._state = state;
+      this.triggerUpdate();
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
-      if (super.attributeChangedCallback) super.attributeChangedCallback(name, oldValue, newValue);
+      if (super.attributeChangedCallback) {
+        super.attributeChangedCallback(name, oldValue, newValue);
+      }
       syncAttributeToProperty(this, name, newValue);
     }
 
-    // Invokes the complete render lifecycle.
-  };
+    connectedCallback() {
+      if (super.connectedCallback) {
+        super.connectedCallback();
+      }
+      this.triggerUpdate();
+    }
+
+    shouldUpdate() {
+      return true;
+    }
+
+    triggerUpdate() {
+      if (this._updating) {
+        return;
+      }
+      this._updating = true;
+      delay(() => {
+        const { _prevProps, _prevState } = this;
+        if (this.updating) {
+          this.updating(_prevProps, _prevState);
+        }
+        if (this.updated && this.shouldUpdate(_prevProps, _prevState)) {
+          this.updated(_prevProps, _prevState);
+        }
+        this._prevProps = this.props;
+        this._prevState = this.state;
+        this._updating = false;
+      });
+    }
+  }, _class._observedAttributes = [], _temp2;
 };
 
-// Props
-
 const { parse, stringify } = JSON;
-const attribute = freeze({ source: true });
-const createProp = obj => freeze(_extends({ attribute }, obj));
-const nullOrType = type => val => empty(val) ? null : type(val);
+const attribute = Object.freeze({ source: true });
 const zeroOrNumber = val => empty(val) ? 0 : Number(val);
 
-const array = createProp({
+const any = prop({
+  attribute
+});
+
+const array = prop({
+  attribute,
   coerce: val => Array.isArray(val) ? val : empty(val) ? null : [val],
-  default: freeze([]),
+  default: Object.freeze([]),
   deserialize: parse,
   serialize: stringify
 });
 
-const boolean = createProp({
+const boolean = prop({
+  attribute,
   coerce: Boolean,
   default: false,
   deserialize: val => !empty(val),
   serialize: val => val ? '' : null
 });
 
-const number = createProp({
+const number = prop({
+  attribute,
   default: 0,
   coerce: zeroOrNumber,
   deserialize: zeroOrNumber,
-  serialize: nullOrType(Number)
+  serialize: val => empty(val) ? null : String(Number(val))
 });
 
-const object = createProp({
-  default: freeze({}),
+const object = prop({
+  attribute,
+  default: Object.freeze({}),
   deserialize: parse,
   serialize: stringify
 });
 
-const string = createProp({
+const string = prop({
+  attribute,
   default: '',
   coerce: String,
-  serialize: nullOrType(String)
+  serialize: val => empty(val) ? null : String(val)
 });
 
-const _shadowRoot = sym();
-
-const attachShadowOptions = { mode: 'open' };
-
-function attachShadow(elem) {
-  return elem.attachShadow ? elem.attachShadow(attachShadowOptions) : elem;
+function shadow(elem) {
+  return elem._shadowRoot || (elem._shadowRoot = elem.shadowRoot || elem.attachShadow({ mode: 'open' }));
 }
 
-const withRender = (Base = HTMLElement) => class extends Base {
-  get renderRoot() {
-    this[_shadowRoot] = this[_shadowRoot] || (this[_shadowRoot] = this.shadowRoot || attachShadow(this));
-    return this[_shadowRoot];
-  }
+const withRenderer = (Base = HTMLElement) => {
+  return class extends Base {
 
-  propsChangedCallback() {
-    this.rendererCallback(this.renderRoot, () => this.renderCallback(this));
-    this.renderedCallback();
-  }
+    get renderRoot() {
+      return super.renderRoot || shadow(this);
+    }
 
-  // Called to render the component.
-  renderCallback() {}
+    renderer(root, html) {
+      if (super.renderer) {
+        super.renderer(root, html);
+      } else {
+        root.innerHTML = html();
+      }
+    }
 
-  // Called after the component has rendered.
-  renderedCallback() {}
-};
-
-let suffix = 0;
-
-function formatName(prefix, suffix) {
-  prefix = prefix || 'element';
-  return (prefix.indexOf('-') === -1 ? `x-${prefix}` : prefix) + (suffix ? `-${suffix}` : '');
-}
-
-function generateName(Ctor) {
-  const prefix = dashCase(Ctor.name);
-  while (customElements$1.get(formatName(prefix, suffix))) {
-    suffix++;
-  }
-  return formatName(prefix, suffix++);
-}
-
-const _is = sym('_is');
-
-const withUnique = (Base = HTMLElement) => class extends Base {
-  static get is() {
-    return this[_is] || (this[_is] = generateName(this));
-  }
-  static set is(is) {
-    this[_is] = is;
-  }
+    updated(...args) {
+      super.updated && super.updated(...args);
+      this.rendering && this.rendering();
+      this.renderer(this.renderRoot, () => this.render && this.render(this));
+      this.rendered && this.rendered();
+    }
+  };
 };
 
 /**
@@ -1652,13 +1584,13 @@ function postEvent(event, inst, handle) {
   });
 }
 
-const withComponent = (Base = HTMLElement) => class extends withUnique(withRender(withProps(Base))) {
+const withComponent = (Base = HTMLElement) => class extends withRenderer(withUpdate(Base)) {
   constructor() {
     super();
     this._handlers = Object.create(null);
   }
 
-  rendererCallback (shadowRoot, renderCallback) {
+  renderer(shadowRoot, renderCallback) {
     this._worker.postMessage({
       type: RENDER,
       tag: this.localName,
@@ -1740,7 +1672,7 @@ function define(fritz, msg) {
     }
 
     disconnectedCallback() {
-      super.disconnectedCallback();
+      if(super.disconnectedCallback) super.disconnectedCallback();
       delInstance(fritz, this._id);
       events.forEach(eventName => {
         this.shadowRoot.removeEventListener(eventName, this);
@@ -1776,7 +1708,7 @@ function trigger(fritz, msg) {
     composed: ev.composed
   });
 
-  inst.dispatchEvent(event);  
+  inst.dispatchEvent(event);
 }
 
 function sendState(fritz, worker) {
