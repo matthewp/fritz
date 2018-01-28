@@ -33,7 +33,10 @@ function define(tag, constructor) {
     type: DEFINE,
     tag: tag,
     props: constructor.props,
-    events: constructor.events
+    events: constructor.events,
+    features: {
+      mount: !!constructor.prototype.componentDidMount
+    }
   });
 }
 

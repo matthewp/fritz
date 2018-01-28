@@ -22,10 +22,6 @@ class MathEl extends Component {
 fritz.define('math-el', MathEl);
 
 class BasicApp extends Component {
-  componentDidMount() {
-    this.dispatch({ type: 'rendered' });
-  }
-
   render() {
     return h('div', {id:'root'}, [
       'Hello world!',

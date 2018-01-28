@@ -1,46 +1,20 @@
-import { Component } from './component.js';
-import { DESTROY } from '../message-types.js';
-import { getInstance, setInstance, delInstance } from '../util.js';
+import { withComponent } from './component.js';
+import { withWorkerConnection } from './with-worker-connection.js';
+import { getInstance } from '../util.js';
 
 export function define(fritz, msg) {
   let worker = this;
   let tagName = msg.tag;
   let props = msg.props || {};
   let events = msg.events || [];
+  let features = msg.features;
 
-  class OffThreadElement extends Component {
-    static get props() {
-      return props;
-    }
+  let Element = withWorkerConnection(
+    fritz, events, props, worker,
+    withComponent(features)
+  );
 
-    constructor() {
-      super();
-      this._worker = worker;
-      this._id = ++fritz._id;
-    }
-
-    connectedCallback() {
-      super.connectedCallback();
-      setInstance(fritz, this._id, this);
-      events.forEach(eventName => {
-        this.shadowRoot.addEventListener(eventName, this);
-      });
-    }
-
-    disconnectedCallback() {
-      if(super.disconnectedCallback) super.disconnectedCallback();
-      delInstance(fritz, this._id);
-      events.forEach(eventName => {
-        this.shadowRoot.removeEventListener(eventName, this);
-      });
-      this._worker.postMessage({
-        type: DESTROY,
-        id: this._id
-      });
-    }
-  }
-
-  customElements.define(tagName, OffThreadElement);
+  customElements.define(tagName, Element);
 };
 
 export function render(fritz, msg) {
