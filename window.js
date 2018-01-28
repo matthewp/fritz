@@ -267,33 +267,166 @@ const string = prop({
   serialize: val => empty(val) ? null : String(val)
 });
 
-function shadow(elem) {
-  return elem._shadowRoot || (elem._shadowRoot = elem.shadowRoot || elem.attachShadow({ mode: 'open' }));
+const DEFINE = 'define';
+const TRIGGER = 'trigger';
+const RENDER = 'render';
+const EVENT = 'event';
+const STATE = 'state';
+const DESTROY = 'destroy';
+const RENDERED = 'rendered';
+
+let currentComponent;
+
+function setComponent(component) {
+  let previousComponent = currentComponent;
+  setComponentTo(component);
+  return setComponentTo.bind(null, previousComponent);
 }
 
-const withRenderer = (Base = HTMLElement) => {
-  return class extends Base {
+function setComponentTo(component) {
+  currentComponent = component;
+}
 
-    get renderRoot() {
-      return super.renderRoot || shadow(this);
+/**
+ * The algorithm to determine when mounted is:
+ * 1. When a component is updated, it and parents are updating
+ * 2. When children have rendered, parent is done.
+ * 3. If no children, parent done after own render.
+ */
+
+function withMount(Base) {
+  return class extends Base {
+    constructor() {
+      super();
+      this._resetComponent = Function.prototype; // placeholder
+      this._parentComponent = currentComponent;
+      this._renderCount = 0;
+      this._hasChildComponents = false;
+      this._amMounted = false;
     }
 
-    renderer(root, html) {
-      if (super.renderer) {
-        super.renderer(root, html);
-      } else {
-        root.innerHTML = html();
+    connectedCallback() {
+      if(super.connectedCallback) super.connectedCallback();
+      if(this._parentComponent) {
+        this._parentComponent._hasChildComponents = true;
       }
     }
 
-    updated(...args) {
-      super.updated && super.updated(...args);
-      this.rendering && this.rendering();
-      this.renderer(this.renderRoot, () => this.render && this.render(this));
-      this.rendered && this.rendered();
+    disconnectedCallback() {
+      if(super.disconnectedCallback) super.disconnectedCallback();
+      this._amMounted = false;
     }
-  };
-};
+
+    renderer() {
+      if(super.renderer) super.renderer();
+      this._renderCount = 0;
+      if(this._parentComponent) {
+        this._parentComponent._incrementRender();
+      }
+    }
+
+    beforeRender() {
+      this._resetComponent = setComponent(this);
+    }
+
+    afterRender() {
+      this._resetComponent();
+      this._resetComponent = Function.prototype;
+
+      if(!this._amMounted && !this._hasChildComponents) {
+        this._checkIfRendered();
+      }
+    }
+
+    _incrementRender() {
+      this._renderCount++;
+    }
+
+    _decrementRender() {
+      this._renderCount--;
+      this._checkIfRendered();
+    }
+
+    _checkIfRendered() {
+      if(this._amMounted) return;
+
+      if(this._renderCount === 0) {
+        this._amMounted = true;
+        this._worker.postMessage({
+          type: RENDERED,
+          id: this._id
+        });
+
+        if(this._parentComponent) {
+          this._parentComponent._decrementRender();
+        }
+      }
+    }
+  }
+}
+
+function postEvent(event, inst, handle) {
+  let worker = inst._worker;
+  let id = inst._id;
+  worker.postMessage({
+    type: EVENT,
+    event: {
+      type: event.type,
+      detail: event.detail,
+      value: event.target.value
+    },
+    id: id,
+    handle: handle,
+  });
+}
+
+function withWorkerEvents(Base = HTMLElement) {
+  return class extends Base {
+    constructor() {
+      super();
+      this._handlers = Object.create(null);
+    }
+
+    addEventCallback(handleId, eventProp) {
+      var key = eventProp + '/' + handleId;
+      var fn;
+      if(fn = this._handlers[key]) {
+        return fn;
+      }
+
+      // TODO optimize this so functions are reused if possible.
+      var self = this;
+      fn = function(ev){
+        ev.preventDefault();
+        postEvent(ev, self, handleId);
+      };
+      this._handlers[key] = fn;
+      return fn;
+    }
+
+    addEventProperty(name) {
+      var evName = name.substr(2);
+      var priv = '_' + name;
+      var proto = Object.getPrototypeOf(this);
+      Object.defineProperty(proto, name, {
+        get: function(){ return this[priv]; },
+        set: function(val) {
+          var cur;
+          if(cur = this[priv]) {
+            this.removeEventListener(evName, cur);
+          }
+          this[priv] = val;
+          this.addEventListener(evName, val);
+        }
+      });
+    }
+
+    handleEvent(ev) {
+      ev.preventDefault();
+      postEvent(ev, this);
+    }
+  }
+}
 
 /**
  * @license
@@ -1556,105 +1689,79 @@ function idomRender(vdom, root, component) {
   patch(root, () => render$1(vdom, component));
 }
 
-const DEFINE = 'define';
-const TRIGGER = 'trigger';
-const RENDER = 'render';
-const EVENT = 'event';
-const STATE = 'state';
-const DESTROY = 'destroy';
-
-function postEvent(event, inst, handle) {
-  let worker = inst._worker;
-  let id = inst._id;
-  worker.postMessage({
-    type: EVENT,
-    event: {
-      type: event.type,
-      detail: event.detail,
-      value: event.target.value
-    },
-    id: id,
-    handle: handle,
-  });
+function shadow(elem) {
+  return elem._shadowRoot || (elem._shadowRoot = elem.shadowRoot || elem.attachShadow({ mode: 'open' }));
 }
 
-const withComponent = (Base = HTMLElement) => class extends withRenderer(withUpdate(Base)) {
-  constructor() {
-    super();
-    this._handlers = Object.create(null);
-  }
+const withRenderer = (Base = HTMLElement) => {
+  return class extends Base {
 
-  renderer(shadowRoot, renderCallback) {
-    this._worker.postMessage({
-      type: RENDER,
-      tag: this.localName,
-      id: this._id,
-      props: this.props
-    });
-  }
-
-  doRenderCallback(vdom) {
-    let shadowRoot = this.shadowRoot;
-    idomRender(vdom, shadowRoot, this);
-  }
-
-  addEventCallback(handleId, eventProp) {
-    var key = eventProp + '/' + handleId;
-    var fn;
-    if(fn = this._handlers[key]) {
-      return fn;
+    get renderRoot() {
+      return super.renderRoot || shadow(this);
     }
 
-    // TODO optimize this so functions are reused if possible.
-    var self = this;
-    fn = function(ev){
-      ev.preventDefault();
-      postEvent(ev, self, handleId);
-    };
-    this._handlers[key] = fn;
-    return fn;
-  }
-
-  addEventProperty(name) {
-    var evName = name.substr(2);
-    var priv = '_' + name;
-    var proto = Object.getPrototypeOf(this);
-    Object.defineProperty(proto, name, {
-      get: function(){ return this[priv]; },
-      set: function(val) {
-        var cur;
-        if(cur = this[priv]) {
-          this.removeEventListener(evName, cur);
-        }
-        this[priv] = val;
-        this.addEventListener(evName, val);
+    renderer(root, html) {
+      if (super.renderer) {
+        super.renderer(root, html);
+      } else {
+        root.innerHTML = html();
       }
-    });
-  }
+    }
 
-  handleEvent(ev) {
-    ev.preventDefault();
-    postEvent(ev, this);
-  }
+    updated(...args) {
+      super.updated && super.updated(...args);
+      this.rendering && this.rendering();
+      this.renderer(this.renderRoot, () => this.render && this.render(this));
+      this.rendered && this.rendered();
+    }
+  };
 };
 
-const Component = withComponent();
+function withWorkerRender(Base = HTMLElement) {
+  return class extends withRenderer(Base) {
+    renderer() {
+      this._worker.postMessage({
+        type: RENDER,
+        tag: this.localName,
+        id: this._id,
+        props: this.props
+      });
+    }
 
-function define(fritz, msg) {
-  let worker = this;
-  let tagName = msg.tag;
-  let props = msg.props || {};
-  let events = msg.events || [];
+    beforeRender() {}
+    afterRender() {}
 
-  class OffThreadElement extends Component {
+    doRenderCallback(vdom) {
+      this.beforeRender();
+      let shadowRoot = this.shadowRoot;
+      idomRender(vdom, shadowRoot, this);
+      this.afterRender();
+    }
+  }
+}
+
+function withComponent(options) {
+  let Base = withWorkerRender(withUpdate(HTMLElement));
+
+  Base = withWorkerEvents(Base);
+
+  if(options.mount) {
+    Base = withMount(Base);
+  }
+
+  return Base;
+}
+
+function withWorkerConnection(fritz, events, props, worker, Base) {
+  return class extends Base {
     static get props() {
       return props;
     }
 
     constructor() {
       super();
-      this._worker = worker;
       this._id = ++fritz._id;
+      this._worker = worker;
     }
 
     connectedCallback() {
@@ -1677,8 +1784,21 @@ function define(fritz, msg) {
       });
     }
   }
+}
 
-  customElements.define(tagName, OffThreadElement);
+function define(fritz, msg) {
+  let worker = this;
+  let tagName = msg.tag;
+  let props = msg.props || {};
+  let events = msg.events || [];
+  let features = msg.features;
+
+  let Element = withWorkerConnection(
+    fritz, events, props, worker,
+    withComponent(features)
+  );
+
+  customElements.define(tagName, Element);
 }
 
 function render(fritz, msg) {

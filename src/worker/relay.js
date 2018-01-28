@@ -1,5 +1,5 @@
-import { render, trigger, destroy } from './lifecycle.js';
-import { RENDER, EVENT, STATE, DESTROY } from '../message-types.js';
+import { render, trigger, destroy, rendered } from './lifecycle.js';
+import { RENDER, EVENT, STATE, DESTROY, RENDERED } from '../message-types.js';
 
 let hasListened = false;
 
@@ -21,6 +21,9 @@ export default function relay(fritz) {
           break;
         case DESTROY:
           destroy(fritz, msg);
+          break;
+        case RENDERED:
+          rendered(fritz, msg);
           break;
       }
     });
