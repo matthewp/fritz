@@ -1568,6 +1568,65 @@ const RENDER = 'render';
 const EVENT = 'event';
 const STATE = 'state';
 const DESTROY = 'destroy';
+const RENDERED = 'rendered';
+
+let currentComponent;
+
+function setComponent(component) {
+  let previousComponent = currentComponent;
+  setComponentTo(component);
+  return setComponentTo.bind(null, previousComponent);
+}
+
+function setComponentTo(component) {
+  currentComponent = component;
+}
+
+function withMounting(Base) {
+  return class extends Base {
+    constructor() {
+      super();
+      this._resetComponent = Function.prototype; // placeholder
+      this._parentComponent = currentComponent;
+      this._renderCount = 0;
+    }
+
+    renderer() {
+      this._renderCount = 0;
+      if(this._parentComponent) {
+        this._parentComponent._incrementRender();
+      }
+    }
+
+    beforeRender() {
+      this._resetComponent = setComponent(this);
+    }
+
+    afterRender() {
+      this._resetComponent();
+      this._resetComponent = Function.prototype;
+
+      if(this._parentComponent) {
+        this._parentComponent._decrementRender();
+      }
+    }
+
+    _incrementRender() {
+      this._renderCount++;
+    }
+
+    _decrementRender() {
+      this._renderCount--;
+
+      if(this._renderCount === 0) {
+        this._worker.postMessage({
+          type: RENDERED,
+          id: this._id
+        });
+      }
+    }
+  }
+}
 
 function postEvent(event, inst, handle) {
   let worker = inst._worker;
@@ -1584,65 +1643,70 @@ function postEvent(event, inst, handle) {
   });
 }
 
-const withComponent = (Base = HTMLElement) => class extends withRenderer(withUpdate(Base)) {
-  constructor() {
-    super();
-    this._handlers = Object.create(null);
-  }
+function withComponent(Base = HTMLElement) {
+  return class extends withMounting(withRenderer(withUpdate(Base))) {
+    constructor() {
+      super();
+      this._handlers = Object.create(null);
+    }
 
-  renderer(shadowRoot, renderCallback) {
-    this._worker.postMessage({
-      type: RENDER,
-      tag: this.localName,
-      id: this._id,
-      props: this.props
-    });
-  }
+    renderer() {
+      super.renderer();
+      this._worker.postMessage({
+        type: RENDER,
+        tag: this.localName,
+        id: this._id,
+        props: this.props
+      });
+    }
 
-  doRenderCallback(vdom) {
-    let shadowRoot = this.shadowRoot;
-    idomRender(vdom, shadowRoot, this);
-  }
+    doRenderCallback(vdom) {
+      this.beforeRender();
+      let shadowRoot = this.shadowRoot;
+      idomRender(vdom, shadowRoot, this);
+      this.afterRender();
+    }
 
-  addEventCallback(handleId, eventProp) {
-    var key = eventProp + '/' + handleId;
-    var fn;
-    if(fn = this._handlers[key]) {
+    addEventCallback(handleId, eventProp) {
+      var key = eventProp + '/' + handleId;
+      var fn;
+      if(fn = this._handlers[key]) {
+        return fn;
+      }
+
+      // TODO optimize this so functions are reused if possible.
+      var self = this;
+      fn = function(ev){
+        ev.preventDefault();
+        postEvent(ev, self, handleId);
+      };
+      this._handlers[key] = fn;
       return fn;
     }
 
-    // TODO optimize this so functions are reused if possible.
-    var self = this;
-    fn = function(ev){
-      ev.preventDefault();
-      postEvent(ev, self, handleId);
-    };
-    this._handlers[key] = fn;
-    return fn;
-  }
-
-  addEventProperty(name) {
-    var evName = name.substr(2);
-    var priv = '_' + name;
-    var proto = Object.getPrototypeOf(this);
-    Object.defineProperty(proto, name, {
-      get: function(){ return this[priv]; },
-      set: function(val) {
-        var cur;
-        if(cur = this[priv]) {
-          this.removeEventListener(evName, cur);
+    addEventProperty(name) {
+      var evName = name.substr(2);
+      var priv = '_' + name;
+      var proto = Object.getPrototypeOf(this);
+      Object.defineProperty(proto, name, {
+        get: function(){ return this[priv]; },
+        set: function(val) {
+          var cur;
+          if(cur = this[priv]) {
+            this.removeEventListener(evName, cur);
+          }
+          this[priv] = val;
+          this.addEventListener(evName, val);
         }
-        this[priv] = val;
-        this.addEventListener(evName, val);
-      }
-    });
-  }
+      });
+    }
 
-  handleEvent(ev) {
-    ev.preventDefault();
-    postEvent(ev, this);
+    handleEvent(ev) {
+      ev.preventDefault();
+      postEvent(ev, this);
+    }
   }
-};
+}
 
 const Component = withComponent();
 

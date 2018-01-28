@@ -60,3 +60,8 @@ export function destroy(fritz, msg){
   instance._fritzHandles = Object.create(null);
   delInstance(fritz, msg.id);
 };
+
+export function rendered(fritz, msg) {
+  let instance = getInstance(fritz, msg.id);
+  instance.componentDidMount();
+};

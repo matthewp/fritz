@@ -27,6 +27,11 @@
             assert.equal(div.textContent, 'Hello world!');
           });
 
+          it('componentDidMount was called', function(){
+            let el = doc.querySelector('#result');
+            assert.equal(el.textContent, 'loaded');
+          });
+
           it('Renders subelements using the constructor', function(){
             let el = doc.querySelector('basic-app');
             let nested = el.shadowRoot.querySelector('another-el');

@@ -30,6 +30,7 @@ const RENDER = 'render';
 const EVENT = 'event';
 const STATE = 'state';
 const DESTROY = 'destroy';
+const RENDERED = 'rendered';
 
 let currentInstance = null;
 
@@ -323,6 +324,11 @@ function destroy(fritz, msg){
   delInstance(fritz, msg.id);
 }
 
+function rendered(fritz, msg) {
+  let instance = getInstance(fritz, msg.id);
+  instance.componentDidMount();
+}
+
 let hasListened = false;
 
 function relay(fritz) {
@@ -343,6 +349,9 @@ function relay(fritz) {
           break;
         case DESTROY:
           destroy(fritz, msg);
+          break;
+        case RENDERED:
+          rendered(fritz, msg);
           break;
       }
     });
