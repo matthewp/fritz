@@ -363,7 +363,8 @@ function define(tag, constructor) {
   if(constructor === undefined) {
     throw new Error('fritz.define expects 2 arguments');
   }
-  if(constructor.prototype.render === undefined) {
+  if(constructor.prototype === undefined ||
+    constructor.prototype.render === undefined) {
     let render = constructor;
     constructor = class extends Component{};
     constructor.prototype.render = render;

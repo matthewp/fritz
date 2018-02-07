@@ -1646,7 +1646,7 @@ var attributesSet = attributes_1[symbols_1.default];
 attributes_1[symbols_1.default] = preferProps;
 
 function preferProps(element, name, value){
-  if(name in element)
+  if(name in element && element.localName !== 'svg')
     element[name] = value;
   else if(isFunction(value) && eventAttrExp.test(name) &&
     isFunction(element.addEventProperty)) {
