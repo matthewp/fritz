@@ -42,6 +42,13 @@
             let inner = mathel.shadowRoot.firstChild;
             assert.equal(inner.textContent, '15 of 15');
           });
+
+          it('renders svg', function(){
+            let el = doc.querySelector('basic-app');
+            let loading = el.shadowRoot.querySelector('loading-indicator');
+            let svg = loading.shadowRoot.firstChild;
+            assert.ok(svg.hasAttribute('viewBox'), 'has the viewBox');
+          })
         });
       </script>
     </template>
