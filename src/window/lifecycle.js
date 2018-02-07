@@ -21,9 +21,6 @@ export function render(fritz, msg) {
   let instance = getInstance(fritz, msg.id);
   if(instance !== undefined) {
     instance.doRenderCallback(msg.tree);
-    if(msg.events) {
-      instance.observedEventsCallback(msg.events);
-    }
   }
 };
 

@@ -382,7 +382,7 @@ function postEvent(event, inst, handle) {
       value: event.target.value
     },
     id: id,
-    handle: handle,
+    handle: handle
   });
 }
 
@@ -1725,6 +1725,13 @@ const withRenderer = (Base = HTMLElement) => {
 
 function withWorkerRender(Base = HTMLElement) {
   return class extends withRenderer(Base) {
+    constructor() {
+      super();
+      if(!this.shadowRoot) {
+        this.attachShadow({ mode: 'open' });
+      }
+    }
+
     renderer() {
       this._worker.postMessage({
         type: RENDER,
@@ -1811,9 +1818,6 @@ function render(fritz, msg) {
   let instance = getInstance(fritz, msg.id);
   if(instance !== undefined) {
     instance.doRenderCallback(msg.tree);
-    if(msg.events) {
-      instance.observedEventsCallback(msg.events);
-    }
   }
 }
 

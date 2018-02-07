@@ -4,6 +4,13 @@ import { RENDER } from '../message-types.js';
 
 export function withWorkerRender(Base = HTMLElement) {
   return class extends withRenderer(Base) {
+    constructor() {
+      super();
+      if(!this.shadowRoot) {
+        this.attachShadow({ mode: 'open' });
+      }
+    }
+
     renderer() {
       this._worker.postMessage({
         type: RENDER,

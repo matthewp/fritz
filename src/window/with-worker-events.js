@@ -11,7 +11,7 @@ function postEvent(event, inst, handle) {
       value: event.target.value
     },
     id: id,
-    handle: handle,
+    handle: handle
   });
 }
 
