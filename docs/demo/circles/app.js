@@ -1,4 +1,4 @@
-importScripts('../../worker.umd.js');
+importScripts('../../../worker.umd.js');
 importScripts('./styles.js');
 
 const { h, Component } = fritz;
@@ -22,7 +22,7 @@ function Box(num, count) {
 }
 
 class CirclesDemo extends Component {
-  static get observedEvents() {
+  static get events() {
     return ['submit'];
   }
 

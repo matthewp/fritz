@@ -1,9 +1,9 @@
-importScripts('../../worker.umd.js');
+importScripts('../../../worker.umd.js');
 
 const { h, Component } = fritz;
 
 class CounterForm extends Component {
-  static get observedEvents() {
+  static get events() {
     return ['submit'];
   }
 
@@ -20,12 +20,13 @@ class CounterForm extends Component {
 
 fritz.define('counter-form', CounterForm);
 
-class ClickCounter {
-  static get observedEvents() {
+class ClickCounter extends Component {
+  static get events() {
     return ['change'];
   }
 
   constructor() {
+    super();
     this.count = 0;
   }
 

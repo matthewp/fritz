@@ -7,7 +7,6 @@ export function render(fritz, msg) {
   let props = msg.props || {};
 
   let instance = getInstance(fritz, id);
-  let events;
   if(!instance) {
     let constructor = fritz._tags[msg.tag];
     instance = new constructor();
@@ -36,7 +35,8 @@ export function trigger(fritz, msg){
   if(msg.handle != null) {
     method = Handle.get(msg.handle).fn;
   } else {
-    let methodName = 'on' + msg.name[0].toUpperCase() + msg.name.substr(1);
+    let name = msg.event.type;
+    let methodName = 'on' + name[0].toUpperCase() + name.substr(1);
     method = inst[methodName];
   }
 
