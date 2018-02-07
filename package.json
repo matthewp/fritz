@@ -1,6 +1,6 @@
 {
   "name": "fritz",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "Create web components that run in a Web Worker",
   "main": "worker.umd.js",
   "jsnext:main": "worker.js",
