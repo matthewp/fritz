@@ -20,12 +20,6 @@ function keys(obj) {
   return Object.getOwnPropertySymbols ? names.concat(Object.getOwnPropertySymbols(obj)) : names;
 }
 
-let symbolCount = 0;
-function sym(description) {
-  description = String(description || ++symbolCount);
-  return typeof Symbol === 'function' ? Symbol(description) : `__skate_${description}`;
-}
-
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 function normaliseAttributeDefinition(name, prop) {
@@ -54,34 +48,6 @@ function normalisePropertyDefinition(name, prop) {
   };
 }
 
-function syncAttributeToProperty(elem, name, value) {
-  if (elem._syncingPropertyToAttribute) {
-    return;
-  }
-  const propDefs = elem.constructor._propsNormalised;
-  for (let propName in propDefs) {
-    const { attribute: { source }, deserialize } = propDefs[propName];
-    if (source === name) {
-      elem._syncingAttributeToProperty = propName;
-      elem[propName] = value == null ? value : deserialize(value);
-      elem._syncingAttributeToProperty = null;
-    }
-  }
-}
-
-function syncPropertyToAttribute(elem, target, serialize, val) {
-  if (target && elem._syncingAttributeToProperty !== target) {
-    const serialized = serialize(val);
-    elem._syncingPropertyToAttribute = true;
-    if (serialized == null) {
-      elem.removeAttribute(target);
-    } else {
-      elem.setAttribute(target, serialized);
-    }
-    elem._syncingPropertyToAttribute = false;
-  }
-}
-
 function defineProps(constructor) {
   if (constructor.hasOwnProperty('_propsNormalised')) return;
   const { props } = constructor;
@@ -106,7 +72,6 @@ function prop(definition) {
   // Allows decorators, or imperative definitions.
   const func = function ({ constructor }, name) {
     const normalised = normalisePropertyDefinition(name, propertyDefinition);
-    const _value = sym(name);
 
     // Ensure that we can cache properties. We have to do this so the _props object literal doesn't modify parent
     // classes or share the instance anywhere where it's not intended to be shared explicitly in userland code.
@@ -116,20 +81,33 @@ function prop(definition) {
 
     // Cache the value so we can reference when syncing the attribute to the property.
     constructor._propsNormalised[name] = normalised;
+    const { attribute: { source, target } } = normalised;
 
-    if (normalised.attribute.source) {
-      constructor._observedAttributes.push(normalised.attribute.source);
+    if (source) {
+      constructor._observedAttributes.push(source);
+      constructor._attributeToPropertyMap[source] = name;
+      if (source !== target) {
+        constructor._attributeToAttributeMap[source] = target;
+      }
     }
 
     Object.defineProperty(constructor.prototype, name, {
       configurable: true,
       get() {
-        const val = this[_value];
+        const val = this._props[name];
         return val == null ? normalised.default : val;
       },
       set(val) {
-        this[_value] = normalised.coerce(val);
-        syncPropertyToAttribute(this, normalised.attribute.target, normalised.serialize, val);
+        const { attribute: { target }, serialize } = normalised;
+        if (target) {
+          const serializedVal = serialize ? serialize(val) : val;
+          if (serializedVal == null) {
+            this.removeAttribute(target);
+          } else {
+            this.setAttribute(target, serializedVal);
+          }
+        }
+        this._props[name] = normalised.coerce(val);
         this.triggerUpdate();
       }
     });
@@ -148,7 +126,7 @@ const withUpdate = (Base = HTMLElement) => {
     constructor(...args) {
       var _temp;
 
-      return _temp = super(...args), this._prevProps = {}, this._prevState = {}, this._state = {}, _temp;
+      return _temp = super(...args), this._prevProps = {}, this._prevState = {}, this._props = {}, this._state = {}, _temp;
     }
 
     static get observedAttributes() {
@@ -189,10 +167,34 @@ const withUpdate = (Base = HTMLElement) => {
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
+      const {
+        _attributeToAttributeMap,
+        _attributeToPropertyMap,
+        props
+      } = this.constructor;
+
       if (super.attributeChangedCallback) {
         super.attributeChangedCallback(name, oldValue, newValue);
       }
-      syncAttributeToProperty(this, name, newValue);
+
+      const propertyName = _attributeToPropertyMap[name];
+      if (propertyName) {
+        const propertyDefinition = props[propertyName];
+        if (propertyDefinition) {
+          const { default: defaultValue, deserialize } = propertyDefinition;
+          const propertyValue = deserialize ? deserialize(newValue) : newValue;
+          this._props[propertyName] = propertyValue == null ? defaultValue : propertyValue;
+        }
+      }
+
+      const targetAttributeName = _attributeToAttributeMap[name];
+      if (targetAttributeName) {
+        if (newValue == null) {
+          this.removeAttribute(targetAttributeName);
+        } else {
+          this.setAttribute(targetAttributeName, newValue);
+        }
+      }
     }
 
     connectedCallback() {
@@ -224,7 +226,7 @@ const withUpdate = (Base = HTMLElement) => {
         this._updating = false;
       });
     }
-  }, _class._observedAttributes = [], _temp2;
+  }, _class._attributeToAttributeMap = {}, _class._attributeToPropertyMap = {}, _class._observedAttributes = [], _class._props = {}, _temp2;
 };
 
 const { parse, stringify } = JSON;
@@ -1710,7 +1712,7 @@ const withRenderer = (Base = HTMLElement) => {
       if (super.renderer) {
         super.renderer(root, html);
       } else {
-        root.innerHTML = html();
+        root.innerHTML = html() || '';
       }
     }
 
