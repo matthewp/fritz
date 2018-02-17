@@ -14,7 +14,7 @@ var attributesSet = attributes[symbols.default];
 attributes[symbols.default] = preferProps;
 
 function preferProps(element, name, value){
-  if(name in element && element.localName !== 'svg')
+  if(name in element && !isSVG(element))
     element[name] = value;
   else if(isFunction(value) && eventAttrExp.test(name) &&
     isFunction(element.addEventProperty)) {
@@ -23,6 +23,10 @@ function preferProps(element, name, value){
   }
   else
     attributesSet(element, name, value);
+}
+
+function isSVG(element) {
+  return element.namespaceURI === 'http://www.w3.org/2000/svg';
 }
 
 const TAG = 1;
