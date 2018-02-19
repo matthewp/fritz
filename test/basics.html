@@ -48,7 +48,21 @@
             let loading = el.shadowRoot.querySelector('loading-indicator');
             let svg = loading.shadowRoot.firstChild;
             assert.ok(svg.hasAttribute('viewBox'), 'has the viewBox');
-          })
+          });
+
+          it('renders children that are numbers', function(){
+            let root = doc.querySelector('basic-app').shadowRoot;
+            let el = root.querySelector('typed-el').shadowRoot;
+            let val = el.querySelector('.c-number').firstChild.nodeValue;
+            assert.equal(val, '27', 'printed the string 27');
+          });
+
+          it('renders children that are booleans', function(){
+            let root = doc.querySelector('basic-app').shadowRoot;
+            let el = root.querySelector('typed-el').shadowRoot;
+            let val = el.querySelector('.c-boolean').firstChild.nodeValue;
+            assert.equal(val, 'false', 'printed the string false');
+          });
         });
       </script>
     </template>
