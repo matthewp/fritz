@@ -188,14 +188,14 @@ function createTree() {
 }
 
 function h(tag, attrs, children){
-  const argsLen = arguments.length;
+  var argsLen = arguments.length;
+  var childrenType = typeof children;
   if(argsLen === 2) {
     if(typeof attrs !== 'object' || Array.isArray(attrs)) {
       children = attrs;
       attrs = null;
     }
-  } else if(argsLen > 3 || isTree(children) ||
-    typeof children === 'string') {
+  } else if(argsLen > 3 || isTree(children) || isPrimitive(childrenType)) {
     children = Array.prototype.slice.call(arguments, 2);
   }
 
@@ -257,6 +257,10 @@ function h(tag, attrs, children){
   tree.push([2, tag]);
 
   return tree;
+}
+
+function isPrimitive(type) {
+  return type === 'string' || type === 'number' || type === 'boolean';
 }
 
 function render$1(fritz, msg) {

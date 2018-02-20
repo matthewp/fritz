@@ -28,12 +28,24 @@ class MathEl extends Component {
 
 fritz.define('math-el', MathEl);
 
+class TypedEl extends Component {
+  render() {
+    return h('div', {}, [
+      h('div', {'class':'c-number'}, 27),
+      h('div', {'class':'c-boolean'}, false),
+    ]);
+  }
+}
+
+fritz.define('typed-el', TypedEl);
+
 class BasicApp extends Component {
   render() {
     return h('div', {id:'root'}, [
       'Hello world!',
       h(AnotherEl),
       h(MathEl),
+      h(TypedEl),
       h('loading-indicator')
     ]);
   }
