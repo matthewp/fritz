@@ -1,4 +1,4 @@
-import { withUpdate } from 'skatejs/dist/esnext/with-update';
+import { withUpdate } from '@matthewp/skatejs/dist/esnext/with-update';
 import { withMount } from './with-mount.js';
 import { withWorkerEvents } from './with-worker-events.js';
 import { withWorkerRender } from './with-worker-render.js';

@@ -1,5 +1,5 @@
 import { idomRender as render } from './idom-render.js';
-import { withRenderer } from 'skatejs/dist/esnext/with-renderer';
+import { withRenderer } from '@matthewp/skatejs/dist/esnext/with-renderer';
 import { RENDER } from '../message-types.js';
 
 export function withWorkerRender(Base = HTMLElement) {

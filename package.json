@@ -50,7 +50,7 @@
     "rollup-plugin-node-resolve": "^2.0.0",
     "rollup-plugin-replace": "^1.1.1",
     "rollup-plugin-string": "^2.0.2",
-    "skatejs": "^5.0.0",
+    "@matthewp/skatejs": "^5.1.1",
     "sw-precache": "^5.2.0",
     "testee": "^0.3.0"
   }
