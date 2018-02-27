@@ -1,5 +1,6 @@
 import { RENDER } from '../message-types.js';
 import { defer } from '../util.js';
+import { diff } from './diff/diff.js';
 
 export let currentInstance = null;
 
@@ -39,7 +40,9 @@ function render(instance, sentProps) {
 
     // Diffing
     let vnode = renderInstance(instance);
+    currentInstance = instance;
     let changeList = diff(instance._vnode, vnode);
+    currentInstance = null;
     instance._vnode = vnode;
 
     postMessage({

@@ -3,11 +3,13 @@
 // import { buildComponentFromVNode } from './component';
 // import { createNode, setAccessor } from '../dom/index';
 import { createNode } from './dom.js';
-import { VNode } from '../vnode.js';
+import { VNode } from './vnode.js';
 import { PatchOp } from './patch-op.js';
+import signal from '../signal.js';
 import {
 	CREATE_ELEMENT,
-	SET_ATTR
+	SET_ATTR,
+	ADD_EVENT
 } from '../../opcodes.js';
 // import { unmountComponent } from './component';
 // import options from '../options';
@@ -16,7 +18,7 @@ import {
 const ATTR_KEY = Symbol('fritz.attrkey');
 
 function isNamedNode(node, nodeName) {
-	return node.normalizedNodeName===nodeName || (node.nodeName && 
+	return node.normalizedNodeName===nodeName || (node.nodeName &&
 		node.nodeName.toLowerCase()===nodeName.toLowerCase());
 }
 
@@ -98,9 +100,10 @@ function idiff(dom, vnode, context, mountAll, componentRoot, patch, indices) {
 	// If there's no existing element or it's the wrong type, create a new one:
 	vnodeName = String(vnodeName);
 	if (!dom || !isNamedNode(dom, vnodeName)) {
-		debugger;
+		//debugger;
 		patch.add(CREATE_ELEMENT, indices, [1, vnodeName]);
 		out = createNode(vnodeName);
+		out.patchAdded = true;
 
 		if (dom) {
 			// move children into the replacement node
@@ -215,10 +218,13 @@ function innerDiffNode(dom, vchildren, context, mountAll, patch, indices) {
 
 				if (f==null) {
 					//dom.appendChild(child);
-					if(child.nodeValue)
-						patch.add(CREATE_ELEMENT, childIndice, [3, child.nodeValue]);
-					else
-						patch.add(CREATE_ELEMENT, childIndice, [1, child.nodeName]);
+					if(!child.patchAdded) {
+						if(child.nodeValue)
+							patch.add(CREATE_ELEMENT, childIndice, [3, child.nodeValue]);
+						else if(!child.patchAdded)
+							patch.add(CREATE_ELEMENT, childIndice, [1, child.nodeName]);
+					}
+
 					append(dom, child);
 				}
 				else if (child===f.nextSibling) {
@@ -305,7 +311,13 @@ function diffAttributes(dom, attrs, old, patch, indices) {
 	for (name in attrs) {
 		if (name!=='children' && name!=='innerHTML' && (!(name in old) || attrs[name]!==(name==='value' || name==='checked' ? dom[name] : old[name]))) {
 			//setAccessor(dom, name, old[name], old[name] = attrs[name]);
-			patch.add(SET_ATTR, indices, [name, attrs[name]]);
+			let attrValue = attrs[name];
+			let eventInfo = signal(dom.nodeName, name, attrValue);
+			if(eventInfo) {
+				patch.add(ADD_EVENT, indices, eventInfo);
+			} else {
+				patch.add(SET_ATTR, indices, [name, attrs[name]]);
+			}
 		}
 	}
 }
@@ -316,7 +328,7 @@ function append(parent, child) {
 
 function insertBefore(parent, child, ref) {
 	var idx = parent.children.indexOf(ref);
-	parent.splice(idx - 1, 0, child);
+	parent.children.splice(idx - 1, 0, child);
 }
 
 function remove(parent, child){

@@ -1,4 +1,4 @@
-import { VNode } from '../vnode.js';
+import { VNode } from './vnode.js';
 
 export function createNode(nodeName, isSvg){
   var v = new VNode();

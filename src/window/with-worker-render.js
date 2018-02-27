@@ -1,7 +1,23 @@
 import { idomRender as render } from './idom-render.js';
 import { withRenderer } from '@matthewp/skatejs/dist/esnext/with-renderer';
-import { RENDER } from '../message-types.js';
+import { RENDER, EVENT } from '../message-types.js';
 import { patch } from './patch.js';
+
+// TODO This should definitely not go here :(
+function postEvent(event, inst, handle) {
+  let worker = inst._worker;
+  let id = inst._id;
+  worker.postMessage({
+    type: EVENT,
+    event: {
+      type: event.type,
+      detail: event.detail,
+      value: event.target.value
+    },
+    id: id,
+    handle: handle
+  });
+}
 
 export function withWorkerRender(Base = HTMLElement) {
   return class extends withRenderer(Base) {
@@ -26,8 +42,14 @@ export function withWorkerRender(Base = HTMLElement) {
 
     doRenderCallback(patches) {
       this.beforeRender();
+      let elem = this;
       let root = this.shadowRoot;
-      patch(patches, root);
+      function createEventCallback(type, handle) {
+        return function(event){
+          postEvent(event, elem, handle);
+        };
+      }
+      patch(patches, root, createEventCallback);
       this.afterRender();
     }
   }

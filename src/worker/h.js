@@ -1,4 +1,4 @@
-import { VNode } from './vnode.js';
+import { VNode } from './diff/vnode.js';
 import { isFunction } from '../util.js';
 const options = {};
 

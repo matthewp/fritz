@@ -709,18 +709,23 @@ const CREATE_ELEMENT = 1;
 
 const SET_ATTR = 3;
 
-function patch$1(patches, root) {
+const ADD_EVENT = 5;
+
+function patch$1(patches, root, createEventCallback) {
   var index = 0, last = patches.length - 1;
 
   do {
     var opcode = patches[index++];
     var indices = patches[index++];
     var value = patches[index++];
-    var parent = findNode(root, indices);
-    var doc = parent.ownerDocument;
+    var parent;
     switch(opcode) {
       case CREATE_ELEMENT:
+        parent = findNode(root, indices, true);
         var child;
+        var doc = parent.ownerDocument;
+        var refIndex = indices[indices.length - 1];
+        var refNode = parent.childNodes[refIndex];
         switch(value[0]) {
           case 1:
             child = doc.createElement(value[1]);
@@ -729,25 +734,53 @@ function patch$1(patches, root) {
             child = doc.createTextNode(value[1]);
             break;
         }
-        parent.appendChild(child);
+        if(refNode !== undefined) {
+          parent.insertBefore(refNode, child);
+        } else {
+          parent.appendChild(child);
+        }
         break;
       case SET_ATTR:
+        parent = findNode(root, indices, false);
         parent.setAttribute(value[0], value[1]);
+        break;
+      case ADD_EVENT:
+        parent = findNode(root, indices, false);
+        var handler = createEventCallback(value[1], value[2]);
+        // onclick
+        parent[value[1]] = handler;
         break;
     }
 
   } while (index < last);
 }
 
-function findNode(node, indices) {
+function findNode(node, indices, findParent) {
   var index;
-  for(var i = 1, len = indices.length; i < len; i++) {
+  var len = findParent ? (indices.length - 1) : indices.length;
+  for(var i = 0; i < len; i++) {
     index = indices[i];
     if(index !== undefined) {
       node = node.childNodes[index];
     }
   }
   return node;
+}
+
+// TODO This should definitely not go here :(
+function postEvent$1(event, inst, handle) {
+  let worker = inst._worker;
+  let id = inst._id;
+  worker.postMessage({
+    type: EVENT,
+    event: {
+      type: event.type,
+      detail: event.detail,
+      value: event.target.value
+    },
+    id: id,
+    handle: handle
+  });
 }
 
 function withWorkerRender(Base = HTMLElement) {
@@ -773,8 +806,14 @@ function withWorkerRender(Base = HTMLElement) {
 
     doRenderCallback(patches) {
       this.beforeRender();
+      let elem = this;
       let root = this.shadowRoot;
-      patch$1(patches, root);
+      function createEventCallback(type, handle) {
+        return function(event){
+          postEvent$1(event, elem, handle);
+        };
+      }
+      patch$1(patches, root, createEventCallback);
       this.afterRender();
     }
   }
