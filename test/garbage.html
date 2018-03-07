@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+  <title>GC tests</title>
+  <link rel="import" href="../node_modules/mocha-test/mocha-test.html">
+  <style>
+    iframe { display: none; }
+  </style>
+</head>
+<body>
+  <iframe id="gcFrame" src="./garbage/index.html"></iframe>
+  <mocha-test>
+    <template>
+      <script>
+        describe('Garbage Collection', function(){
+          const win = gcFrame.contentWindow;
+          const doc = gcFrame.contentDocument;
+
+          before(function(done) {
+            setTimeout(done, 100);
+          });
+
+          it('Triggering a render gives 2 handles', function(done){
+            let shadow = doc.querySelector('gc-app').shadowRoot;
+            let btn = shadow.querySelector('#increment');
+            let sizeSpan = shadow.querySelector('#handleSize');
+
+            btn.dispatchEvent(new Event('click'));
+
+            setTimeout(function(){
+              assert.equal(sizeSpan.textContent, '2');
+
+              // Now trigger another.
+              btn.dispatchEvent(new Event('click'));
+              setTimeout(function(){
+                assert.equal(sizeSpan.textContent, '2', 'still is 2');
+
+                done();
+              }, 60);
+            }, 60);
+          })
+        });
+      </script>
+    </template>
+  </mocha-test>
+</body>
+</html>

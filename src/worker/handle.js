@@ -5,6 +5,7 @@ Store = class {
     this.handleMap = new WeakMap();
     this.idMap = new Map();
     this.id = 0;
+    this.inUse = true;
   }
 
   from(fn) {

@@ -18,7 +18,7 @@ export function render(fritz, msg) {
       _fritzHandles: {
         enumerable: false,
         writable: true,
-        value: Object.create(null)
+        value: new Map()
       }
     });
     setInstance(fritz, id, instance);

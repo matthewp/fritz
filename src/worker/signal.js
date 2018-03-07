@@ -7,7 +7,8 @@ function signal(tagName, attrName, attrValue, attrs) {
   if(eventAttrExp.test(attrName)) {
     let eventName = attrName.toLowerCase();
     let handle = Handle.from(attrValue);
-    currentInstance._fritzHandles[handle.id] = handle;
+    handle.inUse = true;
+    currentInstance._fritzHandles.set(handle.id, handle);
     return [1, eventName, handle.id];
   }
 }
