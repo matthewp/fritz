@@ -4,7 +4,7 @@ import {
   ADD_EVENT
 } from '../opcodes.js';
 
-export function patch(patches, root, createEventCallback) {
+export function patch(patches, shadow, createEventCallback) {
   var index = 0, last = patches.length - 1;
 
   do {

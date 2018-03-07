@@ -1,11 +1,18 @@
 import { VNode } from './diff/vnode.js';
 import { isFunction } from '../util.js';
+import {
+	open
+} from './patch.js';
+
 const options = {};
 
 const stack = [];
 const EMPTY_CHILDREN = [];
 
 export default function(nodeName, attributes) {
+	debugger;
+	open(nodeName);
+
 	let children=EMPTY_CHILDREN, lastSimple, child, simple, i;
 	for (i=arguments.length; i-- > 2; ) {
 		stack.push(arguments[i]);

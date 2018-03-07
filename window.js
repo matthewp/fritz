@@ -705,7 +705,7 @@ const SET_ATTR = 3;
 
 const ADD_EVENT = 5;
 
-function patch$1(patches, root, createEventCallback) {
+function patch$1(patches, shadow, createEventCallback) {
   var index = 0, last = patches.length - 1;
 
   do {

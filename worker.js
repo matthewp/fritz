@@ -163,15 +163,7 @@ function isNamedNode(node, nodeName) {
  *	@returns {Element} dom			The created/mutated element
  *	@private
  */
-function diff(dom, vnode, context, mountAll, parent, componentRoot) {
-	let patch = new PatchOp();
-	let ret = idiff(dom, vnode, context, mountAll, componentRoot, patch, [0]);
 
-	// append the element if its a new parent
-	if (parent && ret.parentNode!==parent) parent.appendChild(ret);
-
-	return patch;
-}
 
 
 /** Internals of `diff()`, separated to allow bypassing diffLevel / mount flushing. */
@@ -455,6 +447,46 @@ function remove(parent, child){
 	parent.children.splice(idx, 1);
 }
 
+let globalIndex;
+let currentPatch;
+let currentNode;
+let currentParent;
+
+function startPatch(node) {
+  currentNode = node;
+  currentPatch = new PatchOp();
+  globalIndex = 0;
+}
+
+function getPatch() {
+  return currentPatch;
+}
+
+function stopPatch() {
+  let patch = getPatch();
+  currentNode = null;
+  currentPatch = null;
+  currentParent = null;
+  globalIndex = 0;
+  return patch;
+}
+
+function getNextNode() {
+  if(currentNode) {
+
+  } else {
+
+  }
+}
+
+function nextNode() {
+  currentNode = getNextNode();
+}
+
+function open(nameOrCtor, key) {
+  nextNode();
+}
+
 let currentInstance = null;
 
 function renderInstance(instance) {
@@ -494,9 +526,10 @@ function render(instance, sentProps) {
     // Diffing
     let vnode = renderInstance(instance);
     currentInstance = instance;
-    let changeList = diff(instance._vnode, vnode);
+    startPatch(instance._vnode);
     currentInstance = null;
     instance._vnode = vnode;
+    let changeList = stopPatch();
 
     postMessage({
       type: RENDER,
@@ -547,6 +580,9 @@ const stack = [];
 const EMPTY_CHILDREN = [];
 
 var h = function(nodeName, attributes) {
+	debugger;
+	open(nodeName);
+
 	let children=EMPTY_CHILDREN, lastSimple, child, simple, i;
 	for (i=arguments.length; i-- > 2; ) {
 		stack.push(arguments[i]);
