@@ -1,4 +1,5 @@
 import { RENDER } from '../message-types.js';
+import { collect } from './collect.js';
 import { defer } from '../util.js';
 
 export let currentInstance = null;
@@ -42,5 +43,7 @@ function render(instance, sentProps) {
       id: instance._fritzId,
       tree: renderInstance(instance)
     });
+    
+    collect(instance);
   }
 }

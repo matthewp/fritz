@@ -32,6 +32,35 @@ const STATE = 'state';
 const DESTROY = 'destroy';
 const RENDERED = 'rendered';
 
+let queue$1 = new Set();
+let markId = null;
+
+function collect(instance) {
+  queue$1.add(instance);
+  if(markId === null) {
+    markId = setTimeout(runCollection, 40);
+  }
+}
+
+function runCollection() {
+  queue$1.forEach(function(instance) {
+    let handles = instance._fritzHandles;
+    handles.forEach(function(handle){
+      // Mark
+      if(handle.inUse) {
+        handle.inUse = false;
+      }
+      // Sweep
+      else {
+        handle.del();
+        handles.delete(handle.id);
+      }
+    });
+  });
+  queue$1.clear();
+  markId = null;
+}
+
 let currentInstance = null;
 
 function renderInstance(instance) {
@@ -73,6 +102,8 @@ function render(instance, sentProps) {
       id: instance._fritzId,
       tree: renderInstance(instance)
     });
+    
+    collect(instance);
   }
 }
 
@@ -119,6 +150,7 @@ Store = class {
     this.handleMap = new WeakMap();
     this.idMap = new Map();
     this.id = 0;
+    this.inUse = true;
   }
 
   from(fn) {
@@ -176,7 +208,8 @@ function signal(tagName, attrName, attrValue, attrs) {
   if(eventAttrExp.test(attrName)) {
     let eventName = attrName.toLowerCase();
     let handle = Handle$1.from(attrValue);
-    currentInstance._fritzHandles[handle.id] = handle;
+    handle.inUse = true;
+    currentInstance._fritzHandles.set(handle.id, handle);
     return [1, eventName, handle.id];
   }
 }
@@ -285,7 +318,7 @@ function render$1(fritz, msg) {
       _fritzHandles: {
         enumerable: false,
         writable: true,
-        value: Object.create(null)
+        value: new Map()
       }
     });
     setInstance(fritz, id, instance);
