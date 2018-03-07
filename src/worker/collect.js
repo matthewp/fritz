@@ -23,8 +23,8 @@ function runCollection() {
         handles.delete(handle.id);
       }
     });
-    queue.delete(instance);
   });
+  queue.clear();
   markId = null;
 }
 

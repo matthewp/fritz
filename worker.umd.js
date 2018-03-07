@@ -56,8 +56,8 @@ function runCollection() {
         handles.delete(handle.id);
       }
     });
-    queue$1.delete(instance);
   });
+  queue$1.clear();
   markId = null;
 }
 
