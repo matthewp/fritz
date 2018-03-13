@@ -5,3 +5,4 @@ export const EVENT = 'event';
 export const STATE = 'state';
 export const DESTROY = 'destroy';
 export const RENDERED = 'rendered';
+export const CLEANUP = 'cleanup';

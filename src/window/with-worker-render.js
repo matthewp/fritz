@@ -26,8 +26,9 @@ export function withWorkerRender(Base = HTMLElement) {
     doRenderCallback(vdom) {
       this.beforeRender();
       let shadowRoot = this.shadowRoot;
-      render(vdom, shadowRoot, this);
+      let out = render(vdom, shadowRoot, this);
       this.afterRender();
+      this.handleOrphanedHandles(out);
     }
   }
 }
