@@ -1,4 +1,4 @@
-import { EVENT } from '../message-types.js';
+import { CLEANUP, EVENT } from '../message-types.js';
 
 function postEvent(event, inst, handle) {
   let worker = inst._worker;
@@ -23,7 +23,7 @@ export function withWorkerEvents(Base = HTMLElement) {
     }
 
     addEventCallback(handleId, eventProp) {
-      var key = eventProp + '/' + handleId;
+      var key = handleId;
       var fn;
       if(fn = this._handlers[key]) {
         return fn;
@@ -59,6 +59,21 @@ export function withWorkerEvents(Base = HTMLElement) {
     handleEvent(ev) {
       ev.preventDefault();
       postEvent(ev, this);
+    }
+
+    handleOrphanedHandles(handles) {
+      if(handles.length) {
+        let worker = this._worker;
+        worker.postMessage({
+          type: CLEANUP,
+          id: this._id,
+          handles: handles
+        });
+        let handlers = this._handlers;
+        handles.forEach(function(id){
+          delete handlers[id];
+        });
+      }
     }
   }
 }

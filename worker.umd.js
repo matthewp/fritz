@@ -31,35 +31,7 @@ const EVENT = 'event';
 const STATE = 'state';
 const DESTROY = 'destroy';
 const RENDERED = 'rendered';
-
-let queue$1 = new Set();
-let markId = null;
-
-function collect(instance) {
-  queue$1.add(instance);
-  if(markId === null) {
-    markId = setTimeout(runCollection, 40);
-  }
-}
-
-function runCollection() {
-  queue$1.forEach(function(instance) {
-    let handles = instance._fritzHandles;
-    handles.forEach(function(handle){
-      // Mark
-      if(handle.inUse) {
-        handle.inUse = false;
-      }
-      // Sweep
-      else {
-        handle.del();
-        handles.delete(handle.id);
-      }
-    });
-  });
-  queue$1.clear();
-  markId = null;
-}
+const CLEANUP = 'cleanup';
 
 let currentInstance = null;
 
@@ -102,8 +74,6 @@ function render(instance, sentProps) {
       id: instance._fritzId,
       tree: renderInstance(instance)
     });
-    
-    collect(instance);
   }
 }
 
@@ -353,17 +323,29 @@ function trigger(fritz, msg){
 function destroy(fritz, msg){
   let instance = getInstance(fritz, msg.id);
   instance.componentWillUnmount();
-  Object.keys(instance._fritzHandles).forEach(function(key){
-    let handle = instance._fritzHandles[key];
+
+  let handles = instance._fritzHandles;
+  handles.forEach(function(handle){
     handle.del();
   });
-  instance._fritzHandles = Object.create(null);
+  handles.clear();
+  
   delInstance(fritz, msg.id);
 }
 
 function rendered(fritz, msg) {
   let instance = getInstance(fritz, msg.id);
   instance.componentDidMount();
+}
+
+function cleanup(fritz, msg) {
+  let instance = getInstance(fritz, msg.id);
+  let handles = instance._fritzHandles;
+  msg.handles.forEach(function(id){
+    let handle = handles.get(id);
+    handle.del();
+    handles.delete(id);
+  });
 }
 
 let hasListened = false;
@@ -389,6 +371,9 @@ function relay(fritz) {
           break;
         case RENDERED:
           rendered(fritz, msg);
+          break;
+        case CLEANUP:
+          cleanup(fritz, msg);
           break;
       }
     });

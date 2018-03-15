@@ -282,6 +282,7 @@ const EVENT = 'event';
 const STATE = 'state';
 const DESTROY = 'destroy';
 const RENDERED = 'rendered';
+const CLEANUP = 'cleanup';
 
 let currentComponent;
 
@@ -396,7 +397,7 @@ function withWorkerEvents(Base = HTMLElement) {
     }
 
     addEventCallback(handleId, eventProp) {
-      var key = eventProp + '/' + handleId;
+      var key = handleId;
       var fn;
       if(fn = this._handlers[key]) {
         return fn;
@@ -432,6 +433,21 @@ function withWorkerEvents(Base = HTMLElement) {
     handleEvent(ev) {
       ev.preventDefault();
       postEvent(ev, this);
+    }
+
+    handleOrphanedHandles(handles) {
+      if(handles.length) {
+        let worker = this._worker;
+        worker.postMessage({
+          type: CLEANUP,
+          id: this._id,
+          handles: handles
+        });
+        let handlers = this._handlers;
+        handles.forEach(function(id){
+          delete handlers[id];
+        });
+      }
     }
   }
 }
@@ -1642,25 +1658,52 @@ function isFunction(val) {
 
 const defer = Promise.resolve().then.bind(Promise.resolve());
 
+const sym$1 = typeof Symbol === 'function' ? Symbol : function(v) { return '_' + v };
+
 var eventAttrExp = /^on[a-z]/;
+var orphanedHandles = null;
+var FN_HANDLE = sym$1('fritz.handle');
 
 var attributesSet = attributes_1[symbols_1.default];
 attributes_1[symbols_1.default] = preferProps;
 
 function preferProps(element, name, value){
-  if(name in element && !isSVG(element))
-    element[name] = value;
-  else if(isFunction(value) && eventAttrExp.test(name) &&
-    isFunction(element.addEventProperty)) {
+  if(name in element && !isSVG(element)) {
+    if(isEventProperty(name, value)) {
+      element[name] = setupEventHandler(element, name, value);
+    } else {
+      element[name] = value;
+    }
+  }
+
+  else if(isEventProperty(name, value) && isFunction(element.addEventProperty)) {
     element.addEventProperty(name);
-    element[name] = value;
+    element[name] = setupEventHandler(element, name, value);
   }
   else
     attributesSet(element, name, value);
 }
 
+function isEventProperty(name, value) {
+  return eventAttrExp.test(name) && Array.isArray(value) && isFunction(value[1]);
+}
+
 function isSVG(element) {
   return element.namespaceURI === 'http://www.w3.org/2000/svg';
+}
+
+function setupEventHandler(element, name, value) {
+  var currentValue = element[name];
+  var fn = value[1];
+  if(currentValue) {
+    if(currentValue !== fn) {
+      fn[FN_HANDLE] = value[0];
+      orphanedHandles.push(currentValue[FN_HANDLE]);
+    }
+  } else {
+    fn[FN_HANDLE] = value[0];
+  }
+  return fn;
 }
 
 const TAG = 1;
@@ -1680,7 +1723,7 @@ function render$1(bc, component){
           for(var j = 0, jlen = n[EVENTS].length; j < jlen; j++) {
             k = n[EVENTS][j];
             let handler = component.addEventCallback(k[2], k[1]);
-            n[ATTRS].push(k[1], handler);
+            n[ATTRS].push(k[1], [k[2], handler]);
           }
         }
 
@@ -1698,7 +1741,11 @@ function render$1(bc, component){
 }
 
 function idomRender(vdom, root, component) {
+  orphanedHandles = [];
   patch(root, () => render$1(vdom, component));
+  let out = orphanedHandles;
+  orphanedHandles = null;
+  return out;
 }
 
 function shadow(elem) {
@@ -1753,8 +1800,9 @@ function withWorkerRender(Base = HTMLElement) {
     doRenderCallback(vdom) {
       this.beforeRender();
       let shadowRoot = this.shadowRoot;
-      idomRender(vdom, shadowRoot, this);
+      let out = idomRender(vdom, shadowRoot, this);
       this.afterRender();
+      this.handleOrphanedHandles(out);
     }
   }
 }

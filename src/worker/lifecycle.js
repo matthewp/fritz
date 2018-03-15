@@ -53,15 +53,27 @@ export function trigger(fritz, msg){
 export function destroy(fritz, msg){
   let instance = getInstance(fritz, msg.id);
   instance.componentWillUnmount();
-  Object.keys(instance._fritzHandles).forEach(function(key){
-    let handle = instance._fritzHandles[key];
+
+  let handles = instance._fritzHandles;
+  handles.forEach(function(handle){
     handle.del();
   });
-  instance._fritzHandles = Object.create(null);
+  handles.clear();
+  
   delInstance(fritz, msg.id);
 };
 
 export function rendered(fritz, msg) {
   let instance = getInstance(fritz, msg.id);
   instance.componentDidMount();
+};
+
+export function cleanup(fritz, msg) {
+  let instance = getInstance(fritz, msg.id);
+  let handles = instance._fritzHandles;
+  msg.handles.forEach(function(id){
+    let handle = handles.get(id);
+    handle.del();
+    handles.delete(id);
+  });
 };
