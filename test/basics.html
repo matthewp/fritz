@@ -63,6 +63,15 @@
             let val = el.querySelector('.c-boolean').firstChild.nodeValue;
             assert.equal(val, 'false', 'printed the string false');
           });
+
+          it('renders fragments', function(){
+            let root = doc.querySelector('basic-app').shadowRoot;
+            let el = root.querySelector('frag-el').shadowRoot;
+
+            assert.ok(el.querySelector('#one'), 'an element');
+            assert.ok(el.querySelector('#two'), 'another el');
+            assert.ok(el.querySelector('#three'), 'a nested fragment');
+          });
         });
       </script>
     </template>

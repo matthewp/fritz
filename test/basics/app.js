@@ -39,6 +39,22 @@ class TypedEl extends Component {
 
 fritz.define('typed-el', TypedEl);
 
+fritz.define('frag-el', class extends Component {
+  render() {
+    return (
+      h(h.frag, null,
+        h("div", {id:'one'}, "One"),
+        h("div", {id:'two'}, "Two"),
+        h("div", null,
+          h(h.frag, null,
+            h("span", {id:'three'}, "Three")
+          )
+        )
+      )
+    );
+  }
+})
+
 class BasicApp extends Component {
   render() {
     return h('div', {id:'root'}, [
@@ -46,7 +62,8 @@ class BasicApp extends Component {
       h(AnotherEl),
       h(MathEl),
       h(TypedEl),
-      h('loading-indicator')
+      h('loading-indicator'),
+      h('frag-el')
     ]);
   }
 }
