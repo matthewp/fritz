@@ -1,5 +1,5 @@
 import Component from './component.js';
-import h from './hyperscript.js';
+import h, { Fragment } from './hyperscript.js';
 import relay from './relay.js';
 import { DEFINE } from '../message-types.js';
 
@@ -48,4 +48,4 @@ Object.defineProperty(fritz, 'state', {
 });
 
 export default fritz;
-export { Component, h, state };
+export { Component, h, Fragment, state };

@@ -196,6 +196,16 @@ function createTree() {
   return out;
 }
 
+function Fragment(attrs, children) {
+  var child;
+  var tree = createTree();
+  for(var i = 0; i < children.length; i++) {
+    child = children[i];
+    tree.push.apply(tree, child);
+  }
+  return tree;
+}
+
 function h(tag, attrs, children){
   var argsLen = arguments.length;
   var childrenType = typeof children;
@@ -267,6 +277,8 @@ function h(tag, attrs, children){
 
   return tree;
 }
+
+h.frag = Fragment;
 
 function isPrimitive(type) {
   return type === 'string' || type === 'number' || type === 'boolean';
