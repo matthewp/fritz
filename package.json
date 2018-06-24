@@ -32,6 +32,7 @@
     "web-worker"
   ],
   "devDependencies": {
+    "@matthewp/skatejs": "^5.1.1",
     "babel-cli": "^6.24.1",
     "babel-plugin-syntax-class-properties": "^6.13.0",
     "babel-plugin-transform-class-properties": "^6.24.1",
@@ -42,6 +43,7 @@
     "highlight.js": "^9.11.0",
     "incremental-dom": "^0.5.1",
     "is-promise": "^2.1.0",
+    "lit-html": "^0.10.0",
     "mocha-test": "^2.0.2",
     "path-to-regexp": "^1.7.0",
     "rollup": "^0.41.4",
@@ -50,7 +52,6 @@
     "rollup-plugin-node-resolve": "^2.0.0",
     "rollup-plugin-replace": "^1.1.1",
     "rollup-plugin-string": "^2.0.2",
-    "@matthewp/skatejs": "^5.1.1",
     "sw-precache": "^5.2.0",
     "testee": "^0.3.0"
   }

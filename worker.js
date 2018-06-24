@@ -278,6 +278,10 @@ function isPrimitive(type) {
   return type === 'string' || type === 'number' || type === 'boolean';
 }
 
+var html = function(strings, ...vals) {
+  return [1, strings, 2, vals];
+};
+
 function render$1(fritz, msg) {
   let id = msg.id;
   let props = msg.props || {};
@@ -390,6 +394,7 @@ const fritz = Object.create(null);
 fritz.Component = Component;
 fritz.define = define;
 fritz.h = h;
+fritz.html = html;
 fritz._tags = Object.create(null);
 fritz._instances = Object.create(null);
 
@@ -430,4 +435,4 @@ Object.defineProperty(fritz, 'state', {
   get: function() { return state; }
 });
 
-export { Component, h, Fragment, state };export default fritz;
+export { Component, h, html, Fragment, state };export default fritz;

@@ -1,6 +1,6 @@
 importScripts('../../worker.umd.js');
 
-const { h, Component } = fritz;
+const { Component, html } = fritz;
 
 class Hello extends Component {
   static get props() {
@@ -12,7 +12,9 @@ class Hello extends Component {
   }
 
   render({name}) {
-    return h('span', [`Hello ${name}`]);
+    return html`
+      <span>Hello ${name}</span>
+    `;
   }
 }
 
