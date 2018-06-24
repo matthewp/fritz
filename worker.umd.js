@@ -288,7 +288,7 @@ function isPrimitive(type) {
 const templates = new WeakMap();
 let globalId = 0;
 
-var html = function(strings, ...vals) {
+var html = function(strings, ...args) {
   let id;
   if(templates.has(strings)) {
     id = templates.get(strings);
@@ -298,6 +298,20 @@ var html = function(strings, ...vals) {
     templates.set(strings, id);
     register(id, strings);
   }
+
+  // Set values
+  let vals = args.map(arg => {
+    let type = typeof arg;
+    if(type === 'function') {
+      let handle = Handle$1.from(arg);
+      handle.inUse = true;
+      currentInstance._fritzHandles.set(handle.id, handle);
+      return handle.id;
+    }
+    return arg;
+  });
+
+  console.log(vals);
 
   return [1, id, 2, vals];
 };
