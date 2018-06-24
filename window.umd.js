@@ -283,6 +283,7 @@ const STATE = 'state';
 const DESTROY = 'destroy';
 const RENDERED = 'rendered';
 const CLEANUP = 'cleanup';
+const REGISTER = 'register';
 
 let currentComponent;
 
@@ -1065,16 +1066,51 @@ const removeNodes = (container, startNode, endNode = null) => {
     }
 };
 
-const templates = new WeakSet();
+const registry = new WeakMap();
+let globalId = 0;
+
+function add(worker) {
+  if(registry.has(worker)) {
+    return registry.get(worker);
+  }
+  globalId = globalId + 1;
+  let id = globalId;
+  registry.set(worker, id);
+  return id;
+}
+
+function get$1(worker) {
+  return registry.get(worker);
+}
+
+const templates = new Map();
+
+function getId(worker, workerUniqueId) {
+  let workerId = get$1(worker);
+  let id = workerId + '|' + workerUniqueId;
+  return id;
+}
+
+function register$1(worker, workerUniqueId, strings) {
+  let id = getId(worker, workerUniqueId);
+  templates.set(id, strings);
+}
+
+function get$$1(worker, workerUniqueId) {
+  let id = getId(worker, workerUniqueId);
+  return templates.get(id);
+}
 
 var render$1 = function(tree, root, instance){
-  console.log('have', templates.has(tree));
+  let workerUniqueId = tree[1];
+  let template = get$$1(this, workerUniqueId);
+  let values = tree[3];
 
-  if(!templates.has(tree)) {
-    templates.add(tree);
+  if(!template) {
+     throw new Error('Something went wrong. A template was queued to render before it registered itself. This shouldn\'t happen.');
   }
 
-  let result = html(tree[1], tree[3]);
+  let result = html(template, values);
   render$2(result, root);
 };
 
@@ -1128,12 +1164,14 @@ function withWorkerRender(Base = HTMLElement) {
     afterRender() {}
 
     doRenderCallback(tree) {
-      debugger;
       this.beforeRender();
       let shadowRoot = this.shadowRoot;
-      let out = render$1(tree, shadowRoot, this);
+      let worker = this._worker;
+      let out = render$1.call(worker, tree, shadowRoot, this);
       this.afterRender();
-      this.handleOrphanedHandles(out);
+
+      // TODO we need to add this back
+      //this.handleOrphanedHandles(out);
     }
   }
 }
@@ -1236,6 +1274,13 @@ function trigger(fritz, msg) {
   inst.dispatchEvent(event);
 }
 
+function register$$1(fritz, msg) {
+  let worker = this;
+  let strings = msg.template;
+  let workerUniqueId = msg.id;
+  register$1(worker, workerUniqueId, strings); 
+}
+
 function sendState(fritz, worker) {
   let workers = worker ? [worker] : fritz._workers;
   let state = fritz.state;
@@ -1256,6 +1301,7 @@ fritz._work = [];
 
 function use(worker) {
   fritz._workers.push(worker);
+  add(worker);
   worker.addEventListener('message', handleMessage);
   if(fritz.state) {
     sendState(fritz, worker);
@@ -1273,6 +1319,10 @@ function handleMessage(ev) {
       break;
     case TRIGGER:
       trigger(fritz, msg);
+      break;
+    case REGISTER:
+      register$$1.call(this, fritz, msg);
+      break;
   }
 }
 

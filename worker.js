@@ -26,6 +26,7 @@ const STATE = 'state';
 const DESTROY = 'destroy';
 const RENDERED = 'rendered';
 const CLEANUP = 'cleanup';
+const REGISTER = 'register';
 
 let currentInstance = null;
 
@@ -278,9 +279,30 @@ function isPrimitive(type) {
   return type === 'string' || type === 'number' || type === 'boolean';
 }
 
+const templates = new WeakMap();
+let globalId = 0;
+
 var html = function(strings, ...vals) {
-  return [1, strings, 2, vals];
+  let id;
+  if(templates.has(strings)) {
+    id = templates.get(strings);
+  } else {
+    globalId = globalId + 1;
+    id = globalId;
+    templates.set(strings, id);
+    register(id, strings);
+  }
+
+  return [1, id, 2, vals];
 };
+
+function register(id, template) {
+  postMessage({
+    type: REGISTER,
+    id,
+    template
+  });
+}
 
 function render$1(fritz, msg) {
   let id = msg.id;

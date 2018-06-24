@@ -1,14 +1,15 @@
 import { html, render } from 'lit-html';
-
-const templates = new WeakSet();
+import { get as getTemplate } from './templates.js';
 
 export default function(tree, root, instance){
-  console.log('have', templates.has(tree));
+  let workerUniqueId = tree[1];
+  let template = getTemplate(this, workerUniqueId);
+  let values = tree[3];
 
-  if(!templates.has(tree)) {
-    templates.add(tree);
+  if(!template) {
+     throw new Error('Something went wrong. A template was queued to render before it registered itself. This shouldn\'t happen.');
   }
 
-  let result = html(tree[1], tree[3]);
+  let result = html(template, values);
   render(result, root);
 };

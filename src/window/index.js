@@ -1,6 +1,7 @@
-import { define, render, trigger } from './lifecycle.js';
-import { DEFINE, RENDER, TRIGGER } from '../message-types.js';
+import { define, render, trigger, register } from './lifecycle.js';
+import { DEFINE, REGISTER, RENDER, TRIGGER } from '../message-types.js';
 import { sendState } from './cmd.js';
+import { add as addWorker } from './pool.js';
 
 const fritz = Object.create(null);
 fritz.tags = Object.create(null);
@@ -11,6 +12,7 @@ fritz._work = [];
 
 function use(worker) {
   fritz._workers.push(worker);
+  addWorker(worker);
   worker.addEventListener('message', handleMessage);
   if(fritz.state) {
     sendState(fritz, worker);
@@ -28,6 +30,10 @@ function handleMessage(ev) {
       break;
     case TRIGGER:
       trigger(fritz, msg);
+      break;
+    case REGISTER:
+      register.call(this, fritz, msg);
+      break;
   }
 }
 

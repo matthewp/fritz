@@ -24,12 +24,14 @@ export function withWorkerRender(Base = HTMLElement) {
     afterRender() {}
 
     doRenderCallback(tree) {
-      debugger;
       this.beforeRender();
       let shadowRoot = this.shadowRoot;
-      let out = render(tree, shadowRoot, this);
+      let worker = this._worker;
+      let out = render.call(worker, tree, shadowRoot, this);
       this.afterRender();
-      this.handleOrphanedHandles(out);
+
+      // TODO we need to add this back
+      //this.handleOrphanedHandles(out);
     }
   }
 }
