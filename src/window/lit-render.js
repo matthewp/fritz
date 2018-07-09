@@ -1,5 +1,6 @@
 import { html, render } from './lit';
 import { get as getTemplate } from './templates.js';
+import { track, trap } from './handle.js';
 
 const FN_HANDLE = Symbol('fritz.handle');
 
@@ -19,12 +20,17 @@ export default function(tree, root, instance){
       // TODO use handleEvent instead
       //return instance;
       
-      let fn = instance.addEventCallback(value[1]);
+      let handleId = value[1];
+      let fn = instance.addEventCallback(handleId);
+      return track(fn, handleId);
     }
     
     return value;
   });
 
   let result = html(template, values);
+
+  let release = trap();
   render(result, root);
+  return release();
 };

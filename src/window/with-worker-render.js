@@ -30,8 +30,7 @@ export function withWorkerRender(Base = HTMLElement) {
       let out = render.call(worker, tree, shadowRoot, this);
       this.afterRender();
 
-      // TODO we need to add this back
-      //this.handleOrphanedHandles(out);
+      this.handleOrphanedHandles(out);
     }
   }
 }
