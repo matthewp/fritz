@@ -29,11 +29,11 @@ class EventEl extends Component {
 
     return html`
       <div>
-        <a href="/foo" onClick="${this.myHandler}">Click me</a>
+        <a href="/foo" on-click="${this.myHandler}">Click me</a>
         <div id="foo">${foo}</div>
         <div id="thing">${thing}</div>
-        <special-el onSpecial="${this.handleSpecial}"></special-el>
-        <child-el onThing="${this.handleThing}"></child-el>
+        <special-el on-special="${this.handleSpecial}"></special-el>
+        <child-el on-thing="${this.handleThing}"></child-el>
       </div>
     `;
   }
@@ -78,7 +78,7 @@ class InputEl extends Component {
     return html`
       <div>
         <div class="result">${this.filter}</div>
-        <input type="text" value="${this.filter}" onKeyup=${this.setFilter}">
+        <input type="text" value="${this.filter}" on-keyup=${this.setFilter}">
       </div>
     `;
   }

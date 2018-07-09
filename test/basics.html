@@ -24,7 +24,8 @@
           it('Renders the initial page', function(){
             let el = doc.querySelector('basic-app');
             let div = el.shadowRoot.querySelector('#root');
-            assert.equal(div.textContent, 'Hello world!');
+            let txt = div.textContent.trim();
+            assert.equal(txt, 'Hello world!');
           });
 
           it('Renders subelements using the constructor', function(){
@@ -32,35 +33,35 @@
             let nested = el.shadowRoot.querySelector('another-el');
             assert.ok(nested, 'The nested element was rendered');
 
-            let inner = nested.shadowRoot.firstChild;
+            let inner = nested.shadowRoot.firstElementChild;
             assert.equal(inner.textContent, 'Another el');
           });
 
-          it('Renders hyperscript that uses numbers', function(){
+          it('Renders elements that uses numbers', function(){
             let el = doc.querySelector('basic-app');
             let mathel = el.shadowRoot.querySelector('math-el');
-            let inner = mathel.shadowRoot.firstChild;
+            let inner = mathel.shadowRoot.firstElementChild;
             assert.equal(inner.textContent, '15 of 15');
           });
 
           it('renders svg', function(){
             let el = doc.querySelector('basic-app');
             let loading = el.shadowRoot.querySelector('loading-indicator');
-            let svg = loading.shadowRoot.firstChild;
+            let svg = loading.shadowRoot.firstElementChild;
             assert.ok(svg.hasAttribute('viewBox'), 'has the viewBox');
           });
 
           it('renders children that are numbers', function(){
             let root = doc.querySelector('basic-app').shadowRoot;
             let el = root.querySelector('typed-el').shadowRoot;
-            let val = el.querySelector('.c-number').firstChild.nodeValue;
+            let val = el.querySelector('.c-number').textContent;
             assert.equal(val, '27', 'printed the string 27');
           });
 
           it('renders children that are booleans', function(){
             let root = doc.querySelector('basic-app').shadowRoot;
             let el = root.querySelector('typed-el').shadowRoot;
-            let val = el.querySelector('.c-boolean').firstChild.nodeValue;
+            let val = el.querySelector('.c-boolean').textContent;
             assert.equal(val, 'false', 'printed the string false');
           });
 

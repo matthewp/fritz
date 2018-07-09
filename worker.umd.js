@@ -306,12 +306,10 @@ var html = function(strings, ...args) {
       let handle = Handle$1.from(arg);
       handle.inUse = true;
       currentInstance._fritzHandles.set(handle.id, handle);
-      return handle.id;
+      return Uint8Array.from([0, handle.id]);
     }
     return arg;
   });
-
-  console.log(vals);
 
   return [1, id, 2, vals];
 };
