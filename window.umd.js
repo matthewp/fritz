@@ -1071,7 +1071,7 @@ const FN_HANDLE$1 = Symbol('fritz.handle');
 const orphans = [];
 
 function track(fn, handleId) {
-  if(!fn[FN_HANDLE$1]) {
+  if(!(FN_HANDLE$1 in fn)) {
     fn[FN_HANDLE$1] = handleId;
   }
 
@@ -1126,8 +1126,11 @@ class EventPart {
   setValue(value) {
     const listener = getValue(this, value);
     if (listener === this._listener) {
-      mark(this._listener);
       return;
+    }
+    // Mark garbage if the value has changed
+    if(listener && this._listener && listener !== this._listener) {
+      mark(this._listener);
     }
     if (listener == null) {
       this.element.removeEventListener(this.eventName, this);

@@ -3,7 +3,7 @@ const FN_HANDLE = Symbol('fritz.handle');
 const orphans = [];
 
 export function track(fn, handleId) {
-  if(!fn[FN_HANDLE]) {
+  if(!(FN_HANDLE in fn)) {
     fn[FN_HANDLE] = handleId;
   }
 
