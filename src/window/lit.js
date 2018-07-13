@@ -24,7 +24,7 @@ function partCallback(instance, templatePart, node) {
     }
 
     // What to do about properties
-    if(templatePart.name.startsWith(":")) {
+    if(templatePart.name.startsWith(".")) {
       const name = templatePart.name.substr(1);
       return new PropertyPart(instance, node, name, templatePart.strings);
     }
@@ -87,13 +87,6 @@ class PropertyPart extends AttributePart {
       }
     }
     this.element[this.name] = value;
-  }
-}
-
-class PropertyOrAttributePart { 
-  constructor(...args) {
-    this._args = args;
-    this._part = null;
   }
 }
 

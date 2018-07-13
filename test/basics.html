@@ -24,7 +24,7 @@
           it('Renders the initial page', function(){
             let el = doc.querySelector('basic-app');
             let div = el.shadowRoot.querySelector('#root');
-            let txt = div.textContent.trim();
+            let txt = div.firstChild.nodeValue.trim();
             assert.equal(txt, 'Hello world!');
           });
 
@@ -72,6 +72,12 @@
             assert.ok(el.querySelector('#one'), 'an element');
             assert.ok(el.querySelector('#two'), 'another el');
             assert.ok(el.querySelector('#three'), 'a nested fragment');
+          });
+
+          it('renders inner templates', function(){
+            let root = doc.querySelector('basic-app').shadowRoot;
+            let el = root.querySelector('#nested');
+            assert.equal(el.textContent, 'This is nested');
           });
         });
       </script>

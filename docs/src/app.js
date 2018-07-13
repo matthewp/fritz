@@ -1,5 +1,5 @@
-import fritz, { Component, h } from '../../worker';
-import About from './about.js';
+import fritz, { Component, html } from '../../worker';
+import about from './about.js';
 import styles from './app.css';
 import './code-file.js';
 
@@ -31,9 +31,9 @@ const htmlCode = `
 `;
 
 function main() {
-  return (
+  return html`
     <main>  
-      <style>{styles}</style>
+      <style>${styles}</style>
 
       <section class="intro shadow-section">
         <header class="title">
@@ -48,17 +48,17 @@ function main() {
 
         <a class="github" href="https://github.com/matthewp/fritz">GitHub</a>
 
-        <code-file name="worker.js" code={jsCode}></code-file>
-        <code-file name="index.html" code={htmlCode}></code-file>
+        <code-file name="worker.js" .code=${jsCode}></code-file>
+        <code-file name="index.html" .code=${htmlCode}></code-file>
       </section>
 
-      <About/>
+      ${about()}
 
       <footer>
         <p>Made with 🎃 by <a href="https://twitter.com/matthewcp">@matthewcp</a></p>
       </footer>
     </main>
-  );
+  `;
 }
 
 fritz.define('its-fritz-yall', main);

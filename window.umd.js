@@ -1107,7 +1107,7 @@ function partCallback(instance, templatePart, node) {
     }
 
     // What to do about properties
-    if(templatePart.name.startsWith(":")) {
+    if(templatePart.name.startsWith(".")) {
       const name = templatePart.name.substr(1);
       return new PropertyPart(instance, node, name, templatePart.strings);
     }
@@ -1208,16 +1208,21 @@ function get$$1(worker, workerUniqueId) {
   return templates.get(id);
 }
 
-var render$1 = function(tree, root, instance){
-  let workerUniqueId = tree[1];
-  let template = get$$1(this, workerUniqueId);
+const templateTag = 0;
+
+function renderTemplate(tree, root, instance){
+  let result = createTemplateResult.call(this, tree, 
+    getValues.call(this, tree, instance));
+
+  let release = trap();
+  render$2(result, root);
+  return release();
+}
+
+function getValues(tree, instance) {
   let rawValues = tree[3];
 
-  if(!template) {
-     throw new Error('Something went wrong. A template was queued to render before it registered itself. This shouldn\'t happen.');
-  }
-
-  let values = rawValues.map(value => {
+  return rawValues.map(value => {
     if(value instanceof Uint8Array) {
       // This assumes it's always an event
       
@@ -1227,17 +1232,31 @@ var render$1 = function(tree, root, instance){
       let handleId = value[1];
       let fn = instance.addEventCallback(handleId);
       return track(fn, handleId);
+    } else if(Array.isArray(value)) {
+      let tag = value[0];
+      let val = value[1];
+      if(tag === templateTag) {
+        return createTemplateResult.call(this, val,
+          getValues.call(this, val, instance));
+      }
+      return val;
     }
     
     return value;
   });
+}
+
+function createTemplateResult(tree, values) {
+  let workerUniqueId = tree[1];
+  let template = get$$1(this, workerUniqueId);
+
+  if(!template) {
+     throw new Error('Something went wrong. A template was queued to render before it registered itself. This shouldn\'t happen.');
+  }
 
   let result = html$$1(template, values);
-
-  let release = trap();
-  render$2(result, root);
-  return release();
-};
+  return result;
+}
 
 function shadow(elem) {
   return elem._shadowRoot || (elem._shadowRoot = elem.shadowRoot || elem.attachShadow({ mode: 'open' }));
@@ -1292,7 +1311,7 @@ function withWorkerRender(Base = HTMLElement) {
       this.beforeRender();
       let shadowRoot = this.shadowRoot;
       let worker = this._worker;
-      let out = render$1.call(worker, tree, shadowRoot, this);
+      let out = renderTemplate.call(worker, tree, shadowRoot, this);
       this.afterRender();
 
       this.handleOrphanedHandles(out);

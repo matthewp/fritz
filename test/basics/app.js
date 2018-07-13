@@ -54,7 +54,11 @@ fritz.define('frag-el', class extends Component {
       </div>
     `;
   }
-})
+});
+
+function nested() {
+  return html`<div id="nested">This is nested</div>`;
+}
 
 class BasicApp extends Component {
   render() {
@@ -65,6 +69,7 @@ class BasicApp extends Component {
         <math-el></math-el>
         <typed-el></typed-el>
         <loading-indicator></loading-indicator>
+        ${nested()}
         <frag-el></frag-el>
       </div>
     `;

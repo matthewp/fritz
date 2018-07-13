@@ -285,8 +285,13 @@ function isPrimitive(type) {
   return type === 'string' || type === 'number' || type === 'boolean';
 }
 
+const templateTag = 0;
+const valueTag = 1;
+
 const templates = new WeakMap();
+const _template = Symbol();
 let globalId = 0;
+
 
 var html = function(strings, ...args) {
   let id;
@@ -307,11 +312,19 @@ var html = function(strings, ...args) {
       handle.inUse = true;
       currentInstance._fritzHandles.set(handle.id, handle);
       return Uint8Array.from([0, handle.id]);
+    } else if (Array.isArray(arg)) {
+      let tag;
+      if(isTemplate(arg)) {
+        tag = templateTag;
+      } else {
+        tag = valueTag;
+      }
+      return [tag, arg];
     }
     return arg;
   });
 
-  return [1, id, 2, vals];
+  return mark([1, id, 2, vals]);
 };
 
 function register(id, template) {
@@ -320,6 +333,15 @@ function register(id, template) {
     id,
     template
   });
+}
+
+function mark(template) {
+  template[_template] = true;
+  return template;
+}
+
+function isTemplate(template) {
+  return !!template[_template];
 }
 
 function render$1(fritz, msg) {

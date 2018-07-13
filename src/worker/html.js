@@ -1,9 +1,12 @@
 import { REGISTER } from '../message-types.js';
 import { currentInstance } from './instance.js';
 import Handle from './handle.js';
+import { templateTag, valueTag } from '../tags.js';
 
 const templates = new WeakMap();
+const _template = Symbol();
 let globalId = 0;
+
 
 export default function(strings, ...args) {
   let id;
@@ -24,11 +27,19 @@ export default function(strings, ...args) {
       handle.inUse = true;
       currentInstance._fritzHandles.set(handle.id, handle);
       return Uint8Array.from([0, handle.id]);
+    } else if (Array.isArray(arg)) {
+      let tag;
+      if(isTemplate(arg)) {
+        tag = templateTag;
+      } else {
+        tag = valueTag;
+      }
+      return [tag, arg];
     }
     return arg;
   });
 
-  return [1, id, 2, vals];
+  return mark([1, id, 2, vals]);
 }
 
 function register(id, template) {
@@ -37,4 +48,13 @@ function register(id, template) {
     id,
     template
   });
+}
+
+function mark(template) {
+  template[_template] = true;
+  return template;
+}
+
+function isTemplate(template) {
+  return !!template[_template];
 }
