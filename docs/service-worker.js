@@ -37,7 +37,7 @@
 /* eslint-disable indent, no-unused-vars, no-multiple-empty-lines, max-nested-callbacks, space-before-function-paren, quotes, comma-spacing */
 'use strict';
 
-var precacheConfig = [["app.js","90a860b3f57a5f06d051b4e465e8e1c2"],["frankenstein-fritz-flame.png","d382c041fa5e0564cf780e5ec57dfb7f"],["frankenstein-fritz-flame.webp","64a0d9e360f13b66a5b9c7fe82802cd1"],["index.html","8ea58980dcff6895e0c91d5e385b2d25"],["main.js","728721710b63f80eadafc6f027fdf6fd"],["service-worker-registration.js","854cb02fab00d5e4b382a00771ba8774"]];
+var precacheConfig = [["app.js","db111f5e8f770efffa1214c473b34549"],["frankenstein-fritz-flame.png","d382c041fa5e0564cf780e5ec57dfb7f"],["frankenstein-fritz-flame.webp","64a0d9e360f13b66a5b9c7fe82802cd1"],["index.html","8ea58980dcff6895e0c91d5e385b2d25"],["main.js","728721710b63f80eadafc6f027fdf6fd"],["service-worker-registration.js","854cb02fab00d5e4b382a00771ba8774"]];
 var cacheName = 'sw-precache-v3-sw-precache-' + (self.registration ? self.registration.scope : '');
 
 
