@@ -338,7 +338,6 @@ function relay(fritz) {
 const fritz = Object.create(null);
 fritz.Component = Component;
 fritz.define = define;
-fritz.h = h;
 fritz.html = html;
 fritz._tags = Object.create(null);
 fritz._instances = Object.create(null);

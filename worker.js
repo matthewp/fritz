@@ -335,7 +335,6 @@ function relay(fritz) {
 const fritz = Object.create(null);
 fritz.Component = Component;
 fritz.define = define;
-fritz.h = h;
 fritz.html = html;
 fritz._tags = Object.create(null);
 fritz._instances = Object.create(null);
@@ -377,4 +376,4 @@ Object.defineProperty(fritz, 'state', {
   get: function() { return state; }
 });
 
-export { Component, h, html, Fragment, state };export default fritz;
+export { Component, html, Fragment, state };export default fritz;
