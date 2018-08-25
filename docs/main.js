@@ -17,21 +17,7 @@ function keys(obj) {
   return Object.getOwnPropertySymbols ? names.concat(Object.getOwnPropertySymbols(obj)) : names;
 }
 
-let symbolCount = 0;
-function sym(description) {
-  description = String(description || ++symbolCount);
-  return typeof Symbol === 'function' ? Symbol(description) : `__skate_${description}`;
-}
-
-var _extends = Object.assign || function (target) {
-  for (var i = 1; i < arguments.length; i++) {
-    var source = arguments[i];for (var key in source) {
-      if (Object.prototype.hasOwnProperty.call(source, key)) {
-        target[key] = source[key];
-      }
-    }
-  }return target;
-};
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 function normaliseAttributeDefinition(name, prop) {
   const { attribute } = prop;
@@ -59,34 +45,6 @@ function normalisePropertyDefinition(name, prop) {
   };
 }
 
-function syncAttributeToProperty(elem, name, value) {
-  if (elem._syncingPropertyToAttribute) {
-    return;
-  }
-  const propDefs = elem.constructor._propsNormalised;
-  for (let propName in propDefs) {
-    const { attribute: { source }, deserialize } = propDefs[propName];
-    if (source === name) {
-      elem._syncingAttributeToProperty = propName;
-      elem[propName] = value == null ? value : deserialize(value);
-      elem._syncingAttributeToProperty = null;
-    }
-  }
-}
-
-function syncPropertyToAttribute(elem, target, serialize, val) {
-  if (target && elem._syncingAttributeToProperty !== target) {
-    const serialized = serialize(val);
-    elem._syncingPropertyToAttribute = true;
-    if (serialized == null) {
-      elem.removeAttribute(target);
-    } else {
-      elem.setAttribute(target, serialized);
-    }
-    elem._syncingPropertyToAttribute = false;
-  }
-}
-
 function defineProps(constructor) {
   if (constructor.hasOwnProperty('_propsNormalised')) return;
   const { props } = constructor;
@@ -111,7 +69,6 @@ function prop(definition) {
   // Allows decorators, or imperative definitions.
   const func = function ({ constructor }, name) {
     const normalised = normalisePropertyDefinition(name, propertyDefinition);
-    const _value = sym(name);
 
     // Ensure that we can cache properties. We have to do this so the _props object literal doesn't modify parent
     // classes or share the instance anywhere where it's not intended to be shared explicitly in userland code.
@@ -121,20 +78,33 @@ function prop(definition) {
 
     // Cache the value so we can reference when syncing the attribute to the property.
     constructor._propsNormalised[name] = normalised;
+    const { attribute: { source, target } } = normalised;
 
-    if (normalised.attribute.source) {
-      constructor._observedAttributes.push(normalised.attribute.source);
+    if (source) {
+      constructor._observedAttributes.push(source);
+      constructor._attributeToPropertyMap[source] = name;
+      if (source !== target) {
+        constructor._attributeToAttributeMap[source] = target;
+      }
     }
 
     Object.defineProperty(constructor.prototype, name, {
       configurable: true,
       get() {
-        const val = this[_value];
+        const val = this._props[name];
         return val == null ? normalised.default : val;
       },
       set(val) {
-        this[_value] = normalised.coerce(val);
-        syncPropertyToAttribute(this, normalised.attribute.target, normalised.serialize, val);
+        const { attribute: { target }, serialize } = normalised;
+        if (target) {
+          const serializedVal = serialize ? serialize(val) : val;
+          if (serializedVal == null) {
+            this.removeAttribute(target);
+          } else {
+            this.setAttribute(target, serializedVal);
+          }
+        }
+        this._props[name] = normalised.coerce(val);
         this.triggerUpdate();
       }
     });
@@ -153,7 +123,7 @@ const withUpdate = (Base = HTMLElement) => {
     constructor(...args) {
       var _temp;
 
-      return _temp = super(...args), this._prevProps = {}, this._prevState = {}, this._state = {}, _temp;
+      return _temp = super(...args), this._prevProps = {}, this._prevState = {}, this._props = {}, this._state = {}, _temp;
     }
 
     static get observedAttributes() {
@@ -194,10 +164,34 @@ const withUpdate = (Base = HTMLElement) => {
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
+      const {
+        _attributeToAttributeMap,
+        _attributeToPropertyMap,
+        props
+      } = this.constructor;
+
       if (super.attributeChangedCallback) {
         super.attributeChangedCallback(name, oldValue, newValue);
       }
-      syncAttributeToProperty(this, name, newValue);
+
+      const propertyName = _attributeToPropertyMap[name];
+      if (propertyName) {
+        const propertyDefinition = props[propertyName];
+        if (propertyDefinition) {
+          const { default: defaultValue, deserialize } = propertyDefinition;
+          const propertyValue = deserialize ? deserialize(newValue) : newValue;
+          this._props[propertyName] = propertyValue == null ? defaultValue : propertyValue;
+        }
+      }
+
+      const targetAttributeName = _attributeToAttributeMap[name];
+      if (targetAttributeName) {
+        if (newValue == null) {
+          this.removeAttribute(targetAttributeName);
+        } else {
+          this.setAttribute(targetAttributeName, newValue);
+        }
+      }
     }
 
     connectedCallback() {
@@ -229,7 +223,7 @@ const withUpdate = (Base = HTMLElement) => {
         this._updating = false;
       });
     }
-  }, _class._observedAttributes = [], _temp2;
+  }, _class._attributeToAttributeMap = {}, _class._attributeToPropertyMap = {}, _class._observedAttributes = [], _class._props = {}, _temp2;
 };
 
 const { parse, stringify } = JSON;
@@ -285,6 +279,8 @@ const EVENT = 'event';
 const STATE = 'state';
 const DESTROY = 'destroy';
 const RENDERED = 'rendered';
+const CLEANUP = 'cleanup';
+const REGISTER = 'register';
 
 let currentComponent;
 
@@ -317,21 +313,21 @@ function withMount(Base) {
     }
 
     connectedCallback() {
-      if (super.connectedCallback) super.connectedCallback();
-      if (this._parentComponent) {
+      if(super.connectedCallback) super.connectedCallback();
+      if(this._parentComponent) {
         this._parentComponent._hasChildComponents = true;
       }
     }
 
     disconnectedCallback() {
-      if (super.disconnectedCallback) super.disconnectedCallback();
+      if(super.disconnectedCallback) super.disconnectedCallback();
       this._amMounted = false;
     }
 
     renderer() {
-      if (super.renderer) super.renderer();
+      if(super.renderer) super.renderer();
       this._renderCount = 0;
-      if (this._parentComponent) {
+      if(this._parentComponent) {
         this._parentComponent._incrementRender();
       }
     }
@@ -344,7 +340,7 @@ function withMount(Base) {
       this._resetComponent();
       this._resetComponent = Function.prototype;
 
-      if (!this._amMounted && !this._hasChildComponents) {
+      if(!this._amMounted && !this._hasChildComponents) {
         this._checkIfRendered();
       }
     }
@@ -359,21 +355,21 @@ function withMount(Base) {
     }
 
     _checkIfRendered() {
-      if (this._amMounted) return;
+      if(this._amMounted) return;
 
-      if (this._renderCount === 0) {
+      if(this._renderCount === 0) {
         this._amMounted = true;
         this._worker.postMessage({
           type: RENDERED,
           id: this._id
         });
 
-        if (this._parentComponent) {
+        if(this._parentComponent) {
           this._parentComponent._decrementRender();
         }
       }
     }
-  };
+  }
 }
 
 function postEvent(event, inst, handle) {
@@ -398,16 +394,16 @@ function withWorkerEvents(Base = HTMLElement) {
       this._handlers = Object.create(null);
     }
 
-    addEventCallback(handleId, eventProp) {
-      var key = eventProp + '/' + handleId;
+    addEventCallback(handleId) {
+      var key = handleId;
       var fn;
-      if (fn = this._handlers[key]) {
+      if(fn = this._handlers[key]) {
         return fn;
       }
 
       // TODO optimize this so functions are reused if possible.
       var self = this;
-      fn = function (ev) {
+      fn = function(ev){
         ev.preventDefault();
         postEvent(ev, self, handleId);
       };
@@ -420,12 +416,10 @@ function withWorkerEvents(Base = HTMLElement) {
       var priv = '_' + name;
       var proto = Object.getPrototypeOf(this);
       Object.defineProperty(proto, name, {
-        get: function () {
-          return this[priv];
-        },
-        set: function (val) {
+        get: function(){ return this[priv]; },
+        set: function(val) {
           var cur;
-          if (cur = this[priv]) {
+          if(cur = this[priv]) {
             this.removeEventListener(evName, cur);
           }
           this[priv] = val;
@@ -438,1263 +432,827 @@ function withWorkerEvents(Base = HTMLElement) {
       ev.preventDefault();
       postEvent(ev, this);
     }
-  };
+
+    handleOrphanedHandles(handles) {
+      if(handles.length) {
+        let worker = this._worker;
+        worker.postMessage({
+          type: CLEANUP,
+          id: this._id,
+          handles: handles
+        });
+        let handlers = this._handlers;
+        handles.forEach(function(id){
+          delete handlers[id];
+        });
+      }
+    }
+  }
 }
 
 /**
  * @license
- * Copyright 2015 The Incremental DOM Authors. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS-IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
+ * This code may only be used under the BSD style license found at
+ * http://polymer.github.io/LICENSE.txt
+ * The complete set of authors may be found at
+ * http://polymer.github.io/AUTHORS.txt
+ * The complete set of contributors may be found at
+ * http://polymer.github.io/CONTRIBUTORS.txt
+ * Code distributed by Google as part of the polymer project is also
+ * subject to an additional IP rights grant found at
+ * http://polymer.github.io/PATENTS.txt
+ */
+// The first argument to JS template tags retain identity across multiple
+// calls to a tag for the same literal, so we can cache work done per literal
+// in a Map.
+const templateCaches = new Map();
+/**
+ * Interprets a template literal as an HTML template that can efficiently
+ * render to and update a container.
  */
 
 /**
- * Copyright 2015 The Incremental DOM Authors. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS-IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Interprets a template literal as an SVG template that can efficiently
+ * render to and update a container.
  */
 
 /**
- * A cached reference to the hasOwnProperty function.
+ * The return type of `html`, which holds a Template and the values from
+ * interpolated expressions.
  */
-var hasOwnProperty = Object.prototype.hasOwnProperty;
-
-/**
- * A constructor function that will create blank objects.
- * @constructor
- */
-function Blank() {}
-
-Blank.prototype = Object.create(null);
-
-/**
- * Used to prevent property collisions between our "map" and its prototype.
- * @param {!Object<string, *>} map The map to check.
- * @param {string} property The property to check.
- * @return {boolean} Whether map has property.
- */
-var has = function (map, property) {
-  return hasOwnProperty.call(map, property);
-};
-
-/**
- * Creates an map object without a prototype.
- * @return {!Object}
- */
-var createMap = function () {
-  return new Blank();
-};
-
-/**
- * Keeps track of information needed to perform diffs for a given DOM node.
- * @param {!string} nodeName
- * @param {?string=} key
- * @constructor
- */
-function NodeData(nodeName, key) {
-  /**
-   * The attributes and their values.
-   * @const {!Object<string, *>}
-   */
-  this.attrs = createMap();
-
-  /**
-   * An array of attribute name/value pairs, used for quickly diffing the
-   * incomming attributes to see if the DOM node's attributes need to be
-   * updated.
-   * @const {Array<*>}
-   */
-  this.attrsArr = [];
-
-  /**
-   * The incoming attributes for this Node, before they are updated.
-   * @const {!Object<string, *>}
-   */
-  this.newAttrs = createMap();
-
-  /**
-   * Whether or not the statics have been applied for the node yet.
-   * {boolean}
-   */
-  this.staticsApplied = false;
-
-  /**
-   * The key used to identify this node, used to preserve DOM nodes when they
-   * move within their parent.
-   * @const
-   */
-  this.key = key;
-
-  /**
-   * Keeps track of children within this node by their key.
-   * {!Object<string, !Element>}
-   */
-  this.keyMap = createMap();
-
-  /**
-   * Whether or not the keyMap is currently valid.
-   * @type {boolean}
-   */
-  this.keyMapValid = true;
-
-  /**
-   * Whether or the associated node is, or contains, a focused Element.
-   * @type {boolean}
-   */
-  this.focused = false;
-
-  /**
-   * The node name for this node.
-   * @const {string}
-   */
-  this.nodeName = nodeName;
-
-  /**
-   * @type {?string}
-   */
-  this.text = null;
-}
-
-/**
- * Initializes a NodeData object for a Node.
- *
- * @param {Node} node The node to initialize data for.
- * @param {string} nodeName The node name of node.
- * @param {?string=} key The key that identifies the node.
- * @return {!NodeData} The newly initialized data object
- */
-var initData = function (node, nodeName, key) {
-  var data = new NodeData(nodeName, key);
-  node['__incrementalDOMData'] = data;
-  return data;
-};
-
-/**
- * Retrieves the NodeData object for a Node, creating it if necessary.
- *
- * @param {?Node} node The Node to retrieve the data for.
- * @return {!NodeData} The NodeData for this Node.
- */
-var getData = function (node) {
-  importNode(node);
-  return node['__incrementalDOMData'];
-};
-
-/**
- * Imports node and its subtree, initializing caches.
- *
- * @param {?Node} node The Node to import.
- */
-var importNode = function (node) {
-  if (node['__incrementalDOMData']) {
-    return;
-  }
-
-  var isElement = node instanceof Element;
-  var nodeName = isElement ? node.localName : node.nodeName;
-  var key = isElement ? node.getAttribute('key') : null;
-  var data = initData(node, nodeName, key);
-
-  if (key) {
-    getData(node.parentNode).keyMap[key] = node;
-  }
-
-  if (isElement) {
-    var attributes = node.attributes;
-    var attrs = data.attrs;
-    var newAttrs = data.newAttrs;
-    var attrsArr = data.attrsArr;
-
-    for (var i = 0; i < attributes.length; i += 1) {
-      var attr = attributes[i];
-      var name = attr.name;
-      var value = attr.value;
-
-      attrs[name] = value;
-      newAttrs[name] = undefined;
-      attrsArr.push(name);
-      attrsArr.push(value);
+class TemplateResult {
+    constructor(strings, values, type, partCallback = defaultPartCallback) {
+        this.strings = strings;
+        this.values = values;
+        this.type = type;
+        this.partCallback = partCallback;
     }
-  }
-
-  for (var child = node.firstChild; child; child = child.nextSibling) {
-    importNode(child);
-  }
-};
-
-/**
- * Gets the namespace to create an element (of a given tag) in.
- * @param {string} tag The tag to get the namespace for.
- * @param {?Node} parent
- * @return {?string} The namespace to create the tag in.
- */
-var getNamespaceForTag = function (tag, parent) {
-  if (tag === 'svg') {
-    return 'http://www.w3.org/2000/svg';
-  }
-
-  if (getData(parent).nodeName === 'foreignObject') {
-    return null;
-  }
-
-  return parent.namespaceURI;
-};
-
-/**
- * Creates an Element.
- * @param {Document} doc The document with which to create the Element.
- * @param {?Node} parent
- * @param {string} tag The tag for the Element.
- * @param {?string=} key A key to identify the Element.
- * @return {!Element}
- */
-var createElement = function (doc, parent, tag, key) {
-  var namespace = getNamespaceForTag(tag, parent);
-  var el = undefined;
-
-  if (namespace) {
-    el = doc.createElementNS(namespace, tag);
-  } else {
-    el = doc.createElement(tag);
-  }
-
-  initData(el, tag, key);
-
-  return el;
-};
-
-/**
- * Creates a Text Node.
- * @param {Document} doc The document with which to create the Element.
- * @return {!Text}
- */
-var createText = function (doc) {
-  var node = doc.createTextNode('');
-  initData(node, '#text', null);
-  return node;
-};
-
-/**
- * Copyright 2015 The Incremental DOM Authors. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS-IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/** @const */
-var notifications = {
-  /**
-   * Called after patch has compleated with any Nodes that have been created
-   * and added to the DOM.
-   * @type {?function(Array<!Node>)}
-   */
-  nodesCreated: null,
-
-  /**
-   * Called after patch has compleated with any Nodes that have been removed
-   * from the DOM.
-   * Note it's an applications responsibility to handle any childNodes.
-   * @type {?function(Array<!Node>)}
-   */
-  nodesDeleted: null
-};
-
-/**
- * Keeps track of the state of a patch.
- * @constructor
- */
-function Context() {
-  /**
-   * @type {(Array<!Node>|undefined)}
-   */
-  this.created = notifications.nodesCreated && [];
-
-  /**
-   * @type {(Array<!Node>|undefined)}
-   */
-  this.deleted = notifications.nodesDeleted && [];
-}
-
-/**
- * @param {!Node} node
- */
-Context.prototype.markCreated = function (node) {
-  if (this.created) {
-    this.created.push(node);
-  }
-};
-
-/**
- * @param {!Node} node
- */
-Context.prototype.markDeleted = function (node) {
-  if (this.deleted) {
-    this.deleted.push(node);
-  }
-};
-
-/**
- * Notifies about nodes that were created during the patch opearation.
- */
-Context.prototype.notifyChanges = function () {
-  if (this.created && this.created.length > 0) {
-    notifications.nodesCreated(this.created);
-  }
-
-  if (this.deleted && this.deleted.length > 0) {
-    notifications.nodesDeleted(this.deleted);
-  }
-};
-
-/**
- * Copyright 2015 The Incremental DOM Authors. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS-IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/**
-  * Keeps track whether or not we are in an attributes declaration (after
-  * elementOpenStart, but before elementOpenEnd).
-  * @type {boolean}
-  */
-var inAttributes = false;
-
-/**
-  * Keeps track whether or not we are in an element that should not have its
-  * children cleared.
-  * @type {boolean}
-  */
-var inSkip = false;
-
-/**
- * Makes sure that a patch closes every node that it opened.
- * @param {?Node} openElement
- * @param {!Node|!DocumentFragment} root
- */
-var assertNoUnclosedTags = function (openElement, root) {
-  if (openElement === root) {
-    return;
-  }
-
-  var currentElement = openElement;
-  var openTags = [];
-  while (currentElement && currentElement !== root) {
-    openTags.push(currentElement.nodeName.toLowerCase());
-    currentElement = currentElement.parentNode;
-  }
-
-  throw new Error('One or more tags were not closed:\n' + openTags.join('\n'));
-};
-
-/**
- * Makes sure that the caller is not where attributes are expected.
- * @param {string} functionName
- */
-var assertNotInAttributes = function (functionName) {
-  if (inAttributes) {
-    throw new Error(functionName + '() can not be called between ' + 'elementOpenStart() and elementOpenEnd().');
-  }
-};
-
-/**
- * Makes sure that the caller is not inside an element that has declared skip.
- * @param {string} functionName
- */
-var assertNotInSkip = function (functionName) {
-  if (inSkip) {
-    throw new Error(functionName + '() may not be called inside an element ' + 'that has called skip().');
-  }
-};
-
-/**
- * Makes sure the patch closes virtual attributes call
- */
-var assertVirtualAttributesClosed = function () {
-  if (inAttributes) {
-    throw new Error('elementOpenEnd() must be called after calling ' + 'elementOpenStart().');
-  }
-};
-
-/**
-  * Makes sure that tags are correctly nested.
-  * @param {string} nodeName
-  * @param {string} tag
-  */
-var assertCloseMatchesOpenTag = function (nodeName, tag) {
-  if (nodeName !== tag) {
-    throw new Error('Received a call to close "' + tag + '" but "' + nodeName + '" was open.');
-  }
-};
-
-/**
- * Updates the state of being in an attribute declaration.
- * @param {boolean} value
- * @return {boolean} the previous value.
- */
-var setInAttributes = function (value) {
-  var previous = inAttributes;
-  inAttributes = value;
-  return previous;
-};
-
-/**
- * Updates the state of being in a skip element.
- * @param {boolean} value
- * @return {boolean} the previous value.
- */
-var setInSkip = function (value) {
-  var previous = inSkip;
-  inSkip = value;
-  return previous;
-};
-
-/**
- * Copyright 2016 The Incremental DOM Authors. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS-IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/**
- * @param {!Node} node
- * @return {boolean} True if the node the root of a document, false otherwise.
- */
-var isDocumentRoot = function (node) {
-  // For ShadowRoots, check if they are a DocumentFragment instead of if they
-  // are a ShadowRoot so that this can work in 'use strict' if ShadowRoots are
-  // not supported.
-  return node instanceof Document || node instanceof DocumentFragment;
-};
-
-/**
- * @param {!Node} node The node to start at, inclusive.
- * @param {?Node} root The root ancestor to get until, exclusive.
- * @return {!Array<!Node>} The ancestry of DOM nodes.
- */
-var getAncestry = function (node, root) {
-  var ancestry = [];
-  var cur = node;
-
-  while (cur !== root) {
-    ancestry.push(cur);
-    cur = cur.parentNode;
-  }
-
-  return ancestry;
-};
-
-/**
- * @param {!Node} node
- * @return {!Node} The root node of the DOM tree that contains node.
- */
-var getRoot = function (node) {
-  var cur = node;
-  var prev = cur;
-
-  while (cur) {
-    prev = cur;
-    cur = cur.parentNode;
-  }
-
-  return prev;
-};
-
-/**
- * @param {!Node} node The node to get the activeElement for.
- * @return {?Element} The activeElement in the Document or ShadowRoot
- *     corresponding to node, if present.
- */
-var getActiveElement = function (node) {
-  var root = getRoot(node);
-  return isDocumentRoot(root) ? root.activeElement : null;
-};
-
-/**
- * Gets the path of nodes that contain the focused node in the same document as
- * a reference node, up until the root.
- * @param {!Node} node The reference node to get the activeElement for.
- * @param {?Node} root The root to get the focused path until.
- * @return {!Array<Node>}
- */
-var getFocusedPath = function (node, root) {
-  var activeElement = getActiveElement(node);
-
-  if (!activeElement || !node.contains(activeElement)) {
-    return [];
-  }
-
-  return getAncestry(activeElement, root);
-};
-
-/**
- * Like insertBefore, but instead instead of moving the desired node, instead
- * moves all the other nodes after.
- * @param {?Node} parentNode
- * @param {!Node} node
- * @param {?Node} referenceNode
- */
-var moveBefore = function (parentNode, node, referenceNode) {
-  var insertReferenceNode = node.nextSibling;
-  var cur = referenceNode;
-
-  while (cur !== node) {
-    var next = cur.nextSibling;
-    parentNode.insertBefore(cur, insertReferenceNode);
-    cur = next;
-  }
-};
-
-/** @type {?Context} */
-var context = null;
-
-/** @type {?Node} */
-var currentNode = null;
-
-/** @type {?Node} */
-var currentParent = null;
-
-/** @type {?Document} */
-var doc = null;
-
-/**
- * @param {!Array<Node>} focusPath The nodes to mark.
- * @param {boolean} focused Whether or not they are focused.
- */
-var markFocused = function (focusPath, focused) {
-  for (var i = 0; i < focusPath.length; i += 1) {
-    getData(focusPath[i]).focused = focused;
-  }
-};
-
-/**
- * Returns a patcher function that sets up and restores a patch context,
- * running the run function with the provided data.
- * @param {function((!Element|!DocumentFragment),!function(T),T=): ?Node} run
- * @return {function((!Element|!DocumentFragment),!function(T),T=): ?Node}
- * @template T
- */
-var patchFactory = function (run) {
-  /**
-   * TODO(moz): These annotations won't be necessary once we switch to Closure
-   * Compiler's new type inference. Remove these once the switch is done.
-   *
-   * @param {(!Element|!DocumentFragment)} node
-   * @param {!function(T)} fn
-   * @param {T=} data
-   * @return {?Node} node
-   * @template T
-   */
-  var f = function (node, fn, data) {
-    var prevContext = context;
-    var prevDoc = doc;
-    var prevCurrentNode = currentNode;
-    var prevCurrentParent = currentParent;
-    var previousInAttributes = false;
-    var previousInSkip = false;
-
-    context = new Context();
-    doc = node.ownerDocument;
-    currentParent = node.parentNode;
-
-    {
-      previousInAttributes = setInAttributes(false);
-      previousInSkip = setInSkip(false);
-    }
-
-    var focusPath = getFocusedPath(node, currentParent);
-    markFocused(focusPath, true);
-    var retVal = run(node, fn, data);
-    markFocused(focusPath, false);
-
-    {
-      assertVirtualAttributesClosed();
-      setInAttributes(previousInAttributes);
-      setInSkip(previousInSkip);
-    }
-
-    context.notifyChanges();
-
-    context = prevContext;
-    doc = prevDoc;
-    currentNode = prevCurrentNode;
-    currentParent = prevCurrentParent;
-
-    return retVal;
-  };
-  return f;
-};
-
-/**
- * Patches the document starting at node with the provided function. This
- * function may be called during an existing patch operation.
- * @param {!Element|!DocumentFragment} node The Element or Document
- *     to patch.
- * @param {!function(T)} fn A function containing elementOpen/elementClose/etc.
- *     calls that describe the DOM.
- * @param {T=} data An argument passed to fn to represent DOM state.
- * @return {!Node} The patched node.
- * @template T
- */
-var patchInner = patchFactory(function (node, fn, data) {
-  currentNode = node;
-
-  enterNode();
-  fn(data);
-  exitNode();
-
-  {
-    assertNoUnclosedTags(currentNode, node);
-  }
-
-  return node;
-});
-
-/**
- * Checks whether or not the current node matches the specified nodeName and
- * key.
- *
- * @param {!Node} matchNode A node to match the data to.
- * @param {?string} nodeName The nodeName for this node.
- * @param {?string=} key An optional key that identifies a node.
- * @return {boolean} True if the node matches, false otherwise.
- */
-var matches = function (matchNode, nodeName, key) {
-  var data = getData(matchNode);
-
-  // Key check is done using double equals as we want to treat a null key the
-  // same as undefined. This should be okay as the only values allowed are
-  // strings, null and undefined so the == semantics are not too weird.
-  return nodeName === data.nodeName && key == data.key;
-};
-
-/**
- * Aligns the virtual Element definition with the actual DOM, moving the
- * corresponding DOM node to the correct location or creating it if necessary.
- * @param {string} nodeName For an Element, this should be a valid tag string.
- *     For a Text, this should be #text.
- * @param {?string=} key The key used to identify this element.
- */
-var alignWithDOM = function (nodeName, key) {
-  if (currentNode && matches(currentNode, nodeName, key)) {
-    return;
-  }
-
-  var parentData = getData(currentParent);
-  var currentNodeData = currentNode && getData(currentNode);
-  var keyMap = parentData.keyMap;
-  var node = undefined;
-
-  // Check to see if the node has moved within the parent.
-  if (key) {
-    var keyNode = keyMap[key];
-    if (keyNode) {
-      if (matches(keyNode, nodeName, key)) {
-        node = keyNode;
-      } else if (keyNode === currentNode) {
-        context.markDeleted(keyNode);
-      } else {
-        removeChild(currentParent, keyNode, keyMap);
-      }
-    }
-  }
-
-  // Create the node if it doesn't exist.
-  if (!node) {
-    if (nodeName === '#text') {
-      node = createText(doc);
-    } else {
-      node = createElement(doc, currentParent, nodeName, key);
-    }
-
-    if (key) {
-      keyMap[key] = node;
-    }
-
-    context.markCreated(node);
-  }
-
-  // Re-order the node into the right position, preserving focus if either
-  // node or currentNode are focused by making sure that they are not detached
-  // from the DOM.
-  if (getData(node).focused) {
-    // Move everything else before the node.
-    moveBefore(currentParent, node, currentNode);
-  } else if (currentNodeData && currentNodeData.key && !currentNodeData.focused) {
-    // Remove the currentNode, which can always be added back since we hold a
-    // reference through the keyMap. This prevents a large number of moves when
-    // a keyed item is removed or moved backwards in the DOM.
-    currentParent.replaceChild(node, currentNode);
-    parentData.keyMapValid = false;
-  } else {
-    currentParent.insertBefore(node, currentNode);
-  }
-
-  currentNode = node;
-};
-
-/**
- * @param {?Node} node
- * @param {?Node} child
- * @param {?Object<string, !Element>} keyMap
- */
-var removeChild = function (node, child, keyMap) {
-  node.removeChild(child);
-  context.markDeleted( /** @type {!Node}*/child);
-
-  var key = getData(child).key;
-  if (key) {
-    delete keyMap[key];
-  }
-};
-
-/**
- * Clears out any unvisited Nodes, as the corresponding virtual element
- * functions were never called for them.
- */
-var clearUnvisitedDOM = function () {
-  var node = currentParent;
-  var data = getData(node);
-  var keyMap = data.keyMap;
-  var keyMapValid = data.keyMapValid;
-  var child = node.lastChild;
-  var key = undefined;
-
-  if (child === currentNode && keyMapValid) {
-    return;
-  }
-
-  while (child !== currentNode) {
-    removeChild(node, child, keyMap);
-    child = node.lastChild;
-  }
-
-  // Clean the keyMap, removing any unusued keys.
-  if (!keyMapValid) {
-    for (key in keyMap) {
-      child = keyMap[key];
-      if (child.parentNode !== node) {
-        context.markDeleted(child);
-        delete keyMap[key];
-      }
-    }
-
-    data.keyMapValid = true;
-  }
-};
-
-/**
- * Changes to the first child of the current node.
- */
-var enterNode = function () {
-  currentParent = currentNode;
-  currentNode = null;
-};
-
-/**
- * @return {?Node} The next Node to be patched.
- */
-var getNextNode = function () {
-  if (currentNode) {
-    return currentNode.nextSibling;
-  } else {
-    return currentParent.firstChild;
-  }
-};
-
-/**
- * Changes to the next sibling of the current node.
- */
-var nextNode = function () {
-  currentNode = getNextNode();
-};
-
-/**
- * Changes to the parent of the current node, removing any unvisited children.
- */
-var exitNode = function () {
-  clearUnvisitedDOM();
-
-  currentNode = currentParent;
-  currentParent = currentParent.parentNode;
-};
-
-/**
- * Makes sure that the current node is an Element with a matching tagName and
- * key.
- *
- * @param {string} tag The element's tag.
- * @param {?string=} key The key used to identify this element. This can be an
- *     empty string, but performance may be better if a unique value is used
- *     when iterating over an array of items.
- * @return {!Element} The corresponding Element.
- */
-var coreElementOpen = function (tag, key) {
-  nextNode();
-  alignWithDOM(tag, key);
-  enterNode();
-  return (/** @type {!Element} */currentParent
-  );
-};
-
-/**
- * Closes the currently open Element, removing any unvisited children if
- * necessary.
- *
- * @return {!Element} The corresponding Element.
- */
-var coreElementClose = function () {
-  {
-    setInSkip(false);
-  }
-
-  exitNode();
-  return (/** @type {!Element} */currentNode
-  );
-};
-
-/**
- * Makes sure the current node is a Text node and creates a Text node if it is
- * not.
- *
- * @return {!Text} The corresponding Text Node.
- */
-var coreText = function () {
-  nextNode();
-  alignWithDOM('#text', null);
-  return (/** @type {!Text} */currentNode
-  );
-};
-
-/**
- * Copyright 2015 The Incremental DOM Authors. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS-IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/** @const */
-var symbols = {
-  default: '__default'
-};
-
-/**
- * @param {string} name
- * @return {string|undefined} The namespace to use for the attribute.
- */
-var getNamespace = function (name) {
-  if (name.lastIndexOf('xml:', 0) === 0) {
-    return 'http://www.w3.org/XML/1998/namespace';
-  }
-
-  if (name.lastIndexOf('xlink:', 0) === 0) {
-    return 'http://www.w3.org/1999/xlink';
-  }
-};
-
-/**
- * Applies an attribute or property to a given Element. If the value is null
- * or undefined, it is removed from the Element. Otherwise, the value is set
- * as an attribute.
- * @param {!Element} el
- * @param {string} name The attribute's name.
- * @param {?(boolean|number|string)=} value The attribute's value.
- */
-var applyAttr = function (el, name, value) {
-  if (value == null) {
-    el.removeAttribute(name);
-  } else {
-    var attrNS = getNamespace(name);
-    if (attrNS) {
-      el.setAttributeNS(attrNS, name, value);
-    } else {
-      el.setAttribute(name, value);
-    }
-  }
-};
-
-/**
- * Applies a property to a given Element.
- * @param {!Element} el
- * @param {string} name The property's name.
- * @param {*} value The property's value.
- */
-var applyProp = function (el, name, value) {
-  el[name] = value;
-};
-
-/**
- * Applies a value to a style declaration. Supports CSS custom properties by
- * setting properties containing a dash using CSSStyleDeclaration.setProperty.
- * @param {CSSStyleDeclaration} style
- * @param {!string} prop
- * @param {*} value
- */
-var setStyleValue = function (style, prop, value) {
-  if (prop.indexOf('-') >= 0) {
-    style.setProperty(prop, /** @type {string} */value);
-  } else {
-    style[prop] = value;
-  }
-};
-
-/**
- * Applies a style to an Element. No vendor prefix expansion is done for
- * property names/values.
- * @param {!Element} el
- * @param {string} name The attribute's name.
- * @param {*} style The style to set. Either a string of css or an object
- *     containing property-value pairs.
- */
-var applyStyle = function (el, name, style) {
-  if (typeof style === 'string') {
-    el.style.cssText = style;
-  } else {
-    el.style.cssText = '';
-    var elStyle = el.style;
-    var obj = /** @type {!Object<string,string>} */style;
-
-    for (var prop in obj) {
-      if (has(obj, prop)) {
-        setStyleValue(elStyle, prop, obj[prop]);
-      }
-    }
-  }
-};
-
-/**
- * Updates a single attribute on an Element.
- * @param {!Element} el
- * @param {string} name The attribute's name.
- * @param {*} value The attribute's value. If the value is an object or
- *     function it is set on the Element, otherwise, it is set as an HTML
- *     attribute.
- */
-var applyAttributeTyped = function (el, name, value) {
-  var type = typeof value;
-
-  if (type === 'object' || type === 'function') {
-    applyProp(el, name, value);
-  } else {
-    applyAttr(el, name, /** @type {?(boolean|number|string)} */value);
-  }
-};
-
-/**
- * Calls the appropriate attribute mutator for this attribute.
- * @param {!Element} el
- * @param {string} name The attribute's name.
- * @param {*} value The attribute's value.
- */
-var updateAttribute = function (el, name, value) {
-  var data = getData(el);
-  var attrs = data.attrs;
-
-  if (attrs[name] === value) {
-    return;
-  }
-
-  var mutator = attributes[name] || attributes[symbols.default];
-  mutator(el, name, value);
-
-  attrs[name] = value;
-};
-
-/**
- * A publicly mutable object to provide custom mutators for attributes.
- * @const {!Object<string, function(!Element, string, *)>}
- */
-var attributes = createMap();
-
-// Special generic mutator that's called for any attribute that does not
-// have a specific mutator.
-attributes[symbols.default] = applyAttributeTyped;
-
-attributes['style'] = applyStyle;
-
-/**
- * The offset in the virtual element declaration where the attributes are
- * specified.
- * @const
- */
-var ATTRIBUTES_OFFSET = 3;
-
-/**
- * @param {string} tag The element's tag.
- * @param {?string=} key The key used to identify this element. This can be an
- *     empty string, but performance may be better if a unique value is used
- *     when iterating over an array of items.
- * @param {?Array<*>=} statics An array of attribute name/value pairs of the
- *     static attributes for the Element. These will only be set once when the
- *     Element is created.
- * @param {...*} var_args, Attribute name/value pairs of the dynamic attributes
- *     for the Element.
- * @return {!Element} The corresponding Element.
- */
-var elementOpen = function (tag, key, statics, var_args) {
-  {
-    assertNotInAttributes('elementOpen');
-    assertNotInSkip('elementOpen');
-  }
-
-  var node = coreElementOpen(tag, key);
-  var data = getData(node);
-
-  if (!data.staticsApplied) {
-    if (statics) {
-      for (var _i = 0; _i < statics.length; _i += 2) {
-        var name = /** @type {string} */statics[_i];
-        var value = statics[_i + 1];
-        updateAttribute(node, name, value);
-      }
-    }
-    // Down the road, we may want to keep track of the statics array to use it
-    // as an additional signal about whether a node matches or not. For now,
-    // just use a marker so that we do not reapply statics.
-    data.staticsApplied = true;
-  }
-
-  /*
-   * Checks to see if one or more attributes have changed for a given Element.
-   * When no attributes have changed, this is much faster than checking each
-   * individual argument. When attributes have changed, the overhead of this is
-   * minimal.
-   */
-  var attrsArr = data.attrsArr;
-  var newAttrs = data.newAttrs;
-  var isNew = !attrsArr.length;
-  var i = ATTRIBUTES_OFFSET;
-  var j = 0;
-
-  for (; i < arguments.length; i += 2, j += 2) {
-    var _attr = arguments[i];
-    if (isNew) {
-      attrsArr[j] = _attr;
-      newAttrs[_attr] = undefined;
-    } else if (attrsArr[j] !== _attr) {
-      break;
-    }
-
-    var value = arguments[i + 1];
-    if (isNew || attrsArr[j + 1] !== value) {
-      attrsArr[j + 1] = value;
-      updateAttribute(node, _attr, value);
-    }
-  }
-
-  if (i < arguments.length || j < attrsArr.length) {
-    for (; i < arguments.length; i += 1, j += 1) {
-      attrsArr[j] = arguments[i];
-    }
-
-    if (j < attrsArr.length) {
-      attrsArr.length = j;
-    }
-
-    /*
-     * Actually perform the attribute update.
+    /**
+     * Returns a string of HTML used to create a <template> element.
      */
-    for (i = 0; i < attrsArr.length; i += 2) {
-      var name = /** @type {string} */attrsArr[i];
-      var value = attrsArr[i + 1];
-      newAttrs[name] = value;
-    }
-
-    for (var _attr2 in newAttrs) {
-      updateAttribute(node, _attr2, newAttrs[_attr2]);
-      newAttrs[_attr2] = undefined;
-    }
-  }
-
-  return node;
-};
-
-/**
- * Closes an open virtual Element.
- *
- * @param {string} tag The element's tag.
- * @return {!Element} The corresponding Element.
- */
-var elementClose = function (tag) {
-  {
-    assertNotInAttributes('elementClose');
-  }
-
-  var node = coreElementClose();
-
-  {
-    assertCloseMatchesOpenTag(getData(node).nodeName, tag);
-  }
-
-  return node;
-};
-
-/**
- * Declares a virtual Text at this point in the document.
- *
- * @param {string|number|boolean} value The value of the Text.
- * @param {...(function((string|number|boolean)):string)} var_args
- *     Functions to format the value which are called only when the value has
- *     changed.
- * @return {!Text} The corresponding text node.
- */
-var text = function (value, var_args) {
-  {
-    assertNotInAttributes('text');
-    assertNotInSkip('text');
-  }
-
-  var node = coreText();
-  var data = getData(node);
-
-  if (data.text !== value) {
-    data.text = /** @type {string} */value;
-
-    var formatted = value;
-    for (var i = 1; i < arguments.length; i += 1) {
-      /*
-       * Call the formatter function directly to prevent leaking arguments.
-       * https://github.com/google/incremental-dom/pull/204#issuecomment-178223574
-       */
-      var fn = arguments[i];
-      formatted = fn(formatted);
-    }
-
-    node.data = formatted;
-  }
-
-  return node;
-};
-
-var patch = patchInner;
-var elementOpen_1 = elementOpen;
-var elementClose_1 = elementClose;
-var text_1 = text;
-var symbols_1 = symbols;
-var attributes_1 = attributes;
-
-function getInstance(fritz, id) {
-  return fritz._instances[id];
-}
-
-function setInstance(fritz, id, instance) {
-  fritz._instances[id] = instance;
-}
-
-function delInstance(fritz, id) {
-  delete fritz._instances[id];
-}
-
-function isFunction(val) {
-  return typeof val === 'function';
-}
-
-const defer = Promise.resolve().then.bind(Promise.resolve());
-
-var eventAttrExp = /^on[a-z]/;
-
-var attributesSet = attributes_1[symbols_1.default];
-attributes_1[symbols_1.default] = preferProps;
-
-function preferProps(element, name, value) {
-  if (name in element) element[name] = value;else if (isFunction(value) && eventAttrExp.test(name) && isFunction(element.addEventProperty)) {
-    element.addEventProperty(name);
-    element[name] = value;
-  } else attributesSet(element, name, value);
-}
-
-const TAG = 1;
-const ID = 2;
-const ATTRS = 3;
-const EVENTS = 4;
-
-function render$1(bc, component) {
-  var n;
-  for (var i = 0, len = bc.length; i < len; i++) {
-    n = bc[i];
-    switch (n[0]) {
-      // Open
-      case 1:
-        if (n[EVENTS]) {
-          var k;
-          for (var j = 0, jlen = n[EVENTS].length; j < jlen; j++) {
-            k = n[EVENTS][j];
-            let handler = component.addEventCallback(k[2], k[1]);
-            n[ATTRS].push(k[1], handler);
-          }
+    getHTML() {
+        const l = this.strings.length - 1;
+        let html = '';
+        let isTextBinding = true;
+        for (let i = 0; i < l; i++) {
+            const s = this.strings[i];
+            html += s;
+            // We're in a text position if the previous string closed its tags.
+            // If it doesn't have any tags, then we use the previous text position
+            // state.
+            const closing = findTagClose(s);
+            isTextBinding = closing > -1 ? closing < s.length : isTextBinding;
+            html += isTextBinding ? nodeMarker : marker;
         }
+        html += this.strings[l];
+        return html;
+    }
+    getTemplateElement() {
+        const template = document.createElement('template');
+        template.innerHTML = this.getHTML();
+        return template;
+    }
+}
+/**
+ * A TemplateResult for SVG fragments.
+ *
+ * This class wraps HTMl in an <svg> tag in order to parse its contents in the
+ * SVG namespace, then modifies the template to remove the <svg> tag so that
+ * clones only container the original fragment.
+ */
 
-        var openArgs = [n[TAG], n[ID], null].concat(n[ATTRS]);
-        elementOpen_1.apply(null, openArgs);
-        break;
-      case 2:
-        elementClose_1(n[1]);
-        break;
-      case 4:
-        text_1(n[1]);
-        break;
+/**
+ * The default TemplateFactory which caches Templates keyed on
+ * result.type and result.strings.
+ */
+function defaultTemplateFactory(result) {
+    let templateCache = templateCaches.get(result.type);
+    if (templateCache === undefined) {
+        templateCache = new Map();
+        templateCaches.set(result.type, templateCache);
+    }
+    let template = templateCache.get(result.strings);
+    if (template === undefined) {
+        template = new Template(result, result.getTemplateElement());
+        templateCache.set(result.strings, template);
+    }
+    return template;
+}
+/**
+ * Renders a template to a container.
+ *
+ * To update a container with new values, reevaluate the template literal and
+ * call `render` with the new result.
+ *
+ * @param result a TemplateResult created by evaluating a template tag like
+ *     `html` or `svg`.
+ * @param container A DOM parent to render to. The entire contents are either
+ *     replaced, or efficiently updated if the same result type was previous
+ *     rendered there.
+ * @param templateFactory a function to create a Template or retreive one from
+ *     cache.
+ */
+function render$2(result, container, templateFactory = defaultTemplateFactory) {
+    const template = templateFactory(result);
+    let instance = container.__templateInstance;
+    // Repeat render, just call update()
+    if (instance !== undefined && instance.template === template &&
+        instance._partCallback === result.partCallback) {
+        instance.update(result.values);
+        return;
+    }
+    // First render, create a new TemplateInstance and append it
+    instance =
+        new TemplateInstance(template, result.partCallback, templateFactory);
+    container.__templateInstance = instance;
+    const fragment = instance._clone();
+    instance.update(result.values);
+    removeNodes(container, container.firstChild);
+    container.appendChild(fragment);
+}
+/**
+ * An expression marker with embedded unique key to avoid collision with
+ * possible text in templates.
+ */
+const marker = `{{lit-${String(Math.random()).slice(2)}}}`;
+/**
+ * An expression marker used text-posisitions, not attribute positions,
+ * in template.
+ */
+const nodeMarker = `<!--${marker}-->`;
+const markerRegex = new RegExp(`${marker}|${nodeMarker}`);
+/**
+ * This regex extracts the attribute name preceding an attribute-position
+ * expression. It does this by matching the syntax allowed for attributes
+ * against the string literal directly preceding the expression, assuming that
+ * the expression is in an attribute-value position.
+ *
+ * See attributes in the HTML spec:
+ * https://www.w3.org/TR/html5/syntax.html#attributes-0
+ *
+ * "\0-\x1F\x7F-\x9F" are Unicode control characters
+ *
+ * " \x09\x0a\x0c\x0d" are HTML space characters:
+ * https://www.w3.org/TR/html5/infrastructure.html#space-character
+ *
+ * So an attribute is:
+ *  * The name: any character except a control character, space character, ('),
+ *    ("), ">", "=", or "/"
+ *  * Followed by zero or more space characters
+ *  * Followed by "="
+ *  * Followed by zero or more space characters
+ *  * Followed by:
+ *    * Any character except space, ('), ("), "<", ">", "=", (`), or
+ *    * (") then any non-("), or
+ *    * (') then any non-(')
+ */
+const lastAttributeNameRegex = /[ \x09\x0a\x0c\x0d]([^\0-\x1F\x7F-\x9F \x09\x0a\x0c\x0d"'>=/]+)[ \x09\x0a\x0c\x0d]*=[ \x09\x0a\x0c\x0d]*(?:[^ \x09\x0a\x0c\x0d"'`<>=]*|"[^"]*|'[^']*)$/;
+/**
+ * Finds the closing index of the last closed HTML tag.
+ * This has 3 possible return values:
+ *   - `-1`, meaning there is no tag in str.
+ *   - `string.length`, meaning the last opened tag is unclosed.
+ *   - Some positive number < str.length, meaning the index of the closing '>'.
+ */
+function findTagClose(str) {
+    const close = str.lastIndexOf('>');
+    const open = str.indexOf('<', close + 1);
+    return open > -1 ? str.length : close;
+}
+/**
+ * A placeholder for a dynamic expression in an HTML template.
+ *
+ * There are two built-in part types: AttributePart and NodePart. NodeParts
+ * always represent a single dynamic expression, while AttributeParts may
+ * represent as many expressions are contained in the attribute.
+ *
+ * A Template's parts are mutable, so parts can be replaced or modified
+ * (possibly to implement different template semantics). The contract is that
+ * parts can only be replaced, not removed, added or reordered, and parts must
+ * always consume the correct number of values in their `update()` method.
+ *
+ * TODO(justinfagnani): That requirement is a little fragile. A
+ * TemplateInstance could instead be more careful about which values it gives
+ * to Part.update().
+ */
+class TemplatePart {
+    constructor(type, index, name, rawName, strings) {
+        this.type = type;
+        this.index = index;
+        this.name = name;
+        this.rawName = rawName;
+        this.strings = strings;
+    }
+}
+/**
+ * An updateable Template that tracks the location of dynamic parts.
+ */
+class Template {
+    constructor(result, element) {
+        this.parts = [];
+        this.element = element;
+        const content = this.element.content;
+        // Edge needs all 4 parameters present; IE11 needs 3rd parameter to be null
+        const walker = document.createTreeWalker(content, 133 /* NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_COMMENT |
+               NodeFilter.SHOW_TEXT */, null, false);
+        let index = -1;
+        let partIndex = 0;
+        const nodesToRemove = [];
+        // The actual previous node, accounting for removals: if a node is removed
+        // it will never be the previousNode.
+        let previousNode;
+        // Used to set previousNode at the top of the loop.
+        let currentNode;
+        while (walker.nextNode()) {
+            index++;
+            previousNode = currentNode;
+            const node = currentNode = walker.currentNode;
+            if (node.nodeType === 1 /* Node.ELEMENT_NODE */) {
+                if (!node.hasAttributes()) {
+                    continue;
+                }
+                const attributes = node.attributes;
+                // Per https://developer.mozilla.org/en-US/docs/Web/API/NamedNodeMap,
+                // attributes are not guaranteed to be returned in document order. In
+                // particular, Edge/IE can return them out of order, so we cannot assume
+                // a correspondance between part index and attribute index.
+                let count = 0;
+                for (let i = 0; i < attributes.length; i++) {
+                    if (attributes[i].value.indexOf(marker) >= 0) {
+                        count++;
+                    }
+                }
+                while (count-- > 0) {
+                    // Get the template literal section leading up to the first
+                    // expression in this attribute attribute
+                    const stringForPart = result.strings[partIndex];
+                    // Find the attribute name
+                    const attributeNameInPart = lastAttributeNameRegex.exec(stringForPart)[1];
+                    // Find the corresponding attribute
+                    // TODO(justinfagnani): remove non-null assertion
+                    const attribute = attributes.getNamedItem(attributeNameInPart);
+                    const stringsForAttributeValue = attribute.value.split(markerRegex);
+                    this.parts.push(new TemplatePart('attribute', index, attribute.name, attributeNameInPart, stringsForAttributeValue));
+                    node.removeAttribute(attribute.name);
+                    partIndex += stringsForAttributeValue.length - 1;
+                }
+            }
+            else if (node.nodeType === 3 /* Node.TEXT_NODE */) {
+                const nodeValue = node.nodeValue;
+                if (nodeValue.indexOf(marker) < 0) {
+                    continue;
+                }
+                const parent = node.parentNode;
+                const strings = nodeValue.split(markerRegex);
+                const lastIndex = strings.length - 1;
+                // We have a part for each match found
+                partIndex += lastIndex;
+                // Generate a new text node for each literal section
+                // These nodes are also used as the markers for node parts
+                for (let i = 0; i < lastIndex; i++) {
+                    parent.insertBefore((strings[i] === '')
+                        ? document.createComment('')
+                        : document.createTextNode(strings[i]), node);
+                    this.parts.push(new TemplatePart('node', index++));
+                }
+                parent.insertBefore(strings[lastIndex] === '' ?
+                    document.createComment('') :
+                    document.createTextNode(strings[lastIndex]), node);
+                nodesToRemove.push(node);
+            }
+            else if (node.nodeType === 8 /* Node.COMMENT_NODE */ &&
+                node.nodeValue === marker) {
+                const parent = node.parentNode;
+                // Add a new marker node to be the startNode of the Part if any of the
+                // following are true:
+                //  * We don't have a previousSibling
+                //  * previousSibling is being removed (thus it's not the
+                //    `previousNode`)
+                //  * previousSibling is not a Text node
+                //
+                // TODO(justinfagnani): We should be able to use the previousNode here
+                // as the marker node and reduce the number of extra nodes we add to a
+                // template. See https://github.com/PolymerLabs/lit-html/issues/147
+                const previousSibling = node.previousSibling;
+                if (previousSibling === null || previousSibling !== previousNode ||
+                    previousSibling.nodeType !== Node.TEXT_NODE) {
+                    parent.insertBefore(document.createComment(''), node);
+                }
+                else {
+                    index--;
+                }
+                this.parts.push(new TemplatePart('node', index++));
+                nodesToRemove.push(node);
+                // If we don't have a nextSibling add a marker node.
+                // We don't have to check if the next node is going to be removed,
+                // because that node will induce a new marker if so.
+                if (node.nextSibling === null) {
+                    parent.insertBefore(document.createComment(''), node);
+                }
+                else {
+                    index--;
+                }
+                currentNode = previousNode;
+                partIndex++;
+            }
+        }
+        // Remove text binding nodes after the walk to not disturb the TreeWalker
+        for (const n of nodesToRemove) {
+            n.parentNode.removeChild(n);
+        }
+    }
+}
+/**
+ * Returns a value ready to be inserted into a Part from a user-provided value.
+ *
+ * If the user value is a directive, this invokes the directive with the given
+ * part. If the value is null, it's converted to undefined to work better
+ * with certain DOM APIs, like textContent.
+ */
+const getValue = (part, value) => {
+    // `null` as the value of a Text node will render the string 'null'
+    // so we convert it to undefined
+    if (isDirective(value)) {
+        value = value(part);
+        return directiveValue;
+    }
+    return value === null ? undefined : value;
+};
+
+const isDirective = (o) => typeof o === 'function' && o.__litDirective === true;
+/**
+ * A sentinel value that signals that a value was handled by a directive and
+ * should not be written to the DOM.
+ */
+const directiveValue = {};
+const isPrimitiveValue = (value) => value === null ||
+    !(typeof value === 'object' || typeof value === 'function');
+class AttributePart {
+    constructor(instance, element, name, strings) {
+        this.instance = instance;
+        this.element = element;
+        this.name = name;
+        this.strings = strings;
+        this.size = strings.length - 1;
+        this._previousValues = [];
+    }
+    _interpolate(values, startIndex) {
+        const strings = this.strings;
+        const l = strings.length - 1;
+        let text = '';
+        for (let i = 0; i < l; i++) {
+            text += strings[i];
+            const v = getValue(this, values[startIndex + i]);
+            if (v && v !== directiveValue &&
+                (Array.isArray(v) || typeof v !== 'string' && v[Symbol.iterator])) {
+                for (const t of v) {
+                    // TODO: we need to recursively call getValue into iterables...
+                    text += t;
+                }
+            }
+            else {
+                text += v;
+            }
+        }
+        return text + strings[l];
+    }
+    _equalToPreviousValues(values, startIndex) {
+        for (let i = startIndex; i < startIndex + this.size; i++) {
+            if (this._previousValues[i] !== values[i] ||
+                !isPrimitiveValue(values[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+    setValue(values, startIndex) {
+        if (this._equalToPreviousValues(values, startIndex)) {
+            return;
+        }
+        const s = this.strings;
+        let value;
+        if (s.length === 2 && s[0] === '' && s[1] === '') {
+            // An expression that occupies the whole attribute value will leave
+            // leading and trailing empty strings.
+            value = getValue(this, values[startIndex]);
+            if (Array.isArray(value)) {
+                value = value.join('');
+            }
+        }
+        else {
+            value = this._interpolate(values, startIndex);
+        }
+        if (value !== directiveValue) {
+            this.element.setAttribute(this.name, value);
+        }
+        this._previousValues = values;
+    }
+}
+class NodePart {
+    constructor(instance, startNode, endNode) {
+        this.instance = instance;
+        this.startNode = startNode;
+        this.endNode = endNode;
+        this._previousValue = undefined;
+    }
+    setValue(value) {
+        value = getValue(this, value);
+        if (value === directiveValue) {
+            return;
+        }
+        if (isPrimitiveValue(value)) {
+            // Handle primitive values
+            // If the value didn't change, do nothing
+            if (value === this._previousValue) {
+                return;
+            }
+            this._setText(value);
+        }
+        else if (value instanceof TemplateResult) {
+            this._setTemplateResult(value);
+        }
+        else if (Array.isArray(value) || value[Symbol.iterator]) {
+            this._setIterable(value);
+        }
+        else if (value instanceof Node) {
+            this._setNode(value);
+        }
+        else if (value.then !== undefined) {
+            this._setPromise(value);
+        }
+        else {
+            // Fallback, will render the string representation
+            this._setText(value);
+        }
+    }
+    _insert(node) {
+        this.endNode.parentNode.insertBefore(node, this.endNode);
+    }
+    _setNode(value) {
+        if (this._previousValue === value) {
+            return;
+        }
+        this.clear();
+        this._insert(value);
+        this._previousValue = value;
+    }
+    _setText(value) {
+        const node = this.startNode.nextSibling;
+        value = value === undefined ? '' : value;
+        if (node === this.endNode.previousSibling &&
+            node.nodeType === Node.TEXT_NODE) {
+            // If we only have a single text node between the markers, we can just
+            // set its value, rather than replacing it.
+            // TODO(justinfagnani): Can we just check if _previousValue is
+            // primitive?
+            node.textContent = value;
+        }
+        else {
+            this._setNode(document.createTextNode(value));
+        }
+        this._previousValue = value;
+    }
+    _setTemplateResult(value) {
+        const template = this.instance._getTemplate(value);
+        let instance;
+        if (this._previousValue && this._previousValue.template === template) {
+            instance = this._previousValue;
+        }
+        else {
+            instance = new TemplateInstance(template, this.instance._partCallback, this.instance._getTemplate);
+            this._setNode(instance._clone());
+            this._previousValue = instance;
+        }
+        instance.update(value.values);
+    }
+    _setIterable(value) {
+        // For an Iterable, we create a new InstancePart per item, then set its
+        // value to the item. This is a little bit of overhead for every item in
+        // an Iterable, but it lets us recurse easily and efficiently update Arrays
+        // of TemplateResults that will be commonly returned from expressions like:
+        // array.map((i) => html`${i}`), by reusing existing TemplateInstances.
+        // If _previousValue is an array, then the previous render was of an
+        // iterable and _previousValue will contain the NodeParts from the previous
+        // render. If _previousValue is not an array, clear this part and make a new
+        // array for NodeParts.
+        if (!Array.isArray(this._previousValue)) {
+            this.clear();
+            this._previousValue = [];
+        }
+        // Lets us keep track of how many items we stamped so we can clear leftover
+        // items from a previous render
+        const itemParts = this._previousValue;
+        let partIndex = 0;
+        for (const item of value) {
+            // Try to reuse an existing part
+            let itemPart = itemParts[partIndex];
+            // If no existing part, create a new one
+            if (itemPart === undefined) {
+                // If we're creating the first item part, it's startNode should be the
+                // container's startNode
+                let itemStart = this.startNode;
+                // If we're not creating the first part, create a new separator marker
+                // node, and fix up the previous part's endNode to point to it
+                if (partIndex > 0) {
+                    const previousPart = itemParts[partIndex - 1];
+                    itemStart = previousPart.endNode = document.createTextNode('');
+                    this._insert(itemStart);
+                }
+                itemPart = new NodePart(this.instance, itemStart, this.endNode);
+                itemParts.push(itemPart);
+            }
+            itemPart.setValue(item);
+            partIndex++;
+        }
+        if (partIndex === 0) {
+            this.clear();
+            this._previousValue = undefined;
+        }
+        else if (partIndex < itemParts.length) {
+            const lastPart = itemParts[partIndex - 1];
+            // Truncate the parts array so _previousValue reflects the current state
+            itemParts.length = partIndex;
+            this.clear(lastPart.endNode.previousSibling);
+            lastPart.endNode = this.endNode;
+        }
+    }
+    _setPromise(value) {
+        this._previousValue = value;
+        value.then((v) => {
+            if (this._previousValue === value) {
+                this.setValue(v);
+            }
+        });
+    }
+    clear(startNode = this.startNode) {
+        removeNodes(this.startNode.parentNode, startNode.nextSibling, this.endNode);
+    }
+}
+const defaultPartCallback = (instance, templatePart, node) => {
+    if (templatePart.type === 'attribute') {
+        return new AttributePart(instance, node, templatePart.name, templatePart.strings);
+    }
+    else if (templatePart.type === 'node') {
+        return new NodePart(instance, node, node.nextSibling);
+    }
+    throw new Error(`Unknown part type ${templatePart.type}`);
+};
+/**
+ * An instance of a `Template` that can be attached to the DOM and updated
+ * with new values.
+ */
+class TemplateInstance {
+    constructor(template, partCallback, getTemplate) {
+        this._parts = [];
+        this.template = template;
+        this._partCallback = partCallback;
+        this._getTemplate = getTemplate;
+    }
+    update(values) {
+        let valueIndex = 0;
+        for (const part of this._parts) {
+            if (part.size === undefined) {
+                part.setValue(values[valueIndex]);
+                valueIndex++;
+            }
+            else {
+                part.setValue(values, valueIndex);
+                valueIndex += part.size;
+            }
+        }
+    }
+    _clone() {
+        const fragment = document.importNode(this.template.element.content, true);
+        const parts = this.template.parts;
+        if (parts.length > 0) {
+            // Edge needs all 4 parameters present; IE11 needs 3rd parameter to be
+            // null
+            const walker = document.createTreeWalker(fragment, 133 /* NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_COMMENT |
+                   NodeFilter.SHOW_TEXT */, null, false);
+            let index = -1;
+            for (let i = 0; i < parts.length; i++) {
+                const part = parts[i];
+                while (index < part.index) {
+                    index++;
+                    walker.nextNode();
+                }
+                this._parts.push(this._partCallback(this, part, walker.currentNode));
+            }
+        }
+        return fragment;
+    }
+}
+/**
+ * Reparents nodes, starting from `startNode` (inclusive) to `endNode`
+ * (exclusive), into another container (could be the same container), before
+ * `beforeNode`. If `beforeNode` is null, it appends the nodes to the
+ * container.
+ */
+
+/**
+ * Removes nodes, starting from `startNode` (inclusive) to `endNode`
+ * (exclusive), from `container`.
+ */
+const removeNodes = (container, startNode, endNode = null) => {
+    let node = startNode;
+    while (node !== endNode) {
+        const n = node.nextSibling;
+        container.removeChild(node);
+        node = n;
+    }
+};
+
+const FN_HANDLE$1 = Symbol('fritz.handle');
+
+const orphans = [];
+
+function track(fn, handleId) {
+  if(!(FN_HANDLE$1 in fn)) {
+    fn[FN_HANDLE$1] = handleId;
+  }
+
+  return fn;
+}
+
+function reset() {
+  orphans.length = 0;
+}
+
+function trap() {
+  reset();
+  return function(){
+    let out = Array.from(orphans);
+    reset();
+    return out;
+  };
+}
+
+function mark(fn) {
+  orphans.push(fn[FN_HANDLE$1]);
+}
+
+function html$$1(strings, values) {
+  return new TemplateResult(strings, values, 'html', partCallback);
+}
+
+function partCallback(instance, templatePart, node) {
+  if (templatePart.type === 'attribute') {
+    if (templatePart.rawName.startsWith('on-')) {
+      const eventName = templatePart.rawName.substring(3);
+      return new EventPart(instance, node, eventName);
+    }
+
+    // What to do about properties
+    if(templatePart.name.startsWith(".")) {
+      const name = templatePart.name.substr(1);
+      return new PropertyPart(instance, node, name, templatePart.strings);
+    }
+    return new AttributePart(instance, node, templatePart.rawName, templatePart.strings);
+    //return new PropertyPart(instance, node, templatePart.rawName, templatePart.strings);
+  }
+  return defaultPartCallback(instance, templatePart, node);
+}
+
+class EventPart {
+  constructor(instance, element, eventName) {
+    this.instance = instance;
+    this.element = element;
+    this.eventName = eventName;
+  }
+  setValue(value) {
+    const listener = getValue(this, value);
+    if (listener === this._listener) {
+      return;
+    }
+    // Mark garbage if the value has changed
+    if(listener && this._listener && listener !== this._listener) {
+      mark(this._listener);
+    }
+    if (listener == null) {
+      this.element.removeEventListener(this.eventName, this);
+    }
+    else if (this._listener == null) {
+      this.element.addEventListener(this.eventName, this);
+    }
+    this._listener = listener;
+  }
+  handleEvent(event) {
+    if (typeof this._listener === 'function') {
+      this._listener.call(this.element, event);
+    }
+    else if (typeof this._listener.handleEvent === 'function') {
+      this._listener.handleEvent(event);
     }
   }
 }
 
-function idomRender(vdom, root, component) {
-  patch(root, () => render$1(vdom, component));
+class PropertyPart extends AttributePart {
+  setValue(values, startIndex) {
+    const s = this.strings;
+    let value;
+    if (s.length === 2 && s[0] === '' && s[s.length - 1] === '') {
+      // An expression that occupies the whole attribute value will leave
+      // leading and trailing empty strings.
+      value = getValue(this, values[startIndex]);
+    }
+    else {
+      // Interpolation, so interpolate
+      value = '';
+      for (let i = 0; i < s.length; i++) {
+        value += s[i];
+        if (i < s.length - 1) {
+          value += getValue(this, values[startIndex + i]);
+        }
+      }
+    }
+    this.element[this.name] = value;
+  }
+}
+
+const registry = new WeakMap();
+let globalId = 0;
+
+function add(worker) {
+  if(registry.has(worker)) {
+    return registry.get(worker);
+  }
+  globalId = globalId + 1;
+  let id = globalId;
+  registry.set(worker, id);
+  return id;
+}
+
+function get$1(worker) {
+  return registry.get(worker);
+}
+
+const templates = new Map();
+
+function getId(worker, workerUniqueId) {
+  let workerId = get$1(worker);
+  let id = workerId + '|' + workerUniqueId;
+  return id;
+}
+
+function register$1(worker, workerUniqueId, strings) {
+  let id = getId(worker, workerUniqueId);
+  templates.set(id, strings);
+}
+
+function get$$1(worker, workerUniqueId) {
+  let id = getId(worker, workerUniqueId);
+  return templates.get(id);
+}
+
+const templateTag = 0;
+
+function renderTemplate(tree, root, instance){
+  let result = createTemplateResult.call(this, tree, 
+    getValues.call(this, tree, instance));
+
+  let release = trap();
+  render$2(result, root);
+  return release();
+}
+
+function getValues(tree, instance) {
+  let rawValues = tree[3];
+
+  return rawValues.map(value => {
+    if(value instanceof Uint8Array) {
+      // This assumes it's always an event
+      
+      // TODO use handleEvent instead
+      //return instance;
+      
+      let handleId = value[1];
+      let fn = instance.addEventCallback(handleId);
+      return track(fn, handleId);
+    } else if(Array.isArray(value)) {
+      let tag = value[0];
+      let val = value[1];
+      if(tag === templateTag) {
+        return createTemplateResult.call(this, val,
+          getValues.call(this, val, instance));
+      }
+      return val;
+    }
+    
+    return value;
+  });
+}
+
+function createTemplateResult(tree, values) {
+  let workerUniqueId = tree[1];
+  let template = get$$1(this, workerUniqueId);
+
+  if(!template) {
+     throw new Error('Something went wrong. A template was queued to render before it registered itself. This shouldn\'t happen.');
+  }
+
+  let result = html$$1(template, values);
+  return result;
 }
 
 function shadow(elem) {
@@ -1712,7 +1270,7 @@ const withRenderer = (Base = HTMLElement) => {
       if (super.renderer) {
         super.renderer(root, html);
       } else {
-        root.innerHTML = html();
+        root.innerHTML = html() || '';
       }
     }
 
@@ -1727,6 +1285,13 @@ const withRenderer = (Base = HTMLElement) => {
 
 function withWorkerRender(Base = HTMLElement) {
   return class extends withRenderer(Base) {
+    constructor() {
+      super();
+      if(!this.shadowRoot) {
+        this.attachShadow({ mode: 'open' });
+      }
+    }
+
     renderer() {
       this._worker.postMessage({
         type: RENDER,
@@ -1739,13 +1304,16 @@ function withWorkerRender(Base = HTMLElement) {
     beforeRender() {}
     afterRender() {}
 
-    doRenderCallback(vdom) {
+    doRenderCallback(tree) {
       this.beforeRender();
       let shadowRoot = this.shadowRoot;
-      idomRender(vdom, shadowRoot, this);
+      let worker = this._worker;
+      let out = renderTemplate.call(worker, tree, shadowRoot, this);
       this.afterRender();
+
+      this.handleOrphanedHandles(out);
     }
-  };
+  }
 }
 
 function withComponent(options) {
@@ -1753,12 +1321,28 @@ function withComponent(options) {
 
   Base = withWorkerEvents(Base);
 
-  if (options.mount) {
+  if(options.mount) {
     Base = withMount(Base);
   }
 
   return Base;
 }
+
+function getInstance(fritz, id){
+  return fritz._instances[id];
+}
+
+function setInstance(fritz, id, instance){
+  fritz._instances[id] = instance;
+}
+
+function delInstance(fritz, id){
+  delete fritz._instances[id];
+}
+
+
+
+const defer = Promise.resolve().then.bind(Promise.resolve());
 
 function withWorkerConnection(fritz, events, props, worker, Base) {
   return class extends Base {
@@ -1781,7 +1365,7 @@ function withWorkerConnection(fritz, events, props, worker, Base) {
     }
 
     disconnectedCallback() {
-      if (super.disconnectedCallback) super.disconnectedCallback();
+      if(super.disconnectedCallback) super.disconnectedCallback();
       delInstance(fritz, this._id);
       events.forEach(eventName => {
         this.shadowRoot.removeEventListener(eventName, this);
@@ -1791,7 +1375,7 @@ function withWorkerConnection(fritz, events, props, worker, Base) {
         id: this._id
       });
     }
-  };
+  }
 }
 
 function define$1(fritz, msg) {
@@ -1801,18 +1385,18 @@ function define$1(fritz, msg) {
   let events = msg.events || [];
   let features = msg.features;
 
-  let Element = withWorkerConnection(fritz, events, props, worker, withComponent(features));
+  let Element = withWorkerConnection(
+    fritz, events, props, worker,
+    withComponent(features)
+  );
 
   customElements.define(tagName, Element);
 }
 
 function render(fritz, msg) {
   let instance = getInstance(fritz, msg.id);
-  if (instance !== undefined) {
+  if(instance !== undefined) {
     instance.doRenderCallback(msg.tree);
-    if (msg.events) {
-      instance.observedEventsCallback(msg.events);
-    }
   }
 }
 
@@ -1820,7 +1404,7 @@ function trigger(fritz, msg) {
   let inst = getInstance(fritz, msg.id);
   let ev = msg.event;
   let event = new CustomEvent(ev.type, {
-    bubbles: true, //ev.bubbles,
+    bubbles: true,//ev.bubbles,
     cancelable: ev.cancelable,
     detail: ev.detail,
     scoped: ev.scoped,
@@ -1830,10 +1414,17 @@ function trigger(fritz, msg) {
   inst.dispatchEvent(event);
 }
 
+function register$$1(fritz, msg) {
+  let worker = this;
+  let strings = msg.template;
+  let workerUniqueId = msg.id;
+  register$1(worker, workerUniqueId, strings); 
+}
+
 function sendState(fritz, worker) {
   let workers = worker ? [worker] : fritz._workers;
   let state = fritz.state;
-  workers.forEach(function (worker) {
+  workers.forEach(function(worker){
     worker.postMessage({
       type: STATE,
       state: state
@@ -1850,15 +1441,16 @@ fritz._work = [];
 
 function use(worker) {
   fritz._workers.push(worker);
+  add(worker);
   worker.addEventListener('message', handleMessage);
-  if (fritz.state) {
+  if(fritz.state) {
     sendState(fritz, worker);
   }
 }
 
 function handleMessage(ev) {
   let msg = ev.data;
-  switch (msg.type) {
+  switch(msg.type) {
     case DEFINE:
       define$1.call(this, fritz, msg);
       break;
@@ -1867,17 +1459,21 @@ function handleMessage(ev) {
       break;
     case TRIGGER:
       trigger(fritz, msg);
+      break;
+    case REGISTER:
+      register$$1.call(this, fritz, msg);
+      break;
   }
 }
 
 fritz.use = use;
 
 Object.defineProperty(fritz, 'state', {
-  set: function (val) {
+  set: function(val){
     this._state = val;
     sendState(fritz);
   },
-  get: function () {
+  get: function(){
     return this._state;
   }
 });
@@ -1885,190 +1481,25 @@ Object.defineProperty(fritz, 'state', {
 var styles = "/*!\n * Agate by Taufik Nurrohman <https://github.com/tovic>\n * ----------------------------------------------------\n *\n * #ade5fc\n * #a2fca2\n * #c6b4f0\n * #d36363\n * #fcc28c\n * #fc9b9b\n * #ffa\n * #fff\n * #333\n * #62c8f3\n * #888\n *\n */\n\n.hljs {\n  display: block;\n  overflow-x: auto;\n  padding: 0.5em;\n  background: #333;\n  color: white;\n}\n\n.hljs-name,\n.hljs-strong {\n  font-weight: bold;\n}\n\n.hljs-code,\n.hljs-emphasis {\n  font-style: italic;\n}\n\n.hljs-tag {\n  color: #62c8f3;\n}\n\n.hljs-variable,\n.hljs-template-variable,\n.hljs-selector-id,\n.hljs-selector-class {\n  color: #ade5fc;\n}\n\n.hljs-string,\n.hljs-bullet {\n  color: #a2fca2;\n}\n\n.hljs-type,\n.hljs-title,\n.hljs-section,\n.hljs-attribute,\n.hljs-quote,\n.hljs-built_in,\n.hljs-builtin-name {\n  color: #ffa;\n}\n\n.hljs-number,\n.hljs-symbol,\n.hljs-bullet {\n  color: #d36363;\n}\n\n.hljs-keyword,\n.hljs-selector-tag,\n.hljs-literal {\n  color: #fcc28c;\n}\n\n.hljs-comment,\n.hljs-deletion,\n.hljs-code {\n  color: #888;\n}\n\n.hljs-regexp,\n.hljs-link {\n  color: #c6b4f0;\n}\n\n.hljs-meta {\n  color: #fc9b9b;\n}\n\n.hljs-deletion {\n  background-color: #fc9b9b;\n  color: #333;\n}\n\n.hljs-addition {\n  background-color: #a2fca2;\n  color: #333;\n}\n\n.hljs a {\n  color: inherit;\n}\n\n.hljs a:focus,\n.hljs a:hover {\n  color: inherit;\n  text-decoration: underline;\n}\n";
 
 /*! highlight.js v9.11.0 | BSD3 License | git.io/hljslicense */
-!function (e) {
-  var n = "object" == typeof window && window || "object" == typeof self && self;"undefined" != typeof exports ? e(exports) : n && (n.hljs = e({}), "function" == typeof define && define.amd && define([], function () {
-    return n.hljs;
-  }));
-}(function (e) {
-  function n(e) {
-    return e.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  }function t(e) {
-    return e.nodeName.toLowerCase();
-  }function r(e, n) {
-    var t = e && e.exec(n);return t && 0 === t.index;
-  }function a(e) {
-    return k.test(e);
-  }function i(e) {
-    var n,
-        t,
-        r,
-        i,
-        o = e.className + " ";if (o += e.parentNode ? e.parentNode.className : "", t = B.exec(o)) return w(t[1]) ? t[1] : "no-highlight";for (o = o.split(/\s+/), n = 0, r = o.length; r > n; n++) if (i = o[n], a(i) || w(i)) return i;
-  }function o(e) {
-    var n,
-        t = {},
-        r = Array.prototype.slice.call(arguments, 1);for (n in e) t[n] = e[n];return r.forEach(function (e) {
-      for (n in e) t[n] = e[n];
-    }), t;
-  }function u(e) {
-    var n = [];return function r(e, a) {
-      for (var i = e.firstChild; i; i = i.nextSibling) 3 === i.nodeType ? a += i.nodeValue.length : 1 === i.nodeType && (n.push({ event: "start", offset: a, node: i }), a = r(i, a), t(i).match(/br|hr|img|input/) || n.push({ event: "stop", offset: a, node: i }));return a;
-    }(e, 0), n;
-  }function c(e, r, a) {
-    function i() {
-      return e.length && r.length ? e[0].offset !== r[0].offset ? e[0].offset < r[0].offset ? e : r : "start" === r[0].event ? e : r : e.length ? e : r;
-    }function o(e) {
-      function r(e) {
-        return " " + e.nodeName + '="' + n(e.value).replace('"', "&quot;") + '"';
-      }s += "<" + t(e) + E.map.call(e.attributes, r).join("") + ">";
-    }function u(e) {
-      s += "</" + t(e) + ">";
-    }function c(e) {
-      ("start" === e.event ? o : u)(e.node);
-    }for (var l = 0, s = "", f = []; e.length || r.length;) {
-      var g = i();if (s += n(a.substring(l, g[0].offset)), l = g[0].offset, g === e) {
-        f.reverse().forEach(u);do c(g.splice(0, 1)[0]), g = i(); while (g === e && g.length && g[0].offset === l);f.reverse().forEach(o);
-      } else "start" === g[0].event ? f.push(g[0].node) : f.pop(), c(g.splice(0, 1)[0]);
-    }return s + n(a.substr(l));
-  }function l(e) {
-    return e.v && !e.cached_variants && (e.cached_variants = e.v.map(function (n) {
-      return o(e, { v: null }, n);
-    })), e.cached_variants || e.eW && [o(e)] || [e];
-  }function s(e) {
-    function n(e) {
-      return e && e.source || e;
-    }function t(t, r) {
-      return new RegExp(n(t), "m" + (e.cI ? "i" : "") + (r ? "g" : ""));
-    }function r(a, i) {
-      if (!a.compiled) {
-        if (a.compiled = !0, a.k = a.k || a.bK, a.k) {
-          var o = {},
-              u = function (n, t) {
-            e.cI && (t = t.toLowerCase()), t.split(" ").forEach(function (e) {
-              var t = e.split("|");o[t[0]] = [n, t[1] ? Number(t[1]) : 1];
-            });
-          };"string" == typeof a.k ? u("keyword", a.k) : x(a.k).forEach(function (e) {
-            u(e, a.k[e]);
-          }), a.k = o;
-        }a.lR = t(a.l || /\w+/, !0), i && (a.bK && (a.b = "\\b(" + a.bK.split(" ").join("|") + ")\\b"), a.b || (a.b = /\B|\b/), a.bR = t(a.b), a.e || a.eW || (a.e = /\B|\b/), a.e && (a.eR = t(a.e)), a.tE = n(a.e) || "", a.eW && i.tE && (a.tE += (a.e ? "|" : "") + i.tE)), a.i && (a.iR = t(a.i)), null == a.r && (a.r = 1), a.c || (a.c = []), a.c = Array.prototype.concat.apply([], a.c.map(function (e) {
-          return l("self" === e ? a : e);
-        })), a.c.forEach(function (e) {
-          r(e, a);
-        }), a.starts && r(a.starts, i);var c = a.c.map(function (e) {
-          return e.bK ? "\\.?(" + e.b + ")\\.?" : e.b;
-        }).concat([a.tE, a.i]).map(n).filter(Boolean);a.t = c.length ? t(c.join("|"), !0) : { exec: function () {
-            return null;
-          } };
-      }
-    }r(e);
-  }function f(e, t, a, i) {
-    function o(e, n) {
-      var t, a;for (t = 0, a = n.c.length; a > t; t++) if (r(n.c[t].bR, e)) return n.c[t];
-    }function u(e, n) {
-      if (r(e.eR, n)) {
-        for (; e.endsParent && e.parent;) e = e.parent;return e;
-      }return e.eW ? u(e.parent, n) : void 0;
-    }function c(e, n) {
-      return !a && r(n.iR, e);
-    }function l(e, n) {
-      var t = N.cI ? n[0].toLowerCase() : n[0];return e.k.hasOwnProperty(t) && e.k[t];
-    }function p(e, n, t, r) {
-      var a = r ? "" : I.classPrefix,
-          i = '<span class="' + a,
-          o = t ? "" : C;return i += e + '">', i + n + o;
-    }function h() {
-      var e, t, r, a;if (!E.k) return n(k);for (a = "", t = 0, E.lR.lastIndex = 0, r = E.lR.exec(k); r;) a += n(k.substring(t, r.index)), e = l(E, r), e ? (B += e[1], a += p(e[0], n(r[0]))) : a += n(r[0]), t = E.lR.lastIndex, r = E.lR.exec(k);return a + n(k.substr(t));
-    }function d() {
-      var e = "string" == typeof E.sL;if (e && !y[E.sL]) return n(k);var t = e ? f(E.sL, k, !0, x[E.sL]) : g(k, E.sL.length ? E.sL : void 0);return E.r > 0 && (B += t.r), e && (x[E.sL] = t.top), p(t.language, t.value, !1, !0);
-    }function b() {
-      L += null != E.sL ? d() : h(), k = "";
-    }function v(e) {
-      L += e.cN ? p(e.cN, "", !0) : "", E = Object.create(e, { parent: { value: E } });
-    }function m(e, n) {
-      if (k += e, null == n) return b(), 0;var t = o(n, E);if (t) return t.skip ? k += n : (t.eB && (k += n), b(), t.rB || t.eB || (k = n)), v(t, n), t.rB ? 0 : n.length;var r = u(E, n);if (r) {
-        var a = E;a.skip ? k += n : (a.rE || a.eE || (k += n), b(), a.eE && (k = n));do E.cN && (L += C), E.skip || (B += E.r), E = E.parent; while (E !== r.parent);return r.starts && v(r.starts, ""), a.rE ? 0 : n.length;
-      }if (c(n, E)) throw new Error('Illegal lexeme "' + n + '" for mode "' + (E.cN || "<unnamed>") + '"');return k += n, n.length || 1;
-    }var N = w(e);if (!N) throw new Error('Unknown language: "' + e + '"');s(N);var R,
-        E = i || N,
-        x = {},
-        L = "";for (R = E; R !== N; R = R.parent) R.cN && (L = p(R.cN, "", !0) + L);var k = "",
-        B = 0;try {
-      for (var M, j, O = 0;;) {
-        if (E.t.lastIndex = O, M = E.t.exec(t), !M) break;j = m(t.substring(O, M.index), M[0]), O = M.index + j;
-      }for (m(t.substr(O)), R = E; R.parent; R = R.parent) R.cN && (L += C);return { r: B, value: L, language: e, top: E };
-    } catch (T) {
-      if (T.message && -1 !== T.message.indexOf("Illegal")) return { r: 0, value: n(t) };throw T;
-    }
-  }function g(e, t) {
-    t = t || I.languages || x(y);var r = { r: 0, value: n(e) },
-        a = r;return t.filter(w).forEach(function (n) {
-      var t = f(n, e, !1);t.language = n, t.r > a.r && (a = t), t.r > r.r && (a = r, r = t);
-    }), a.language && (r.second_best = a), r;
-  }function p(e) {
-    return I.tabReplace || I.useBR ? e.replace(M, function (e, n) {
-      return I.useBR && "\n" === e ? "<br>" : I.tabReplace ? n.replace(/\t/g, I.tabReplace) : "";
-    }) : e;
-  }function h(e, n, t) {
-    var r = n ? L[n] : t,
-        a = [e.trim()];return e.match(/\bhljs\b/) || a.push("hljs"), -1 === e.indexOf(r) && a.push(r), a.join(" ").trim();
-  }function d(e) {
-    var n,
-        t,
-        r,
-        o,
-        l,
-        s = i(e);a(s) || (I.useBR ? (n = document.createElementNS("http://www.w3.org/1999/xhtml", "div"), n.innerHTML = e.innerHTML.replace(/\n/g, "").replace(/<br[ \/]*>/g, "\n")) : n = e, l = n.textContent, r = s ? f(s, l, !0) : g(l), t = u(n), t.length && (o = document.createElementNS("http://www.w3.org/1999/xhtml", "div"), o.innerHTML = r.value, r.value = c(t, u(o), l)), r.value = p(r.value), e.innerHTML = r.value, e.className = h(e.className, s, r.language), e.result = { language: r.language, re: r.r }, r.second_best && (e.second_best = { language: r.second_best.language, re: r.second_best.r }));
-  }function b(e) {
-    I = o(I, e);
-  }function v() {
-    if (!v.called) {
-      v.called = !0;var e = document.querySelectorAll("pre code");E.forEach.call(e, d);
-    }
-  }function m() {
-    addEventListener("DOMContentLoaded", v, !1), addEventListener("load", v, !1);
-  }function N(n, t) {
-    var r = y[n] = t(e);r.aliases && r.aliases.forEach(function (e) {
-      L[e] = n;
-    });
-  }function R() {
-    return x(y);
-  }function w(e) {
-    return e = (e || "").toLowerCase(), y[e] || y[L[e]];
-  }var E = [],
-      x = Object.keys,
-      y = {},
-      L = {},
-      k = /^(no-?highlight|plain|text)$/i,
-      B = /\blang(?:uage)?-([\w-]+)\b/i,
-      M = /((^(<[^>]+>|\t|)+|(?:\n)))/gm,
-      C = "</span>",
-      I = { classPrefix: "hljs-", tabReplace: null, useBR: !1, languages: void 0 };return e.highlight = f, e.highlightAuto = g, e.fixMarkup = p, e.highlightBlock = d, e.configure = b, e.initHighlighting = v, e.initHighlightingOnLoad = m, e.registerLanguage = N, e.listLanguages = R, e.getLanguage = w, e.inherit = o, e.IR = "[a-zA-Z]\\w*", e.UIR = "[a-zA-Z_]\\w*", e.NR = "\\b\\d+(\\.\\d+)?", e.CNR = "(-?)(\\b0[xX][a-fA-F0-9]+|(\\b\\d+(\\.\\d*)?|\\.\\d+)([eE][-+]?\\d+)?)", e.BNR = "\\b(0b[01]+)", e.RSR = "!|!=|!==|%|%=|&|&&|&=|\\*|\\*=|\\+|\\+=|,|-|-=|/=|/|:|;|<<|<<=|<=|<|===|==|=|>>>=|>>=|>=|>>>|>>|>|\\?|\\[|\\{|\\(|\\^|\\^=|\\||\\|=|\\|\\||~", e.BE = { b: "\\\\[\\s\\S]", r: 0 }, e.ASM = { cN: "string", b: "'", e: "'", i: "\\n", c: [e.BE] }, e.QSM = { cN: "string", b: '"', e: '"', i: "\\n", c: [e.BE] }, e.PWM = { b: /\b(a|an|the|are|I'm|isn't|don't|doesn't|won't|but|just|should|pretty|simply|enough|gonna|going|wtf|so|such|will|you|your|they|like|more)\b/ }, e.C = function (n, t, r) {
-    var a = e.inherit({ cN: "comment", b: n, e: t, c: [] }, r || {});return a.c.push(e.PWM), a.c.push({ cN: "doctag", b: "(?:TODO|FIXME|NOTE|BUG|XXX):", r: 0 }), a;
-  }, e.CLCM = e.C("//", "$"), e.CBCM = e.C("/\\*", "\\*/"), e.HCM = e.C("#", "$"), e.NM = { cN: "number", b: e.NR, r: 0 }, e.CNM = { cN: "number", b: e.CNR, r: 0 }, e.BNM = { cN: "number", b: e.BNR, r: 0 }, e.CSSNM = { cN: "number", b: e.NR + "(%|em|ex|ch|rem|vw|vh|vmin|vmax|cm|mm|in|pt|pc|px|deg|grad|rad|turn|s|ms|Hz|kHz|dpi|dpcm|dppx)?", r: 0 }, e.RM = { cN: "regexp", b: /\//, e: /\/[gimuy]*/, i: /\n/, c: [e.BE, { b: /\[/, e: /\]/, r: 0, c: [e.BE] }] }, e.TM = { cN: "title", b: e.IR, r: 0 }, e.UTM = { cN: "title", b: e.UIR, r: 0 }, e.METHOD_GUARD = { b: "\\.\\s*" + e.UIR, r: 0 }, e;
-});hljs.registerLanguage("css", function (e) {
-  var c = "[a-zA-Z-][a-zA-Z0-9_-]*",
-      t = { b: /[A-Z\_\.\-]+\s*:/, rB: !0, e: ";", eW: !0, c: [{ cN: "attribute", b: /\S/, e: ":", eE: !0, starts: { eW: !0, eE: !0, c: [{ b: /[\w-]+\(/, rB: !0, c: [{ cN: "built_in", b: /[\w-]+/ }, { b: /\(/, e: /\)/, c: [e.ASM, e.QSM] }] }, e.CSSNM, e.QSM, e.ASM, e.CBCM, { cN: "number", b: "#[0-9A-Fa-f]+" }, { cN: "meta", b: "!important" }] } }] };return { cI: !0, i: /[=\/|'\$]/, c: [e.CBCM, { cN: "selector-id", b: /#[A-Za-z0-9_-]+/ }, { cN: "selector-class", b: /\.[A-Za-z0-9_-]+/ }, { cN: "selector-attr", b: /\[/, e: /\]/, i: "$" }, { cN: "selector-pseudo", b: /:(:)?[a-zA-Z0-9\_\-\+\(\)"'.]+/ }, { b: "@(font-face|page)", l: "[a-z-]+", k: "font-face page" }, { b: "@", e: "[{;]", i: /:/, c: [{ cN: "keyword", b: /\w+/ }, { b: /\s/, eW: !0, eE: !0, r: 0, c: [e.ASM, e.QSM, e.CSSNM] }] }, { cN: "selector-tag", b: c, r: 0 }, { b: "{", e: "}", i: /\S/, c: [e.CBCM, t] }] };
-});hljs.registerLanguage("javascript", function (e) {
-  var r = "[A-Za-z$_][0-9A-Za-z$_]*",
-      t = { keyword: "in of if for while finally var new function do return void else break catch instanceof with throw case default try this switch continue typeof delete let yield const export super debugger as async await static import from as", literal: "true false null undefined NaN Infinity", built_in: "eval isFinite isNaN parseFloat parseInt decodeURI decodeURIComponent encodeURI encodeURIComponent escape unescape Object Function Boolean Error EvalError InternalError RangeError ReferenceError StopIteration SyntaxError TypeError URIError Number Math Date String RegExp Array Float32Array Float64Array Int16Array Int32Array Int8Array Uint16Array Uint32Array Uint8Array Uint8ClampedArray ArrayBuffer DataView JSON Intl arguments require module console window document Symbol Set Map WeakSet WeakMap Proxy Reflect Promise" },
-      a = { cN: "number", v: [{ b: "\\b(0[bB][01]+)" }, { b: "\\b(0[oO][0-7]+)" }, { b: e.CNR }], r: 0 },
-      n = { cN: "subst", b: "\\$\\{", e: "\\}", k: t, c: [] },
-      c = { cN: "string", b: "`", e: "`", c: [e.BE, n] };n.c = [e.ASM, e.QSM, c, a, e.RM];var s = n.c.concat([e.CBCM, e.CLCM]);return { aliases: ["js", "jsx"], k: t, c: [{ cN: "meta", r: 10, b: /^\s*['"]use (strict|asm)['"]/ }, { cN: "meta", b: /^#!/, e: /$/ }, e.ASM, e.QSM, c, e.CLCM, e.CBCM, a, { b: /[{,]\s*/, r: 0, c: [{ b: r + "\\s*:", rB: !0, r: 0, c: [{ cN: "attr", b: r, r: 0 }] }] }, { b: "(" + e.RSR + "|\\b(case|return|throw)\\b)\\s*", k: "return throw case", c: [e.CLCM, e.CBCM, e.RM, { cN: "function", b: "(\\(.*?\\)|" + r + ")\\s*=>", rB: !0, e: "\\s*=>", c: [{ cN: "params", v: [{ b: r }, { b: /\(\s*\)/ }, { b: /\(/, e: /\)/, eB: !0, eE: !0, k: t, c: s }] }] }, { b: /</, e: /(\/\w+|\w+\/)>/, sL: "xml", c: [{ b: /<\w+\s*\/>/, skip: !0 }, { b: /<\w+/, e: /(\/\w+|\w+\/)>/, skip: !0, c: [{ b: /<\w+\s*\/>/, skip: !0 }, "self"] }] }], r: 0 }, { cN: "function", bK: "function", e: /\{/, eE: !0, c: [e.inherit(e.TM, { b: r }), { cN: "params", b: /\(/, e: /\)/, eB: !0, eE: !0, c: s }], i: /\[|%/ }, { b: /\$[(.]/ }, e.METHOD_GUARD, { cN: "class", bK: "class", e: /[{;=]/, eE: !0, i: /[:"\[\]]/, c: [{ bK: "extends" }, e.UTM] }, { bK: "constructor", e: /\{/, eE: !0 }], i: /#(?!!)/ };
-});hljs.registerLanguage("xml", function (s) {
-  var e = "[A-Za-z0-9\\._:-]+",
-      t = { eW: !0, i: /</, r: 0, c: [{ cN: "attr", b: e, r: 0 }, { b: /=\s*/, r: 0, c: [{ cN: "string", endsParent: !0, v: [{ b: /"/, e: /"/ }, { b: /'/, e: /'/ }, { b: /[^\s"'=<>`]+/ }] }] }] };return { aliases: ["html", "xhtml", "rss", "atom", "xjb", "xsd", "xsl", "plist"], cI: !0, c: [{ cN: "meta", b: "<!DOCTYPE", e: ">", r: 10, c: [{ b: "\\[", e: "\\]" }] }, s.C("<!--", "-->", { r: 10 }), { b: "<\\!\\[CDATA\\[", e: "\\]\\]>", r: 10 }, { b: /<\?(php)?/, e: /\?>/, sL: "php", c: [{ b: "/\\*", e: "\\*/", skip: !0 }] }, { cN: "tag", b: "<style(?=\\s|>|$)", e: ">", k: { name: "style" }, c: [t], starts: { e: "</style>", rE: !0, sL: ["css", "xml"] } }, { cN: "tag", b: "<script(?=\\s|>|$)", e: ">", k: { name: "script" }, c: [t], starts: { e: "</script>", rE: !0, sL: ["actionscript", "javascript", "handlebars", "xml"] } }, { cN: "meta", v: [{ b: /<\?xml/, e: /\?>/, r: 10 }, { b: /<\?\w+/, e: /\?>/ }] }, { cN: "tag", b: "</?", e: "/?>", c: [{ cN: "name", b: /[^\/><\s]+/, r: 0 }, t] }] };
-});
+!function(e){var n="object"==typeof window&&window||"object"==typeof self&&self;"undefined"!=typeof exports?e(exports):n&&(n.hljs=e({}),"function"==typeof define&&define.amd&&define([],function(){return n.hljs}));}(function(e){function n(e){return e.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}function t(e){return e.nodeName.toLowerCase()}function r(e,n){var t=e&&e.exec(n);return t&&0===t.index}function a(e){return k.test(e)}function i(e){var n,t,r,i,o=e.className+" ";if(o+=e.parentNode?e.parentNode.className:"",t=B.exec(o))return w(t[1])?t[1]:"no-highlight";for(o=o.split(/\s+/),n=0,r=o.length;r>n;n++)if(i=o[n],a(i)||w(i))return i}function o(e){var n,t={},r=Array.prototype.slice.call(arguments,1);for(n in e)t[n]=e[n];return r.forEach(function(e){for(n in e)t[n]=e[n];}),t}function u(e){var n=[];return function r(e,a){for(var i=e.firstChild;i;i=i.nextSibling)3===i.nodeType?a+=i.nodeValue.length:1===i.nodeType&&(n.push({event:"start",offset:a,node:i}),a=r(i,a),t(i).match(/br|hr|img|input/)||n.push({event:"stop",offset:a,node:i}));return a}(e,0),n}function c(e,r,a){function i(){return e.length&&r.length?e[0].offset!==r[0].offset?e[0].offset<r[0].offset?e:r:"start"===r[0].event?e:r:e.length?e:r}function o(e){function r(e){return" "+e.nodeName+'="'+n(e.value).replace('"',"&quot;")+'"'}s+="<"+t(e)+E.map.call(e.attributes,r).join("")+">";}function u(e){s+="</"+t(e)+">";}function c(e){("start"===e.event?o:u)(e.node);}for(var l=0,s="",f=[];e.length||r.length;){var g=i();if(s+=n(a.substring(l,g[0].offset)),l=g[0].offset,g===e){f.reverse().forEach(u);do c(g.splice(0,1)[0]),g=i();while(g===e&&g.length&&g[0].offset===l);f.reverse().forEach(o);}else"start"===g[0].event?f.push(g[0].node):f.pop(),c(g.splice(0,1)[0]);}return s+n(a.substr(l))}function l(e){return e.v&&!e.cached_variants&&(e.cached_variants=e.v.map(function(n){return o(e,{v:null},n)})),e.cached_variants||e.eW&&[o(e)]||[e]}function s(e){function n(e){return e&&e.source||e}function t(t,r){return new RegExp(n(t),"m"+(e.cI?"i":"")+(r?"g":""))}function r(a,i){if(!a.compiled){if(a.compiled=!0,a.k=a.k||a.bK,a.k){var o={},u=function(n,t){e.cI&&(t=t.toLowerCase()),t.split(" ").forEach(function(e){var t=e.split("|");o[t[0]]=[n,t[1]?Number(t[1]):1];});};"string"==typeof a.k?u("keyword",a.k):x(a.k).forEach(function(e){u(e,a.k[e]);}),a.k=o;}a.lR=t(a.l||/\w+/,!0),i&&(a.bK&&(a.b="\\b("+a.bK.split(" ").join("|")+")\\b"),a.b||(a.b=/\B|\b/),a.bR=t(a.b),a.e||a.eW||(a.e=/\B|\b/),a.e&&(a.eR=t(a.e)),a.tE=n(a.e)||"",a.eW&&i.tE&&(a.tE+=(a.e?"|":"")+i.tE)),a.i&&(a.iR=t(a.i)),null==a.r&&(a.r=1),a.c||(a.c=[]),a.c=Array.prototype.concat.apply([],a.c.map(function(e){return l("self"===e?a:e)})),a.c.forEach(function(e){r(e,a);}),a.starts&&r(a.starts,i);var c=a.c.map(function(e){return e.bK?"\\.?("+e.b+")\\.?":e.b}).concat([a.tE,a.i]).map(n).filter(Boolean);a.t=c.length?t(c.join("|"),!0):{exec:function(){return null}};}}r(e);}function f(e,t,a,i){function o(e,n){var t,a;for(t=0,a=n.c.length;a>t;t++)if(r(n.c[t].bR,e))return n.c[t]}function u(e,n){if(r(e.eR,n)){for(;e.endsParent&&e.parent;)e=e.parent;return e}return e.eW?u(e.parent,n):void 0}function c(e,n){return!a&&r(n.iR,e)}function l(e,n){var t=N.cI?n[0].toLowerCase():n[0];return e.k.hasOwnProperty(t)&&e.k[t]}function p(e,n,t,r){var a=r?"":I.classPrefix,i='<span class="'+a,o=t?"":C;return i+=e+'">',i+n+o}function h(){var e,t,r,a;if(!E.k)return n(k);for(a="",t=0,E.lR.lastIndex=0,r=E.lR.exec(k);r;)a+=n(k.substring(t,r.index)),e=l(E,r),e?(B+=e[1],a+=p(e[0],n(r[0]))):a+=n(r[0]),t=E.lR.lastIndex,r=E.lR.exec(k);return a+n(k.substr(t))}function d(){var e="string"==typeof E.sL;if(e&&!y[E.sL])return n(k);var t=e?f(E.sL,k,!0,x[E.sL]):g(k,E.sL.length?E.sL:void 0);return E.r>0&&(B+=t.r),e&&(x[E.sL]=t.top),p(t.language,t.value,!1,!0)}function b(){L+=null!=E.sL?d():h(),k="";}function v(e){L+=e.cN?p(e.cN,"",!0):"",E=Object.create(e,{parent:{value:E}});}function m(e,n){if(k+=e,null==n)return b(),0;var t=o(n,E);if(t)return t.skip?k+=n:(t.eB&&(k+=n),b(),t.rB||t.eB||(k=n)),v(t,n),t.rB?0:n.length;var r=u(E,n);if(r){var a=E;a.skip?k+=n:(a.rE||a.eE||(k+=n),b(),a.eE&&(k=n));do E.cN&&(L+=C),E.skip||(B+=E.r),E=E.parent;while(E!==r.parent);return r.starts&&v(r.starts,""),a.rE?0:n.length}if(c(n,E))throw new Error('Illegal lexeme "'+n+'" for mode "'+(E.cN||"<unnamed>")+'"');return k+=n,n.length||1}var N=w(e);if(!N)throw new Error('Unknown language: "'+e+'"');s(N);var R,E=i||N,x={},L="";for(R=E;R!==N;R=R.parent)R.cN&&(L=p(R.cN,"",!0)+L);var k="",B=0;try{for(var M,j,O=0;;){if(E.t.lastIndex=O,M=E.t.exec(t),!M)break;j=m(t.substring(O,M.index),M[0]),O=M.index+j;}for(m(t.substr(O)),R=E;R.parent;R=R.parent)R.cN&&(L+=C);return{r:B,value:L,language:e,top:E}}catch(T){if(T.message&&-1!==T.message.indexOf("Illegal"))return{r:0,value:n(t)};throw T}}function g(e,t){t=t||I.languages||x(y);var r={r:0,value:n(e)},a=r;return t.filter(w).forEach(function(n){var t=f(n,e,!1);t.language=n,t.r>a.r&&(a=t),t.r>r.r&&(a=r,r=t);}),a.language&&(r.second_best=a),r}function p(e){return I.tabReplace||I.useBR?e.replace(M,function(e,n){return I.useBR&&"\n"===e?"<br>":I.tabReplace?n.replace(/\t/g,I.tabReplace):""}):e}function h(e,n,t){var r=n?L[n]:t,a=[e.trim()];return e.match(/\bhljs\b/)||a.push("hljs"),-1===e.indexOf(r)&&a.push(r),a.join(" ").trim()}function d(e){var n,t,r,o,l,s=i(e);a(s)||(I.useBR?(n=document.createElementNS("http://www.w3.org/1999/xhtml","div"),n.innerHTML=e.innerHTML.replace(/\n/g,"").replace(/<br[ \/]*>/g,"\n")):n=e,l=n.textContent,r=s?f(s,l,!0):g(l),t=u(n),t.length&&(o=document.createElementNS("http://www.w3.org/1999/xhtml","div"),o.innerHTML=r.value,r.value=c(t,u(o),l)),r.value=p(r.value),e.innerHTML=r.value,e.className=h(e.className,s,r.language),e.result={language:r.language,re:r.r},r.second_best&&(e.second_best={language:r.second_best.language,re:r.second_best.r}));}function b(e){I=o(I,e);}function v(){if(!v.called){v.called=!0;var e=document.querySelectorAll("pre code");E.forEach.call(e,d);}}function m(){addEventListener("DOMContentLoaded",v,!1),addEventListener("load",v,!1);}function N(n,t){var r=y[n]=t(e);r.aliases&&r.aliases.forEach(function(e){L[e]=n;});}function R(){return x(y)}function w(e){return e=(e||"").toLowerCase(),y[e]||y[L[e]]}var E=[],x=Object.keys,y={},L={},k=/^(no-?highlight|plain|text)$/i,B=/\blang(?:uage)?-([\w-]+)\b/i,M=/((^(<[^>]+>|\t|)+|(?:\n)))/gm,C="</span>",I={classPrefix:"hljs-",tabReplace:null,useBR:!1,languages:void 0};return e.highlight=f,e.highlightAuto=g,e.fixMarkup=p,e.highlightBlock=d,e.configure=b,e.initHighlighting=v,e.initHighlightingOnLoad=m,e.registerLanguage=N,e.listLanguages=R,e.getLanguage=w,e.inherit=o,e.IR="[a-zA-Z]\\w*",e.UIR="[a-zA-Z_]\\w*",e.NR="\\b\\d+(\\.\\d+)?",e.CNR="(-?)(\\b0[xX][a-fA-F0-9]+|(\\b\\d+(\\.\\d*)?|\\.\\d+)([eE][-+]?\\d+)?)",e.BNR="\\b(0b[01]+)",e.RSR="!|!=|!==|%|%=|&|&&|&=|\\*|\\*=|\\+|\\+=|,|-|-=|/=|/|:|;|<<|<<=|<=|<|===|==|=|>>>=|>>=|>=|>>>|>>|>|\\?|\\[|\\{|\\(|\\^|\\^=|\\||\\|=|\\|\\||~",e.BE={b:"\\\\[\\s\\S]",r:0},e.ASM={cN:"string",b:"'",e:"'",i:"\\n",c:[e.BE]},e.QSM={cN:"string",b:'"',e:'"',i:"\\n",c:[e.BE]},e.PWM={b:/\b(a|an|the|are|I'm|isn't|don't|doesn't|won't|but|just|should|pretty|simply|enough|gonna|going|wtf|so|such|will|you|your|they|like|more)\b/},e.C=function(n,t,r){var a=e.inherit({cN:"comment",b:n,e:t,c:[]},r||{});return a.c.push(e.PWM),a.c.push({cN:"doctag",b:"(?:TODO|FIXME|NOTE|BUG|XXX):",r:0}),a},e.CLCM=e.C("//","$"),e.CBCM=e.C("/\\*","\\*/"),e.HCM=e.C("#","$"),e.NM={cN:"number",b:e.NR,r:0},e.CNM={cN:"number",b:e.CNR,r:0},e.BNM={cN:"number",b:e.BNR,r:0},e.CSSNM={cN:"number",b:e.NR+"(%|em|ex|ch|rem|vw|vh|vmin|vmax|cm|mm|in|pt|pc|px|deg|grad|rad|turn|s|ms|Hz|kHz|dpi|dpcm|dppx)?",r:0},e.RM={cN:"regexp",b:/\//,e:/\/[gimuy]*/,i:/\n/,c:[e.BE,{b:/\[/,e:/\]/,r:0,c:[e.BE]}]},e.TM={cN:"title",b:e.IR,r:0},e.UTM={cN:"title",b:e.UIR,r:0},e.METHOD_GUARD={b:"\\.\\s*"+e.UIR,r:0},e});hljs.registerLanguage("css",function(e){var c="[a-zA-Z-][a-zA-Z0-9_-]*",t={b:/[A-Z\_\.\-]+\s*:/,rB:!0,e:";",eW:!0,c:[{cN:"attribute",b:/\S/,e:":",eE:!0,starts:{eW:!0,eE:!0,c:[{b:/[\w-]+\(/,rB:!0,c:[{cN:"built_in",b:/[\w-]+/},{b:/\(/,e:/\)/,c:[e.ASM,e.QSM]}]},e.CSSNM,e.QSM,e.ASM,e.CBCM,{cN:"number",b:"#[0-9A-Fa-f]+"},{cN:"meta",b:"!important"}]}}]};return{cI:!0,i:/[=\/|'\$]/,c:[e.CBCM,{cN:"selector-id",b:/#[A-Za-z0-9_-]+/},{cN:"selector-class",b:/\.[A-Za-z0-9_-]+/},{cN:"selector-attr",b:/\[/,e:/\]/,i:"$"},{cN:"selector-pseudo",b:/:(:)?[a-zA-Z0-9\_\-\+\(\)"'.]+/},{b:"@(font-face|page)",l:"[a-z-]+",k:"font-face page"},{b:"@",e:"[{;]",i:/:/,c:[{cN:"keyword",b:/\w+/},{b:/\s/,eW:!0,eE:!0,r:0,c:[e.ASM,e.QSM,e.CSSNM]}]},{cN:"selector-tag",b:c,r:0},{b:"{",e:"}",i:/\S/,c:[e.CBCM,t]}]}});hljs.registerLanguage("javascript",function(e){var r="[A-Za-z$_][0-9A-Za-z$_]*",t={keyword:"in of if for while finally var new function do return void else break catch instanceof with throw case default try this switch continue typeof delete let yield const export super debugger as async await static import from as",literal:"true false null undefined NaN Infinity",built_in:"eval isFinite isNaN parseFloat parseInt decodeURI decodeURIComponent encodeURI encodeURIComponent escape unescape Object Function Boolean Error EvalError InternalError RangeError ReferenceError StopIteration SyntaxError TypeError URIError Number Math Date String RegExp Array Float32Array Float64Array Int16Array Int32Array Int8Array Uint16Array Uint32Array Uint8Array Uint8ClampedArray ArrayBuffer DataView JSON Intl arguments require module console window document Symbol Set Map WeakSet WeakMap Proxy Reflect Promise"},a={cN:"number",v:[{b:"\\b(0[bB][01]+)"},{b:"\\b(0[oO][0-7]+)"},{b:e.CNR}],r:0},n={cN:"subst",b:"\\$\\{",e:"\\}",k:t,c:[]},c={cN:"string",b:"`",e:"`",c:[e.BE,n]};n.c=[e.ASM,e.QSM,c,a,e.RM];var s=n.c.concat([e.CBCM,e.CLCM]);return{aliases:["js","jsx"],k:t,c:[{cN:"meta",r:10,b:/^\s*['"]use (strict|asm)['"]/},{cN:"meta",b:/^#!/,e:/$/},e.ASM,e.QSM,c,e.CLCM,e.CBCM,a,{b:/[{,]\s*/,r:0,c:[{b:r+"\\s*:",rB:!0,r:0,c:[{cN:"attr",b:r,r:0}]}]},{b:"("+e.RSR+"|\\b(case|return|throw)\\b)\\s*",k:"return throw case",c:[e.CLCM,e.CBCM,e.RM,{cN:"function",b:"(\\(.*?\\)|"+r+")\\s*=>",rB:!0,e:"\\s*=>",c:[{cN:"params",v:[{b:r},{b:/\(\s*\)/},{b:/\(/,e:/\)/,eB:!0,eE:!0,k:t,c:s}]}]},{b:/</,e:/(\/\w+|\w+\/)>/,sL:"xml",c:[{b:/<\w+\s*\/>/,skip:!0},{b:/<\w+/,e:/(\/\w+|\w+\/)>/,skip:!0,c:[{b:/<\w+\s*\/>/,skip:!0},"self"]}]}],r:0},{cN:"function",bK:"function",e:/\{/,eE:!0,c:[e.inherit(e.TM,{b:r}),{cN:"params",b:/\(/,e:/\)/,eB:!0,eE:!0,c:s}],i:/\[|%/},{b:/\$[(.]/},e.METHOD_GUARD,{cN:"class",bK:"class",e:/[{;=]/,eE:!0,i:/[:"\[\]]/,c:[{bK:"extends"},e.UTM]},{bK:"constructor",e:/\{/,eE:!0}],i:/#(?!!)/}});hljs.registerLanguage("xml",function(s){var e="[A-Za-z0-9\\._:-]+",t={eW:!0,i:/</,r:0,c:[{cN:"attr",b:e,r:0},{b:/=\s*/,r:0,c:[{cN:"string",endsParent:!0,v:[{b:/"/,e:/"/},{b:/'/,e:/'/},{b:/[^\s"'=<>`]+/}]}]}]};return{aliases:["html","xhtml","rss","atom","xjb","xsd","xsl","plist"],cI:!0,c:[{cN:"meta",b:"<!DOCTYPE",e:">",r:10,c:[{b:"\\[",e:"\\]"}]},s.C("<!--","-->",{r:10}),{b:"<\\!\\[CDATA\\[",e:"\\]\\]>",r:10},{b:/<\?(php)?/,e:/\?>/,sL:"php",c:[{b:"/\\*",e:"\\*/",skip:!0}]},{cN:"tag",b:"<style(?=\\s|>|$)",e:">",k:{name:"style"},c:[t],starts:{e:"</style>",rE:!0,sL:["css","xml"]}},{cN:"tag",b:"<script(?=\\s|>|$)",e:">",k:{name:"script"},c:[t],starts:{e:"</script>",rE:!0,sL:["actionscript","javascript","handlebars","xml"]}},{cN:"meta",v:[{b:/<\?xml/,e:/\?>/,r:10},{b:/<\?\w+/,e:/\?>/}]},{cN:"tag",b:"</?",e:"/?>",c:[{cN:"name",b:/[^\/><\s]+/,r:0},t]}]}});
 
 const { highlightBlock } = self.hljs;
 
 class CodeSnippet extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+    this._rendered = false;
+  }
+
   static get observedAttributes() {
     return ['code'];
   }
-
+  
   connectedCallback() {
-    if (!this.shadowRoot) {
-      let root = this.attachShadow({ mode: 'open' });
+    if(!this._rendered) {
+      this._rendered = true;
+      let root = this.shadowRoot;
       let doc = this.ownerDocument;
 
       let style = doc.createElement('style');
@@ -2078,6 +1509,7 @@ class CodeSnippet extends HTMLElement {
       let pre = doc.createElement('pre');
       pre.appendChild(doc.createElement('code'));
       root.appendChild(pre);
+      this._renderCode();
     }
   }
 
@@ -2088,10 +1520,23 @@ class CodeSnippet extends HTMLElement {
   set code(val) {
     // Remove loading newline
     this._code = val[0] === '\n' ? val.substr(1) : val;
-    let tn = this.ownerDocument.createTextNode(this._code);
+    this._renderCode();
+  }
+
+  _renderCode() {
     let code = this.shadowRoot.querySelector('code');
-    code.appendChild(tn);
-    highlightBlock(code);
+    if(this._code && code) {
+      let tn = this.ownerDocument.createTextNode(this._code);
+      clear(code);
+      code.appendChild(tn);
+      highlightBlock(code);
+    }
+  }
+}
+
+function clear(node) {
+  while(node.firstChild) {
+    node.removeChild(node.firstChild);
   }
 }
 

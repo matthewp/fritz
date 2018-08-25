@@ -2,79 +2,95 @@
 <html>
 <head>
   <title>Basic tests</title>
-  <link rel="import" href="../node_modules/mocha-test/mocha-test.html">
+  <link rel="stylesheet" href="../node_modules/mocha/mocha.css">
   <style>
-    iframe { display: none; }
+    
   </style>
+  <script src="../node_modules/mocha/mocha.js"></script>
+  <script src="../node_modules/chai/chai.js"></script>
+  <script>mocha.setup('bdd')</script>
 </head>
 <body>
   <iframe id="basicsFrame" src="./basics/index.html"></iframe>
-  <mocha-test>
-    <template>
-      <script>
-        describe('Basics', function(){
-          const win = basicsFrame.contentWindow;
-          const doc = basicsFrame.contentDocument;
-          const docEl = doc.documentElement;
+  <div id="mocha"></div>
+  <script type="module">
+    const assert = chai.assert;
 
-          before(function(done) {
-            setTimeout(done, 100);
-          });
+    describe('Basics', function(){
+      let win;
+      let doc;
+      let docEl;
 
-          it('Renders the initial page', function(){
-            let el = doc.querySelector('basic-app');
-            let div = el.shadowRoot.querySelector('#root');
-            assert.equal(div.textContent, 'Hello world!');
-          });
+      before(function(done) {
+        setTimeout(() => {
+          win = basicsFrame.contentWindow;
+          doc = basicsFrame.contentDocument;
+          docEl = doc.documentElement;
+          done();
+        }, 300);
+      });
 
-          it('Renders subelements using the constructor', function(){
-            let el = doc.querySelector('basic-app');
-            let nested = el.shadowRoot.querySelector('another-el');
-            assert.ok(nested, 'The nested element was rendered');
+      it('Renders the initial page', function(){
+        let el = doc.querySelector('basic-app');
+        let div = el.shadowRoot.querySelector('#root');
+        let txt = div.firstChild.nodeValue.trim();
+        assert.equal(txt, 'Hello world!');
+      });
 
-            let inner = nested.shadowRoot.firstChild;
-            assert.equal(inner.textContent, 'Another el');
-          });
+      it('Renders subelements using the constructor', function(){
+        let el = doc.querySelector('basic-app');
+        let nested = el.shadowRoot.querySelector('another-el');
+        assert.ok(nested, 'The nested element was rendered');
 
-          it('Renders hyperscript that uses numbers', function(){
-            let el = doc.querySelector('basic-app');
-            let mathel = el.shadowRoot.querySelector('math-el');
-            let inner = mathel.shadowRoot.firstChild;
-            assert.equal(inner.textContent, '15 of 15');
-          });
+        let inner = nested.shadowRoot.firstElementChild;
+        assert.equal(inner.textContent, 'Another el');
+      });
 
-          it('renders svg', function(){
-            let el = doc.querySelector('basic-app');
-            let loading = el.shadowRoot.querySelector('loading-indicator');
-            let svg = loading.shadowRoot.firstChild;
-            assert.ok(svg.hasAttribute('viewBox'), 'has the viewBox');
-          });
+      it('Renders elements that uses numbers', function(){
+        let el = doc.querySelector('basic-app');
+        let mathel = el.shadowRoot.querySelector('math-el');
+        let inner = mathel.shadowRoot.firstElementChild;
+        assert.equal(inner.textContent, '15 of 15');
+      });
 
-          it('renders children that are numbers', function(){
-            let root = doc.querySelector('basic-app').shadowRoot;
-            let el = root.querySelector('typed-el').shadowRoot;
-            let val = el.querySelector('.c-number').firstChild.nodeValue;
-            assert.equal(val, '27', 'printed the string 27');
-          });
+      it('renders svg', function(){
+        let el = doc.querySelector('basic-app');
+        let loading = el.shadowRoot.querySelector('loading-indicator');
+        let svg = loading.shadowRoot.firstElementChild;
+        assert.ok(svg.hasAttribute('viewBox'), 'has the viewBox');
+      });
 
-          it('renders children that are booleans', function(){
-            let root = doc.querySelector('basic-app').shadowRoot;
-            let el = root.querySelector('typed-el').shadowRoot;
-            let val = el.querySelector('.c-boolean').firstChild.nodeValue;
-            assert.equal(val, 'false', 'printed the string false');
-          });
+      it('renders children that are numbers', function(){
+        let root = doc.querySelector('basic-app').shadowRoot;
+        let el = root.querySelector('typed-el').shadowRoot;
+        let val = el.querySelector('.c-number').textContent;
+        assert.equal(val, '27', 'printed the string 27');
+      });
 
-          it('renders fragments', function(){
-            let root = doc.querySelector('basic-app').shadowRoot;
-            let el = root.querySelector('frag-el').shadowRoot;
+      it('renders children that are booleans', function(){
+        let root = doc.querySelector('basic-app').shadowRoot;
+        let el = root.querySelector('typed-el').shadowRoot;
+        let val = el.querySelector('.c-boolean').textContent;
+        assert.equal(val, 'false', 'printed the string false');
+      });
 
-            assert.ok(el.querySelector('#one'), 'an element');
-            assert.ok(el.querySelector('#two'), 'another el');
-            assert.ok(el.querySelector('#three'), 'a nested fragment');
-          });
-        });
-      </script>
-    </template>
-  </mocha-test>
+      it('renders fragments', function(){
+        let root = doc.querySelector('basic-app').shadowRoot;
+        let el = root.querySelector('frag-el').shadowRoot;
+
+        assert.ok(el.querySelector('#one'), 'an element');
+        assert.ok(el.querySelector('#two'), 'another el');
+        assert.ok(el.querySelector('#three'), 'a nested fragment');
+      });
+
+      it('renders inner templates', function(){
+        let root = doc.querySelector('basic-app').shadowRoot;
+        let el = root.querySelector('#nested');
+        assert.equal(el.textContent, 'This is nested');
+      });
+    });
+
+    mocha.run();
+  </script>
 </body>
 </html>

@@ -22,8 +22,6 @@ function isFunction(val) {
 
 const defer = Promise.resolve().then.bind(Promise.resolve());
 
-const sym = typeof Symbol === 'function' ? Symbol : function(v) { return '_' + v };
-
 const DEFINE = 'define';
 const TRIGGER = 'trigger';
 const RENDER = 'render';
@@ -32,6 +30,7 @@ const STATE = 'state';
 const DESTROY = 'destroy';
 const RENDERED = 'rendered';
 const CLEANUP = 'cleanup';
+const REGISTER = 'register';
 
 let currentInstance = null;
 
@@ -172,116 +171,63 @@ Handle = class {
 
 var Handle$1 = Handle;
 
-const eventAttrExp = /^on[A-Z]/;
+const templateTag = 0;
+const valueTag = 1;
 
-function signal(tagName, attrName, attrValue, attrs) {
-  if(eventAttrExp.test(attrName)) {
-    let eventName = attrName.toLowerCase();
-    let handle = Handle$1.from(attrValue);
-    handle.inUse = true;
-    currentInstance._fritzHandles.set(handle.id, handle);
-    return [1, eventName, handle.id];
-  }
-}
+const templates = new WeakMap();
+const _template = Symbol();
+let globalId = 0;
 
-const _tree = sym('ftree');
 
-function isTree(obj) {
-  return !!(obj && obj[_tree]);
-}
-
-function createTree() {
-  var out = [];
-  out[_tree] = true;
-  return out;
-}
-
-function Fragment(attrs, children) {
-  var child;
-  var tree = createTree();
-  for(var i = 0; i < children.length; i++) {
-    child = children[i];
-    tree.push.apply(tree, child);
-  }
-  return tree;
-}
-
-function h(tag, attrs, children){
-  var argsLen = arguments.length;
-  var childrenType = typeof children;
-  if(argsLen === 2) {
-    if(typeof attrs !== 'object' || Array.isArray(attrs)) {
-      children = attrs;
-      attrs = null;
-    }
-  } else if(argsLen > 3 || isTree(children) || isPrimitive(childrenType)) {
-    children = Array.prototype.slice.call(arguments, 2);
+var html = function(strings, ...args) {
+  let id;
+  if(templates.has(strings)) {
+    id = templates.get(strings);
+  } else {
+    globalId = globalId + 1;
+    id = globalId;
+    templates.set(strings, id);
+    register(id, strings);
   }
 
-  var isFn = isFunction(tag);
-
-  if(isFn) {
-    var localName = tag.prototype.localName;
-    if(localName) {
-      return h(localName, attrs, children);
-    }
-
-    return tag(attrs || {}, children);
-  }
-
-  var tree = createTree();
-  var uniq;
-  if(attrs) {
-    var evs;
-    attrs = Object.keys(attrs).reduce(function(acc, key){
-      var value = attrs[key];
-
-      var eventInfo = signal(tag, key, value, attrs);
-      if(eventInfo) {
-        if(!evs) evs = [];
-        evs.push(eventInfo);
-      } else if(key === 'key') {
-        uniq = value;
+  // Set values
+  let vals = args.map(arg => {
+    let type = typeof arg;
+    if(type === 'function') {
+      let handle = Handle$1.from(arg);
+      handle.inUse = true;
+      currentInstance._fritzHandles.set(handle.id, handle);
+      return Uint8Array.from([0, handle.id]);
+    } else if (Array.isArray(arg)) {
+      let tag;
+      if(isTemplate(arg)) {
+        tag = templateTag;
       } else {
-        acc.push(key);
-        acc.push(value);
+        tag = valueTag;
       }
+      return [tag, arg];
+    }
+    return arg;
+  });
 
-      return acc;
-    }, []);
-  }
+  return mark([1, id, 2, vals]);
+};
 
-  var open = [1, tag, uniq];
-  if(attrs) {
-    open.push(attrs);
-  }
-  if(evs) {
-    open.push(evs);
-  }
-  tree.push(open);
-
-  if(children) {
-    children.forEach(function(child){
-      if(typeof child !== 'undefined' && !Array.isArray(child)) {
-        tree.push([4, child + '']);
-        return;
-      }
-
-      while(child && child.length) {
-        tree.push(child.shift());
-      }
-    });
-  }
-
-  tree.push([2, tag]);
-
-  return tree;
+function register(id, template) {
+  postMessage({
+    type: REGISTER,
+    id,
+    template
+  });
 }
 
-h.frag = Fragment;
+function mark(template) {
+  template[_template] = true;
+  return template;
+}
 
-function isPrimitive(type) {
-  return type === 'string' || type === 'number' || type === 'boolean';
+function isTemplate(template) {
+  return !!template[_template];
 }
 
 function render$1(fritz, msg) {
@@ -396,6 +342,7 @@ const fritz$1 = Object.create(null);
 fritz$1.Component = Component;
 fritz$1.define = define;
 fritz$1.h = h;
+fritz$1.html = html;
 fritz$1._tags = Object.create(null);
 fritz$1._instances = Object.create(null);
 

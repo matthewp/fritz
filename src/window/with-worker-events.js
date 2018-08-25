@@ -22,7 +22,7 @@ export function withWorkerEvents(Base = HTMLElement) {
       this._handlers = Object.create(null);
     }
 
-    addEventCallback(handleId, eventProp) {
+    addEventCallback(handleId) {
       var key = handleId;
       var fn;
       if(fn = this._handlers[key]) {
