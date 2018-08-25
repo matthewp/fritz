@@ -1,5 +1,5 @@
 import { isFunction } from '../util.js';
-import { RENDER, TRIGGER } from '../message-types.js';
+import { TRIGGER } from '../message-types.js';
 import { enqueueRender } from './instance.js';
 
 class Component {
