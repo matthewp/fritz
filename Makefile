@@ -4,7 +4,7 @@ ROLLUP = node_modules/.bin/rollup
 # Source files
 SRCES := $(shell find src -name '*.js')
 
-all: worker window
+all: worker.js worker.umd.js window.js
 .PHONY: all
 
 worker.js: $(SRCES)
@@ -13,19 +13,8 @@ worker.js: $(SRCES)
 worker.umd.js: $(SRCES)
 	$(ROLLUP) -o $@ -c rollup.config.js -f umd -n fritz src/worker/umd.js
 
-# Build the worker modules
-worker: worker.js worker.umd.js
-.PHONY: worker
-
 window.js: $(SRCES)
 	$(ROLLUP) -o $@ -c rollup.config.js -f es -n fritz src/window/index.js
-
-window.umd.js: $(SRCES)
-	$(ROLLUP) -o $@ -c rollup.config.js -n fritz src/window/index.js
-
-# Build the window modules
-window: window.js window.umd.js
-.PHONY: window
 
 # Serve the current directory (port 8008)
 serve:
