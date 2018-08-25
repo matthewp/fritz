@@ -1,15 +1,15 @@
 (function () {
 'use strict';
 
-function getInstance(fritz, id) {
+function getInstance(fritz, id){
   return fritz._instances[id];
 }
 
-function setInstance(fritz, id, instance) {
+function setInstance(fritz, id, instance){
   fritz._instances[id] = instance;
 }
 
-function delInstance(fritz, id) {
+function delInstance(fritz, id){
   delete fritz._instances[id];
 }
 
@@ -19,9 +19,7 @@ function isFunction(val) {
 
 const defer = Promise.resolve().then.bind(Promise.resolve());
 
-const sym = typeof Symbol === 'function' ? Symbol : function (v) {
-  return '_' + v;
-};
+const sym = typeof Symbol === 'function' ? Symbol : function(v) { return '_' + v };
 
 const DEFINE = 'define';
 const TRIGGER = 'trigger';
@@ -45,28 +43,27 @@ function renderInstance(instance) {
 let queue = [];
 
 function enqueueRender(instance, sentProps) {
-  if (!instance._dirty && (instance._dirty = true) && queue.push([instance, sentProps]) == 1) {
+  if(!instance._dirty && (instance._dirty = true) && queue.push([instance, sentProps])==1) {
     defer(rerender);
   }
 }
 
 function rerender() {
-  let p,
-      list = queue;
-  queue = [];
-  while (p = list.pop()) {
-    if (p[0]._dirty) render(p[0], p[1]);
-  }
+	let p, list = queue;
+	queue = [];
+	while ( (p = list.pop()) ) {
+		if (p[0]._dirty) render(p[0], p[1]);
+	}
 }
 
 function render(instance, sentProps) {
-  if (sentProps) {
+  if(sentProps) {
     var nextProps = Object.assign({}, instance.props, sentProps);
     instance.componentWillReceiveProps(nextProps);
     instance.props = nextProps;
   }
 
-  if (instance.shouldComponentUpdate(nextProps) !== false) {
+  if(instance.shouldComponentUpdate(nextProps) !== false) {
     instance.componentWillUpdate();
     instance._dirty = false;
 
@@ -105,12 +102,12 @@ class Component {
     this.setState({});
   }
 
-  componentWillReceiveProps() {}
+  componentWillReceiveProps(){}
   shouldComponentUpdate() {
     return true;
   }
-  componentWillUpdate() {}
-  componentWillUnmount() {}
+  componentWillUpdate(){}
+  componentWillUnmount(){}
 }
 
 let Store;
@@ -127,7 +124,7 @@ Store = class {
   from(fn) {
     let handle;
     let id = this.handleMap.get(fn);
-    if (id == null) {
+    if(id == null) {
       id = this.id++;
       handle = new Handle(id, fn);
       this.handleMap.set(fn, id);
@@ -145,7 +142,7 @@ Store = class {
 
 Handle = class {
   static get store() {
-    if (!this._store) {
+    if(!this._store) {
       this._store = new Store();
     }
     return this._store;
@@ -176,7 +173,7 @@ var Handle$1 = Handle;
 const eventAttrExp = /^on[A-Z]/;
 
 function signal(tagName, attrName, attrValue, attrs) {
-  if (eventAttrExp.test(attrName)) {
+  if(eventAttrExp.test(attrName)) {
     let eventName = attrName.toLowerCase();
     let handle = Handle$1.from(attrValue);
     handle.inUse = true;
@@ -200,30 +197,30 @@ function createTree() {
 function Fragment(attrs, children) {
   var child;
   var tree = createTree();
-  for (var i = 0; i < children.length; i++) {
+  for(var i = 0; i < children.length; i++) {
     child = children[i];
     tree.push.apply(tree, child);
   }
   return tree;
 }
 
-function h(tag, attrs, children) {
+function h(tag, attrs, children){
   var argsLen = arguments.length;
   var childrenType = typeof children;
-  if (argsLen === 2) {
-    if (typeof attrs !== 'object' || Array.isArray(attrs)) {
+  if(argsLen === 2) {
+    if(typeof attrs !== 'object' || Array.isArray(attrs)) {
       children = attrs;
       attrs = null;
     }
-  } else if (argsLen > 3 || isTree(children) || isPrimitive(childrenType)) {
+  } else if(argsLen > 3 || isTree(children) || isPrimitive(childrenType)) {
     children = Array.prototype.slice.call(arguments, 2);
   }
 
   var isFn = isFunction(tag);
 
-  if (isFn) {
+  if(isFn) {
     var localName = tag.prototype.localName;
-    if (localName) {
+    if(localName) {
       return h(localName, attrs, children);
     }
 
@@ -232,16 +229,16 @@ function h(tag, attrs, children) {
 
   var tree = createTree();
   var uniq;
-  if (attrs) {
+  if(attrs) {
     var evs;
-    attrs = Object.keys(attrs).reduce(function (acc, key) {
+    attrs = Object.keys(attrs).reduce(function(acc, key){
       var value = attrs[key];
 
       var eventInfo = signal(tag, key, value, attrs);
-      if (eventInfo) {
-        if (!evs) evs = [];
+      if(eventInfo) {
+        if(!evs) evs = [];
         evs.push(eventInfo);
-      } else if (key === 'key') {
+      } else if(key === 'key') {
         uniq = value;
       } else {
         acc.push(key);
@@ -253,22 +250,22 @@ function h(tag, attrs, children) {
   }
 
   var open = [1, tag, uniq];
-  if (attrs) {
+  if(attrs) {
     open.push(attrs);
   }
-  if (evs) {
+  if(evs) {
     open.push(evs);
   }
   tree.push(open);
 
-  if (children) {
-    children.forEach(function (child) {
-      if (typeof child !== 'undefined' && !Array.isArray(child)) {
+  if(children) {
+    children.forEach(function(child){
+      if(typeof child !== 'undefined' && !Array.isArray(child)) {
         tree.push([4, child + '']);
         return;
       }
 
-      while (child && child.length) {
+      while(child && child.length) {
         tree.push(child.shift());
       }
     });
@@ -292,9 +289,10 @@ const templates = new WeakMap();
 const _template = Symbol();
 let globalId = 0;
 
-var html = function (strings, ...args) {
+
+var html = function(strings, ...args) {
   let id;
-  if (templates.has(strings)) {
+  if(templates.has(strings)) {
     id = templates.get(strings);
   } else {
     globalId = globalId + 1;
@@ -306,14 +304,14 @@ var html = function (strings, ...args) {
   // Set values
   let vals = args.map(arg => {
     let type = typeof arg;
-    if (type === 'function') {
+    if(type === 'function') {
       let handle = Handle$1.from(arg);
       handle.inUse = true;
       currentInstance._fritzHandles.set(handle.id, handle);
       return Uint8Array.from([0, handle.id]);
     } else if (Array.isArray(arg)) {
       let tag;
-      if (isTemplate(arg)) {
+      if(isTemplate(arg)) {
         tag = templateTag;
       } else {
         tag = valueTag;
@@ -348,7 +346,7 @@ function render$1(fritz, msg) {
   let props = msg.props || {};
 
   let instance = getInstance(fritz, id);
-  if (!instance) {
+  if(!instance) {
     let constructor = fritz._tags[msg.tag];
     instance = new constructor();
     Object.defineProperties(instance, {
@@ -368,12 +366,12 @@ function render$1(fritz, msg) {
   enqueueRender(instance, props);
 }
 
-function trigger(fritz, msg) {
+function trigger(fritz, msg){
   let inst = getInstance(fritz, msg.id);
   let response = Object.create(null);
 
   let method;
-  if (msg.handle != null) {
+  if(msg.handle != null) {
     method = Handle$1.get(msg.handle).fn;
   } else {
     let name = msg.event.type;
@@ -381,7 +379,7 @@ function trigger(fritz, msg) {
     method = inst[methodName];
   }
 
-  if (method) {
+  if(method) {
     let event = msg.event;
     method.call(inst, event);
 
@@ -391,16 +389,16 @@ function trigger(fritz, msg) {
   }
 }
 
-function destroy(fritz, msg) {
+function destroy(fritz, msg){
   let instance = getInstance(fritz, msg.id);
   instance.componentWillUnmount();
 
   let handles = instance._fritzHandles;
-  handles.forEach(function (handle) {
+  handles.forEach(function(handle){
     handle.del();
   });
   handles.clear();
-
+  
   delInstance(fritz, msg.id);
 }
 
@@ -412,7 +410,7 @@ function rendered(fritz, msg) {
 function cleanup(fritz, msg) {
   let instance = getInstance(fritz, msg.id);
   let handles = instance._fritzHandles;
-  msg.handles.forEach(function (id) {
+  msg.handles.forEach(function(id){
     let handle = handles.get(id);
     handle.del();
     handles.delete(id);
@@ -422,12 +420,12 @@ function cleanup(fritz, msg) {
 let hasListened = false;
 
 function relay(fritz) {
-  if (!hasListened) {
+  if(!hasListened) {
     hasListened = true;
 
-    self.addEventListener('message', function (ev) {
+    self.addEventListener('message', function(ev){
       let msg = ev.data;
-      switch (msg.type) {
+      switch(msg.type) {
         case RENDER:
           render$1(fritz, msg);
           break;
@@ -460,12 +458,13 @@ fritz._tags = Object.create(null);
 fritz._instances = Object.create(null);
 
 function define(tag, constructor) {
-  if (constructor === undefined) {
+  if(constructor === undefined) {
     throw new Error('fritz.define expects 2 arguments');
   }
-  if (constructor.prototype === undefined || constructor.prototype.render === undefined) {
+  if(constructor.prototype === undefined ||
+    constructor.prototype.render === undefined) {
     let render = constructor;
-    constructor = class extends Component {};
+    constructor = class extends Component{};
     constructor.prototype.render = render;
   }
 
@@ -491,12 +490,8 @@ function define(tag, constructor) {
 
 let state;
 Object.defineProperty(fritz, 'state', {
-  set: function (val) {
-    state = val;
-  },
-  get: function () {
-    return state;
-  }
+  set: function(val) { state = val; },
+  get: function() { return state; }
 });
 
 var styles = ".about {\n  background-color: var(--alt-bg);\n  max-width: 80%;\n  margin: auto;\n  font-size: 120%;\n}\n\n.about p, .about ul {\n  line-height: 2rem;\n}\n\n.about h1 {\n  color: var(--vermilion);\n  font-size: 220%;\n}\n\n.about a, .about a:visited {\n  color: var(--main-color);\n}\n\n.about code-snippet,\n.about code-file {\n  width: 60%;\n}\n\n.about code-file {\n  --box-shadow: none;\n}\n\n@media only screen and (max-width: 768px) {\n  .about code-snippet,\n  .about code-file {\n    width: 100%;\n    font-size: 90%;\n  }\n}";
@@ -534,20 +529,12 @@ function about() {
 
       <code-snippet .code=${`const worker = new Worker('./app.js');`}></code-snippet>
 
-      <p>And then define a component inside of that worker. We'll assume you know how to configure your bundler tool and skip that part. But we should point out that you want to change your <a href="https://babeljs.io/">Babel</a> config so that it renders JSX to Fritz <code>h()</code> calls.</p>
-
-      <code-snippet .code=${`
-{
-  "plugins": [
-    ["transform-react-jsx", { "pragma":"h" }]
-  ]
-}
-`}></code-snippet>
+      <p>And then define a component inside of that worker. We'll assume you know how to configure your bundler tool and skip that part.</p>
 
       <p>Then import all of the needed things and create a basic component:</p>
 
       <code-file name="app.js" .code=${`
-import fritz, { Component, h } from 'fritz';
+import fritz, { Component, html } from 'fritz';
 
 class Hello extends Component {
   static get props() {
@@ -557,17 +544,17 @@ class Hello extends Component {
   }
 
   render({name}) {
-    return <div>Hello {name}!</div>
+    return html\`<div>Hello \${name}!</div>\`;
   }
 }
 
 fritz.define('hello-message', Hello);
 `}></code-file>
 
-      <p>Cool, now that we have created a component we need to actually use it. Create another bundle named main.js, this will be a script we add to our page which will sync up the DOM to our component:</p>
+      <p>Cool, now that we have created a component we need to actually use it. Create another module named main.js, this will be a script we add to our page which will sync up the DOM to our component:</p>
 
       <code-file name="main.js" .code=${`
-import fritz from 'fritz/window';
+import fritz from 'https://unpkg.com/fritz/window.js';
 
 const worker = new Worker('./app.js');
 fritz.use(worker);
@@ -582,7 +569,7 @@ fritz.use(worker);
 
 <hello-message name="World"></hello-message>
 
-<script src="./main.js" async></script>
+<script type="module" src="./main.js"></script>
 `}></code-file>
 
       <p>And that's it!</p>
@@ -597,7 +584,7 @@ fritz.use(worker);
 }
 `}></code-snippet>
 
-      <p>This will allow you to transform JSX both for the React and Fritz sides of your application. As before, we won't explain how to configure your bundler, but know that you will need to create a worker bundle (that contains Fritz code) and a bundle for your React code.</p>
+      <p>This will allow you to transform JSX for the React side of your application. As before, we won't explain how to configure your bundler, but know that you will need to create a worker bundle (that contains Fritz code) and a bundle for your React code.</p>
 
       <p>React doesn't properly handle passing data to web components, but luckily there is a helper library that fixes the issue for us. Install <a href="https://github.com/skatejs/val">skatejs/val</a> like so:</p>
       <code-snippet .code=${'npm install @skatejs/val'}></code-snippet>
@@ -634,7 +621,7 @@ class Home extends React.Component {
 const main = document.querySelector('main');
 ReactDOM.render(<Home/>, main);
 `}></code-file>
-      <p>Note that this imports our implementation of <code>h</code>, which is just a small wrapper around <code>React.createElement</code>. Since we are using h in both the React app and the worker, our babel config remains the same.</p>
+      <p>Note that this imports our implementation of <code>h</code>, which is just a small wrapper around <code>React.createElement</code>.</p>
 
       <p>Now we just need to implement <code>&lt;worker-component&gt;</code>.</p>
 
@@ -659,12 +646,12 @@ class MyWorkerComponent extends Component {
   }
 
   render({name}, {count}) {
-    return (
+    return html\`
       <section>
-        <div>Hi {name}. This has been clicked {count} times.</div>
-        <a href="#" onClick={this.add}>Add</a>
+        <div>Hi \${name}. This has been clicked \${count} times.</div>
+        <a href="#" on-click=\${this.add}>Add</a>
       </section>
-    );
+    \`;
   }
 }
 
@@ -693,11 +680,11 @@ class CodeFile extends Component {
     return {
       code: 'string',
       name: { type: 'string', attribute: true }
-    };
+    }
   }
 
-  render({ code, name }) {
-
+  render({code, name}) {
+    
     return html`
       <div>
         <style>${styles$2}</style>
@@ -718,10 +705,10 @@ class HelloMessage extends Component {
     name: { attribute: true }
   }
 
-  render() {
-    return (
-      <div>Hello {this.name}!</div>
-    );
+  render({name}) {
+    return html\`
+      <div>Hello \${name}!</div>
+    \`;
   }
 }
 
@@ -731,8 +718,9 @@ fritz.define('hello-message', HelloMessage);
 const htmlCode = `
 <hello-message name="World"></hello-message>
 
-<script src="./node_modules/fritz/window.umd.js"></script>
-<script>
+<script type="module">
+  import fritz from 'https://unpkg.com/fritz/window.js';
+
   fritz.use(new Worker('./worker.js'));
 </script>
 `;

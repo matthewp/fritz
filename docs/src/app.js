@@ -11,10 +11,10 @@ class HelloMessage extends Component {
     name: { attribute: true }
   }
 
-  render() {
-    return (
-      <div>Hello {this.name}!</div>
-    );
+  render({name}) {
+    return html\`
+      <div>Hello \${name}!</div>
+    \`;
   }
 }
 
@@ -24,8 +24,9 @@ fritz.define('hello-message', HelloMessage);
 const htmlCode = `
 <hello-message name="World"></hello-message>
 
-<script src="./node_modules/fritz/window.umd.js"></script>
-<script>
+<script type="module">
+  import fritz from 'https://unpkg.com/fritz/window.js';
+
   fritz.use(new Worker('./worker.js'));
 </script>
 `;

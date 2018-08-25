@@ -34,20 +34,12 @@ function about() {
 
       <code-snippet .code=${`const worker = new Worker('./app.js');`}></code-snippet>
 
-      <p>And then define a component inside of that worker. We'll assume you know how to configure your bundler tool and skip that part. But we should point out that you want to change your <a href="https://babeljs.io/">Babel</a> config so that it renders JSX to Fritz <code>h()</code> calls.</p>
-
-      <code-snippet .code=${`
-{
-  "plugins": [
-    ["transform-react-jsx", { "pragma":"h" }]
-  ]
-}
-`}></code-snippet>
+      <p>And then define a component inside of that worker. We'll assume you know how to configure your bundler tool and skip that part.</p>
 
       <p>Then import all of the needed things and create a basic component:</p>
 
       <code-file name="app.js" .code=${`
-import fritz, { Component, h } from 'fritz';
+import fritz, { Component, html } from 'fritz';
 
 class Hello extends Component {
   static get props() {
@@ -57,17 +49,17 @@ class Hello extends Component {
   }
 
   render({name}) {
-    return <div>Hello {name}!</div>
+    return html\`<div>Hello \${name}!</div>\`;
   }
 }
 
 fritz.define('hello-message', Hello);
 `}></code-file>
 
-      <p>Cool, now that we have created a component we need to actually use it. Create another bundle named main.js, this will be a script we add to our page which will sync up the DOM to our component:</p>
+      <p>Cool, now that we have created a component we need to actually use it. Create another module named main.js, this will be a script we add to our page which will sync up the DOM to our component:</p>
 
       <code-file name="main.js" .code=${`
-import fritz from 'fritz/window';
+import fritz from 'https://unpkg.com/fritz/window.js';
 
 const worker = new Worker('./app.js');
 fritz.use(worker);
@@ -82,7 +74,7 @@ fritz.use(worker);
 
 <hello-message name="World"></hello-message>
 
-<script src="./main.js" async></script>
+<script type="module" src="./main.js"></script>
 `}></code-file>
 
       <p>And that's it!</p>
@@ -97,7 +89,7 @@ fritz.use(worker);
 }
 `}></code-snippet>
 
-      <p>This will allow you to transform JSX both for the React and Fritz sides of your application. As before, we won't explain how to configure your bundler, but know that you will need to create a worker bundle (that contains Fritz code) and a bundle for your React code.</p>
+      <p>This will allow you to transform JSX for the React side of your application. As before, we won't explain how to configure your bundler, but know that you will need to create a worker bundle (that contains Fritz code) and a bundle for your React code.</p>
 
       <p>React doesn't properly handle passing data to web components, but luckily there is a helper library that fixes the issue for us. Install <a href="https://github.com/skatejs/val">skatejs/val</a> like so:</p>
       <code-snippet .code=${'npm install @skatejs/val'}></code-snippet>
@@ -134,7 +126,7 @@ class Home extends React.Component {
 const main = document.querySelector('main');
 ReactDOM.render(<Home/>, main);
 `}></code-file>
-      <p>Note that this imports our implementation of <code>h</code>, which is just a small wrapper around <code>React.createElement</code>. Since we are using h in both the React app and the worker, our babel config remains the same.</p>
+      <p>Note that this imports our implementation of <code>h</code>, which is just a small wrapper around <code>React.createElement</code>.</p>
 
       <p>Now we just need to implement <code>&lt;worker-component&gt;</code>.</p>
 
@@ -159,12 +151,12 @@ class MyWorkerComponent extends Component {
   }
 
   render({name}, {count}) {
-    return (
+    return html\`
       <section>
-        <div>Hi {name}. This has been clicked {count} times.</div>
-        <a href="#" onClick={this.add}>Add</a>
+        <div>Hi \${name}. This has been clicked \${count} times.</div>
+        <a href="#" on-click=\${this.add}>Add</a>
       </section>
-    );
+    \`;
   }
 }
 
