@@ -45,7 +45,12 @@ function* idiff(oldNode, newNode, parentId, id, index, instance, orphan) {
         yield 3; // NodeType
         yield* encodeString(newNode);
       }
-    } else if(!oldNode.nodeValue) {
+    } else if(oldNode.type !== 3) {
+      /*yield REPLACE;
+      yield parentId;
+      yield index;
+      yield 3;
+      yield encodeString(newNode);*/
       throw new Error('Do not yet support replacing a node with a text node');
     } else if(oldNode.nodeValue === newNode) {
       return oldNode;

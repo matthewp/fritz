@@ -1,5 +1,6 @@
 import { isFunction } from '../util.js';
 import { INSERT, REMOVE, REPLACE, SET_ATTR, RM_ATTR, EVENT, TEXT } from '../bc.js';
+import { elementClose } from 'incremental-dom';
 
 const FN_HANDLE = Symbol('fritz.handle');
 
@@ -116,7 +117,13 @@ function patch(ab, root, component) {
         fn = component.addEventCallback(handleId);
         fn[FN_HANDLE] = handleId;
 
+        if(!(name in parent) && isFunction(parent.addEventProperty)) {
+          parent.addEventProperty(prop);
+        }
+
+        // TODO this should probably be addEventListener
         parent[prop] = fn;
+        
         break;
       }
       case TEXT: {

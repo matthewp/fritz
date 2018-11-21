@@ -80,7 +80,7 @@ export function h2(tag, attrs, children){
 };
 
 export default function h(tag, props, ...args) {
-  let children, child, i;
+  let children, child, i, lastSimple, simple;
 
   if(Array.isArray(props)) {
     args.unshift(props);
@@ -92,11 +92,22 @@ export default function h(tag, props, ...args) {
       for(i = child.length; i--;) args.push(child[i]);
     }
     else {
-      if(typeof children === 'undefined') {
+      if ((simple = typeof tag !== 'function')) {
+        if (child == null) child = '';
+        else if (typeof child === 'number') child = String(child);
+        else if (typeof child !== 'string') simple = false;
+      }
+
+      if (simple && lastSimple) {
+        children[children.length - 1] += child;
+      }
+      else if(typeof children === 'undefined') {
         children = [child];
       } else {
         children.push(child);
       }
+
+      lastSimple = simple;
     }
   }
 

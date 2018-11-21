@@ -161,7 +161,12 @@ function* idiff(oldNode, newNode, parentId, id, index, instance, orphan) {
         yield 3; // NodeType
         yield* encodeString(newNode);
       }
-    } else if(!oldNode.nodeValue) {
+    } else if(oldNode.type !== 3) {
+      /*yield REPLACE;
+      yield parentId;
+      yield index;
+      yield 3;
+      yield encodeString(newNode);*/
       throw new Error('Do not yet support replacing a node with a text node');
     } else if(oldNode.nodeValue === newNode) {
       return oldNode;
@@ -442,7 +447,7 @@ function Fragment() {}
 
 
 function h(tag, props, ...args) {
-  let children, child, i;
+  let children, child, i, lastSimple, simple;
 
   if(Array.isArray(props)) {
     args.unshift(props);
@@ -454,11 +459,22 @@ function h(tag, props, ...args) {
       for(i = child.length; i--;) args.push(child[i]);
     }
     else {
-      if(typeof children === 'undefined') {
+      if ((simple = typeof tag !== 'function')) {
+        if (child == null) child = '';
+        else if (typeof child === 'number') child = String(child);
+        else if (typeof child !== 'string') simple = false;
+      }
+
+      if (simple && lastSimple) {
+        children[children.length - 1] += child;
+      }
+      else if(typeof children === 'undefined') {
         children = [child];
       } else {
         children.push(child);
       }
+
+      lastSimple = simple;
     }
   }
 
