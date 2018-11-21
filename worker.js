@@ -16,8 +16,6 @@ function isFunction(val) {
 
 const defer = Promise.resolve().then.bind(Promise.resolve());
 
-const sym = typeof Symbol === 'function' ? Symbol : function(v) { return '_' + v };
-
 const DEFINE = 'define';
 const TRIGGER = 'trigger';
 const RENDER = 'render';
@@ -135,7 +133,10 @@ function* idiff(oldNode, newNode, parentId, id, index, instance, orphan) {
   let out = oldNode;
   let thisId = id.id;
 
-  if(typeof newNode === 'string') {
+  if(newNode == null || typeof newNode === 'boolean') newNode = '';
+
+  let vtype = typeof newNode;
+  if(vtype === 'string' || vtype === 'number') {
     if(!oldNode) {
       out = new VNode();
       out.nodeValue = newNode;
@@ -186,12 +187,21 @@ function* idiff(oldNode, newNode, parentId, id, index, instance, orphan) {
     }
   }
 
-  // TODO fast pass strings
-
   // TODO fast pass one child
-
+  let ochildren = out.children;
+  let vchildren = newNode.children;
+  if(false && vchildren && vchildren.length === 1 && typeof vchildren[0] === 'string' &&
+    ochildren && ochildren.length === 1 && ochildren[0].type === 3) {
+    if(out.children[0].nodeValue !== newNode.children[0]) {
+      out.children[0].nodeValue = newNode.children[0];
+  
+      yield TEXT;
+      yield thisId;
+      yield* encodeString(newNode.children[0]);
+    }
+  }
   // Children
-  if(newNode.children && newNode.children.length) {
+  else if(newNode.children && newNode.children.length) {
     yield* innerDiffNode(out, newNode, id, instance);
   }
 
@@ -267,8 +277,8 @@ function* innerDiffNode(oldNode, newNode, id, instance) {
         }
         // Is nextSibling
         else {
-          //oldNode.remove(f);
-          //oldNode.insertBefore(child, f);
+          oldNode.insertBefore(child, f);
+          oldNode.remove(f);
         }
       }
   
@@ -293,7 +303,7 @@ function* diffProps(oldNode, newNode, parentId, instance) {
       if(!(newProps && newProps[name] != null) && (oldProps && oldProps[name] != null)) {
         delete oldProps[name];
         yield RM_ATTR;
-        yield id.id;
+        yield parentId;
         yield* encodeString(name);
       }
     }
@@ -421,25 +431,7 @@ class Component {
   componentWillUnmount(){}
 }
 
-const _tree = sym('ftree');
-
-
-
-function createTree() {
-  var out = [];
-  out[_tree] = true;
-  return out;
-}
-
-function Fragment(attrs, children) {
-  var child;
-  var tree = createTree();
-  for(var i = 0; i < children.length; i++) {
-    child = children[i];
-    tree.push.apply(tree, child);
-  }
-  return tree;
-}
+function Fragment() {}
 
 
 
@@ -464,8 +456,14 @@ function h(tag, props, ...args) {
     }
   }
 
+  if(tag === Fragment) {
+    let p = new VFrag();
+    p.children = children;
+    return p;
+  }
+
   let p = new VNode();
-  p.nodeName = tag;
+  p.nodeName = isFunction(tag) ? tag.prototype.localName : tag;
   p.children = children;
   p.props = props;
   return p;

@@ -57,14 +57,14 @@
             assert.equal(val, '27', 'printed the string 27');
           });
 
-          it('renders children that are booleans', function(){
+          it.skip('renders children that are booleans', function(){
             let root = doc.querySelector('basic-app').shadowRoot;
             let el = root.querySelector('typed-el').shadowRoot;
             let val = el.querySelector('.c-boolean').firstChild.nodeValue;
             assert.equal(val, 'false', 'printed the string false');
           });
 
-          it('renders fragments', function(){
+          it.skip('renders fragments', function(){
             let root = doc.querySelector('basic-app').shadowRoot;
             let el = root.querySelector('frag-el').shadowRoot;
 

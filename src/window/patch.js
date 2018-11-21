@@ -126,6 +126,21 @@ function patch(ab, root, component) {
         tn.nodeValue = nodeValue;
         break;
       }
+      case SET_ATTR: {
+        let id = iter.next().value;
+        let name = decodeString(iter);
+        let value = decodeString(iter);
+        let parent = getNode(walker, id);
+        parent.setAttribute(name, value);
+        break;
+      }
+      case RM_ATTR: {
+        let id = iter.next().value;
+        let name = decodeString(iter);
+        let parent = getNode(walker, id);
+        parent.removeAttribute(name);
+        break;
+      }
       default:
         throw new Error(`The instruction ${c} has not been implemented.`);
     }

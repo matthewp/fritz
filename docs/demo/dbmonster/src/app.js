@@ -2,7 +2,7 @@ import fritz, { Component, h } from '../../../../worker.js';
 import './row.js';
 import styles from './app.css';
 
-importScripts('https://cdn.rawgit.com/WebReflection/dbmonster/master/data.js');
+importScripts('./src/data.js');
 
 class App extends Component {
   static get props() {

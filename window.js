@@ -464,8 +464,8 @@ const defer = Promise.resolve().then.bind(Promise.resolve());
 
 const INSERT = 0;
 const REMOVE = 1;
-
-
+const SET_ATTR = 2;
+const RM_ATTR = 3;
 const TEXT = 4;
 const EVENT$1 = 5;
 const REPLACE = 6;
@@ -593,6 +593,21 @@ function patch(ab, root, component) {
         let nodeValue = decodeString(iter);
         let tn = getNode(walker, id);
         tn.nodeValue = nodeValue;
+        break;
+      }
+      case SET_ATTR: {
+        let id = iter.next().value;
+        let name = decodeString(iter);
+        let value = decodeString(iter);
+        let parent = getNode(walker, id);
+        parent.setAttribute(name, value);
+        break;
+      }
+      case RM_ATTR: {
+        let id = iter.next().value;
+        let name = decodeString(iter);
+        let parent = getNode(walker, id);
+        parent.removeAttribute(name);
         break;
       }
       default:

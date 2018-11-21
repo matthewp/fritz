@@ -23,7 +23,10 @@ function* idiff(oldNode, newNode, parentId, id, index, instance, orphan) {
   let out = oldNode;
   let thisId = id.id;
 
-  if(typeof newNode === 'string') {
+  if(newNode == null || typeof newNode === 'boolean') newNode = '';
+
+  let vtype = typeof newNode;
+  if(vtype === 'string' || vtype === 'number') {
     if(!oldNode) {
       out = new VNode();
       out.nodeValue = newNode;
@@ -74,12 +77,21 @@ function* idiff(oldNode, newNode, parentId, id, index, instance, orphan) {
     }
   }
 
-  // TODO fast pass strings
-
   // TODO fast pass one child
-
+  let ochildren = out.children;
+  let vchildren = newNode.children;
+  if(false && vchildren && vchildren.length === 1 && typeof vchildren[0] === 'string' &&
+    ochildren && ochildren.length === 1 && ochildren[0].type === 3) {
+    if(out.children[0].nodeValue !== newNode.children[0]) {
+      out.children[0].nodeValue = newNode.children[0];
+  
+      yield TEXT;
+      yield thisId;
+      yield* encodeString(newNode.children[0]);
+    }
+  }
   // Children
-  if(newNode.children && newNode.children.length) {
+  else if(newNode.children && newNode.children.length) {
     yield* innerDiffNode(out, newNode, id, instance);
   }
 
@@ -159,8 +171,8 @@ function* innerDiffNode(oldNode, newNode, id, instance) {
         }
         // splice into
         else {
-          //oldNode.remove(f);
-          //oldNode.insertBefore(child, f);
+          oldNode.insertBefore(child, f);
+          oldNode.remove(f);
         }
       }
   
@@ -185,7 +197,7 @@ function* diffProps(oldNode, newNode, parentId, instance) {
       if(!(newProps && newProps[name] != null) && (oldProps && oldProps[name] != null)) {
         delete oldProps[name];
         yield RM_ATTR;
-        yield id.id;
+        yield parentId;
         yield* encodeString(name);
       }
     }

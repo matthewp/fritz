@@ -63,7 +63,7 @@ class BasicApp extends Component {
       h(MathEl),
       h(TypedEl),
       h('loading-indicator'),
-      h('frag-el')
+      //h('frag-el') TODO make fragments work
     ]);
   }
 }

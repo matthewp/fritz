@@ -1,17 +1,9 @@
 import { isFunction } from '../util.js';
 import signal from './signal.js';
 import { createTree, isTree } from './tree.js';
-import { VNode } from './vnode.js';
+import { VNode, VFrag } from './vnode.js';
 
-function Fragment(attrs, children) {
-  var child;
-  var tree = createTree();
-  for(var i = 0; i < children.length; i++) {
-    child = children[i];
-    tree.push.apply(tree, child);
-  }
-  return tree;
-}
+function Fragment() {}
 
 export { Fragment };
 
@@ -108,8 +100,14 @@ export default function h(tag, props, ...args) {
     }
   }
 
+  if(tag === Fragment) {
+    let p = new VFrag();
+    p.children = children;
+    return p;
+  }
+
   let p = new VNode();
-  p.nodeName = tag;
+  p.nodeName = isFunction(tag) ? tag.prototype.localName : tag;
   p.children = children;
   p.props = props;
   return p;
