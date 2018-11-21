@@ -1,5 +1,6 @@
 import { RENDER } from '../message-types.js';
 import { defer } from '../util.js';
+import { diff } from './diff.js';
 
 export let currentInstance = null;
 
@@ -37,10 +38,15 @@ function render(instance, sentProps) {
     instance.componentWillUpdate();
     instance._dirty = false;
 
-    postMessage({
-      type: RENDER,
-      id: instance._fritzId,
-      tree: renderInstance(instance)
-    });
+    let tree = renderInstance(instance);
+    let changes = diff(instance._tree, tree, instance);
+
+    if(changes.length) {
+      postMessage({
+        type: RENDER,
+        id: instance._fritzId,
+        tree: changes.buffer
+      }, [changes.buffer]);
+    }
   }
 }

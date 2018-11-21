@@ -33,83 +33,23 @@ const DESTROY = 'destroy';
 const RENDERED = 'rendered';
 const CLEANUP = 'cleanup';
 
-let currentInstance = null;
-
-function renderInstance(instance) {
-  currentInstance = instance;
-  let tree = instance.render(instance.props, instance.state);
-  currentInstance = null;
-  return tree;
-}
-
-let queue = [];
-
-function enqueueRender(instance, sentProps) {
-  if(!instance._dirty && (instance._dirty = true) && queue.push([instance, sentProps])==1) {
-    defer(rerender);
+class Node {
+  insertBefore(child, ref) {
+    let idx = this.children.indexOf(ref);
+    this.children.splice(idx, 0, child);
+  }
+  remove(child) {
+    let idx = this.children.indexOf(child);
+    this.children.splice(idx, 1);
   }
 }
 
-function rerender() {
-	let p, list = queue;
-	queue = [];
-	while ( (p = list.pop()) ) {
-		if (p[0]._dirty) render(p[0], p[1]);
-	}
-}
-
-function render(instance, sentProps) {
-  if(sentProps) {
-    var nextProps = Object.assign({}, instance.props, sentProps);
-    instance.componentWillReceiveProps(nextProps);
-    instance.props = nextProps;
-  }
-
-  if(instance.shouldComponentUpdate(nextProps) !== false) {
-    instance.componentWillUpdate();
-    instance._dirty = false;
-
-    postMessage({
-      type: RENDER,
-      id: instance._fritzId,
-      tree: renderInstance(instance)
-    });
-  }
-}
-
-class Component {
+class VNode extends Node {}
+class VFrag extends Node {
   constructor() {
-    this.state = {};
-    this.props = {};
+    super();
+    this.children = [];
   }
-
-  dispatch(ev) {
-    let id = this._fritzId;
-    postMessage({
-      type: TRIGGER,
-      event: ev,
-      id: id
-    });
-  }
-
-  setState(state) {
-    let s = this.state;
-    Object.assign(s, isFunction(state) ? state(s, this.props) : state);
-    enqueueRender(this);
-  }
-
-  // Force an update, will change to setState()
-  update() {
-    console.warn('update() is deprecated. Use setState() instead.');
-    this.setState({});
-  }
-
-  componentWillReceiveProps(){}
-  shouldComponentUpdate() {
-    return true;
-  }
-  componentWillUpdate(){}
-  componentWillUnmount(){}
 }
 
 let Store;
@@ -172,23 +112,324 @@ Handle = class {
 
 var Handle$1 = Handle;
 
-const eventAttrExp = /^on[A-Z]/;
+const INSERT = 0;
 
-function signal(tagName, attrName, attrValue, attrs) {
-  if(eventAttrExp.test(attrName)) {
-    let eventName = attrName.toLowerCase();
-    let handle = Handle$1.from(attrValue);
-    handle.inUse = true;
-    currentInstance._fritzHandles.set(handle.id, handle);
-    return [1, eventName, handle.id];
+const SET_ATTR = 2;
+const RM_ATTR = 3;
+const TEXT = 4;
+const EVENT$1 = 5;
+const REPLACE = 6;
+
+const enc = new TextEncoder();
+
+function* encodeString(str) {
+  yield* enc.encode(str);
+  yield 0;
+}
+
+function diff(oldTree, newTree, instance) {
+  let tree = newTree;
+  if(newTree instanceof VNode) {
+    tree = new VFrag();
+    tree.children = [newTree];
   }
+
+  return Uint16Array.from(idiff(oldTree, tree, 0, {id:0}, null, instance));
+}
+
+function* idiff(oldNode, newNode, parentId, id, index, instance, orphan) {
+  let out = oldNode;
+  let thisId = id.id;
+
+  if(typeof newNode === 'string') {
+    if(!oldNode) {
+      out = new VNode();
+      out.nodeValue = newNode;
+      out.type = 3;
+
+      if(orphan) {
+        yield REPLACE;
+        yield parentId;
+        yield index;
+        yield 3;
+        yield* encodeString(newNode);
+      } else {
+        yield INSERT;
+        yield parentId;
+        yield index;
+        yield 3; // NodeType
+        yield* encodeString(newNode);
+      }
+    } else if(!oldNode.nodeValue) {
+      throw new Error('Do not yet support replacing a node with a text node');
+    } else if(oldNode.nodeValue === newNode) {
+      return oldNode;
+    } else {
+      oldNode.nodeValue = newNode;
+
+      yield TEXT;
+      yield thisId;
+      yield* encodeString(newNode);
+    }
+
+    return out;
+  }
+
+  let vnodeName = newNode.nodeName;
+  if(!oldNode || false) {
+    out = new VNode();
+    out.nodeName = vnodeName;
+    out.type = 1;
+
+    yield INSERT;
+    yield parentId;
+    yield index;
+    yield 1;
+    yield* encodeString(vnodeName);
+
+    if(oldNode) {
+      throw new Error('Move stuff around');
+    }
+  }
+
+  // TODO fast pass strings
+
+  // TODO fast pass one child
+
+  // Children
+  if(newNode.children && newNode.children.length) {
+    yield* innerDiffNode(out, newNode, id, instance);
+  }
+
+  // Props
+  yield* diffProps(out, newNode, thisId, instance);
+
+  return out;
+}
+
+function* innerDiffNode(oldNode, newNode, id, instance) {
+  let aChildren = oldNode.children && Array.from(oldNode.children),
+    bChildren = newNode.children && Array.from(newNode.children),
+    children = [],
+    keyed = {},
+    keyedLen = 0,
+    aLen = aChildren && aChildren.length,
+    blen = bChildren && bChildren.length,
+    childrenLen = 0,
+    min = 0,
+    parentId = id.id,
+    j, c, f, child, vchild;
+  
+  if(aLen !== 0) {
+    for(let i = 0; i < aLen; i++) {
+      let child = aChildren[i],
+      // TODO props
+        props = {},
+        key = blen && props ? props.key : null;
+
+      if(key != null) {
+        keyedLen++;
+        keyed[key] = child;
+      }
+      else if(props || true) {
+        children[childrenLen++] = child;
+      }
+    }
+  }
+
+  if(blen !== 0) {
+    for(let i = 0; i < blen; i++) {
+      vchild = bChildren[i];
+      child = null;
+      let key = vchild.key;
+
+      if(key != null) {
+        throw new Error('Keyed matching not yet supported.');
+      }
+      else if(min < childrenLen) {
+        for(j = min; j < childrenLen; j++) {
+          if(children[j] !== undefined && isSameNodeType(c = children[j], vchild)) {
+            child = c;
+            children[j] = undefined;
+            if(j === childrenLen -1) childrenLen--;
+            if(j === min) min++;
+            break;
+          }
+        }
+      }
+
+      id.id++;
+      f = aChildren && aChildren[i];
+      child = yield* idiff(child, vchild, parentId, id, i, instance, f);
+      
+      if(child && child !== oldNode && child !== f) {
+        // TODO This should put stuff into place
+        if(f == null) {
+          if(!oldNode.children) {
+            oldNode.children = [child];
+          } else {
+            oldNode.children.push(child);
+          }
+        }
+        // Is nextSibling
+        else {
+          //oldNode.remove(f);
+          //oldNode.insertBefore(child, f);
+        }
+      }
+  
+      //if(min < )
+    }
+  }
+
+  // remove orphaned unkeyed children:
+	/*while (min<=childrenLen) {
+		if ((child = children[childrenLen--])!==undefined) yield* recollectNodeTree(child, oldNode, parentId);
+	}*/
+}
+
+function* diffProps(oldNode, newNode, parentId, instance) {
+  let name;
+  let oldProps = oldNode.props;
+  let newProps = newNode.props;
+
+  // Remove props no longer in new props
+  if(oldProps) {
+    for(name in oldProps) {
+      if(!(newProps && newProps[name] != null) && (oldProps && oldProps[name] != null)) {
+        delete oldProps[name];
+        yield RM_ATTR;
+        yield id.id;
+        yield* encodeString(name);
+      }
+    }
+  }
+
+  if(newProps) {
+    if(!oldProps) {
+      oldProps = oldNode.props = {};
+    }
+
+    for(name in newProps) {
+      if(!(name in oldProps) || newProps[name] !== oldProps[name]) {
+        let value = newProps[name];
+        oldProps[name] = value;
+
+        if(typeof value === 'function') {
+          yield EVENT$1;
+          yield parentId;
+          yield* encodeString(name.toLowerCase());
+          
+          let handle = Handle$1.from(value);
+          handle.inUse = true;
+          instance._fritzHandles.set(handle.id, handle);
+          yield handle.id;
+        } else {
+          yield SET_ATTR;
+          yield parentId;
+          yield* encodeString(name);
+          yield* encodeString(value);
+        }
+      }
+    }
+  }
+}
+
+function isSameNodeType(aNode, bNode) {
+  if(typeof bNode === 'string') {
+    return aNode.type === 3;
+  }
+  return aNode.nodeName === bNode.nodeName;
+}
+
+let currentInstance = null;
+
+function renderInstance(instance) {
+  currentInstance = instance;
+  let tree = instance.render(instance.props, instance.state);
+  currentInstance = null;
+  return tree;
+}
+
+let queue = [];
+
+function enqueueRender(instance, sentProps) {
+  if(!instance._dirty && (instance._dirty = true) && queue.push([instance, sentProps])==1) {
+    defer(rerender);
+  }
+}
+
+function rerender() {
+	let p, list = queue;
+	queue = [];
+	while ( (p = list.pop()) ) {
+		if (p[0]._dirty) render(p[0], p[1]);
+	}
+}
+
+function render(instance, sentProps) {
+  if(sentProps) {
+    var nextProps = Object.assign({}, instance.props, sentProps);
+    instance.componentWillReceiveProps(nextProps);
+    instance.props = nextProps;
+  }
+
+  if(instance.shouldComponentUpdate(nextProps) !== false) {
+    instance.componentWillUpdate();
+    instance._dirty = false;
+
+    let tree = renderInstance(instance);
+    let changes = diff(instance._tree, tree, instance);
+
+    if(changes.length) {
+      postMessage({
+        type: RENDER,
+        id: instance._fritzId,
+        tree: changes.buffer
+      }, [changes.buffer]);
+    }
+  }
+}
+
+class Component {
+  constructor() {
+    this.state = {};
+    this.props = {};
+    this._tree = new VFrag();
+  }
+
+  dispatch(ev) {
+    let id = this._fritzId;
+    postMessage({
+      type: TRIGGER,
+      event: ev,
+      id: id
+    });
+  }
+
+  setState(state) {
+    let s = this.state;
+    Object.assign(s, isFunction(state) ? state(s, this.props) : state);
+    enqueueRender(this);
+  }
+
+  // Force an update, will change to setState()
+  update() {
+    console.warn('update() is deprecated. Use setState() instead.');
+    this.setState({});
+  }
+
+  componentWillReceiveProps(){}
+  shouldComponentUpdate() {
+    return true;
+  }
+  componentWillUpdate(){}
+  componentWillUnmount(){}
 }
 
 const _tree = sym('ftree');
 
-function isTree(obj) {
-  return !!(obj && obj[_tree]);
-}
+
 
 function createTree() {
   var out = [];
@@ -206,83 +447,37 @@ function Fragment(attrs, children) {
   return tree;
 }
 
-function h(tag, attrs, children){
-  var argsLen = arguments.length;
-  var childrenType = typeof children;
-  if(argsLen === 2) {
-    if(typeof attrs !== 'object' || Array.isArray(attrs)) {
-      children = attrs;
-      attrs = null;
-    }
-  } else if(argsLen > 3 || isTree(children) || isPrimitive(childrenType)) {
-    children = Array.prototype.slice.call(arguments, 2);
+
+
+function h(tag, props, ...args) {
+  let children, child, i;
+
+  if(Array.isArray(props)) {
+    args.unshift(props);
+    props = null;
   }
 
-  var isFn = isFunction(tag);
-
-  if(isFn) {
-    var localName = tag.prototype.localName;
-    if(localName) {
-      return h(localName, attrs, children);
+  while(args.length) {
+    if((child = args.pop()) && child.pop !== undefined) {
+      for(i = child.length; i--;) args.push(child[i]);
     }
-
-    return tag(attrs || {}, children);
-  }
-
-  var tree = createTree();
-  var uniq;
-  if(attrs) {
-    var evs;
-    attrs = Object.keys(attrs).reduce(function(acc, key){
-      var value = attrs[key];
-
-      var eventInfo = signal(tag, key, value, attrs);
-      if(eventInfo) {
-        if(!evs) evs = [];
-        evs.push(eventInfo);
-      } else if(key === 'key') {
-        uniq = value;
+    else {
+      if(typeof children === 'undefined') {
+        children = [child];
       } else {
-        acc.push(key);
-        acc.push(value);
+        children.push(child);
       }
-
-      return acc;
-    }, []);
+    }
   }
 
-  var open = [1, tag, uniq];
-  if(attrs) {
-    open.push(attrs);
-  }
-  if(evs) {
-    open.push(evs);
-  }
-  tree.push(open);
-
-  if(children) {
-    children.forEach(function(child){
-      if(typeof child !== 'undefined' && !Array.isArray(child)) {
-        tree.push([4, child + '']);
-        return;
-      }
-
-      while(child && child.length) {
-        tree.push(child.shift());
-      }
-    });
-  }
-
-  tree.push([2, tag]);
-
-  return tree;
+  let p = new VNode();
+  p.nodeName = tag;
+  p.children = children;
+  p.props = props;
+  return p;
 }
 
 h.frag = Fragment;
-
-function isPrimitive(type) {
-  return type === 'string' || type === 'number' || type === 'boolean';
-}
 
 function render$1(fritz, msg) {
   let id = msg.id;

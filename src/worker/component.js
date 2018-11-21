@@ -1,11 +1,13 @@
 import { isFunction } from '../util.js';
 import { RENDER, TRIGGER } from '../message-types.js';
 import { enqueueRender } from './instance.js';
+import { VFrag } from './vnode.js';
 
 class Component {
   constructor() {
     this.state = {};
     this.props = {};
+    this._tree = new VFrag();
   }
 
   dispatch(ev) {
