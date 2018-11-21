@@ -1,6 +1,6 @@
 importScripts('../../worker.umd.js');
 
-const { html, Component } = fritz;
+const { h, Component } = fritz;
 
 class Stateful extends Component {
   constructor() {
@@ -9,7 +9,7 @@ class Stateful extends Component {
   }
 
   render() {
-    return html`<span>Hello ${this.name}</span>`;
+    return h('span', [`Hello ${this.name}`]);
   }
 }
 

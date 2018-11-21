@@ -5,20 +5,13 @@ import './hljs.js';
 const { highlightBlock } = self.hljs;
 
 class CodeSnippet extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: 'open' });
-    this._rendered = false;
-  }
-
   static get observedAttributes() {
     return ['code'];
   }
   
   connectedCallback() {
-    if(!this._rendered) {
-      this._rendered = true;
-      let root = this.shadowRoot;
+    if(!this.shadowRoot) {
+      let root = this.attachShadow({mode:'open'});
       let doc = this.ownerDocument;
 
       let style = doc.createElement('style');
@@ -28,7 +21,6 @@ class CodeSnippet extends HTMLElement {
       let pre = doc.createElement('pre');
       pre.appendChild(doc.createElement('code'));
       root.appendChild(pre);
-      this._renderCode();
     }
   }
 
@@ -39,23 +31,10 @@ class CodeSnippet extends HTMLElement {
   set code(val) {
     // Remove loading newline
     this._code = val[0] === '\n' ? val.substr(1) : val;
-    this._renderCode();
-  }
-
-  _renderCode() {
+    let tn = this.ownerDocument.createTextNode(this._code);
     let code = this.shadowRoot.querySelector('code');
-    if(this._code && code) {
-      let tn = this.ownerDocument.createTextNode(this._code);
-      clear(code);
-      code.appendChild(tn);
-      highlightBlock(code);
-    }
-  }
-}
-
-function clear(node) {
-  while(node.firstChild) {
-    node.removeChild(node.firstChild);
+    code.appendChild(tn);
+    highlightBlock(code);
   }
 }
 

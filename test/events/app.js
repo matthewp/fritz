@@ -1,6 +1,6 @@
 importScripts('../../worker.umd.js');
 
-const { html, Component } = fritz;
+const { h, Component } = fritz;
 
 class EventEl extends Component {
   constructor() {
@@ -22,20 +22,20 @@ class EventEl extends Component {
 
   render({}, {clicked, foo, thing}) {
     if(clicked) {
-      return html`
-        <div class="clicked">link clicked</div>
-      `;
+      return h('div', {'class': 'clicked'}, ['link clicked']);
     }
 
-    return html`
-      <div>
-        <a href="/foo" on-click="${this.myHandler}">Click me</a>
-        <div id="foo">${foo}</div>
-        <div id="thing">${thing}</div>
-        <special-el on-special="${this.handleSpecial}"></special-el>
-        <child-el on-thing="${this.handleThing}"></child-el>
-      </div>
-    `;
+    return h('div', [
+      h('a', {
+        href: '/foo',
+        onClick: this.myHandler
+      }, ['Click me']),
+
+      h('div', {id: 'foo'}, [foo]),
+      h('div', {id: 'thing'}, [thing]),
+      h('special-el', {onSpecial: this.handleSpecial}, []),
+      h('child-el', {onThing: this.handleThing}, [])
+    ]);
   }
 }
 
@@ -58,7 +58,7 @@ class ChildEl extends Component {
   }
 
   render() {
-    return html`<div>Child el</div>`;
+    return h('div', ['Child el']);
   }
 }
 
@@ -75,12 +75,10 @@ class InputEl extends Component {
   }
 
   render() {
-    return html`
-      <div>
-        <div class="result">${this.filter}</div>
-        <input type="text" value="${this.filter}" on-keyup=${this.setFilter}">
-      </div>
-    `;
+    return h('div', [
+      h('div', {'class': 'result'}, [this.filter]),
+      h('input', {type: 'text', value: this.filter, onKeyup:this.setFilter})
+    ]);
   }
 }
 

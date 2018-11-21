@@ -1,3 +1,9 @@
+(function (global, factory) {
+	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+	typeof define === 'function' && define.amd ? define(factory) :
+	(global.fritz = factory());
+}(this, (function () { 'use strict';
+
 function dashCase(str) {
   return typeof str === 'string' ? str.split(/([_A-Z])/).reduce((one, two, idx) => {
     const dash = !one || idx % 2 === 0 ? '' : '-';
@@ -1282,4 +1288,6 @@ Object.defineProperty(fritz, 'state', {
   }
 });
 
-export default fritz;
+return fritz;
+
+})));

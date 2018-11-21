@@ -1,5 +1,5 @@
-import fritz, { Component, html } from '../../worker';
-import about from './about.js';
+import fritz, { Component, h } from '../../worker';
+import About from './about.js';
 import styles from './app.css';
 import './code-file.js';
 
@@ -11,10 +11,10 @@ class HelloMessage extends Component {
     name: { attribute: true }
   }
 
-  render({name}) {
-    return html\`
-      <div>Hello \${name}!</div>
-    \`;
+  render() {
+    return (
+      <div>Hello {this.name}!</div>
+    );
   }
 }
 
@@ -24,17 +24,16 @@ fritz.define('hello-message', HelloMessage);
 const htmlCode = `
 <hello-message name="World"></hello-message>
 
-<script type="module">
-  import fritz from 'https://unpkg.com/fritz/window.js';
-
+<script src="./node_modules/fritz/window.umd.js"></script>
+<script>
   fritz.use(new Worker('./worker.js'));
 </script>
 `;
 
 function main() {
-  return html`
+  return (
     <main>  
-      <style>${styles}</style>
+      <style>{styles}</style>
 
       <section class="intro shadow-section">
         <header class="title">
@@ -49,17 +48,17 @@ function main() {
 
         <a class="github" href="https://github.com/matthewp/fritz">GitHub</a>
 
-        <code-file name="worker.js" .code=${jsCode}></code-file>
-        <code-file name="index.html" .code=${htmlCode}></code-file>
+        <code-file name="worker.js" code={jsCode}></code-file>
+        <code-file name="index.html" code={htmlCode}></code-file>
       </section>
 
-      ${about()}
+      <About/>
 
       <footer>
         <p>Made with 🎃 by <a href="https://twitter.com/matthewcp">@matthewcp</a></p>
       </footer>
     </main>
-  `;
+  );
 }
 
 fritz.define('its-fritz-yall', main);
