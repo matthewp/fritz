@@ -39,14 +39,21 @@ function render(instance, sentProps) {
     instance._dirty = false;
 
     let tree = renderInstance(instance);
-    let changes = diff(instance._tree, tree, instance);
+    let result = diff(instance._tree, tree, instance);
+    let changes = result.changes;
 
     if(changes.length) {
-      postMessage({
+      let msg = {
         type: RENDER,
         id: instance._fritzId,
         tree: changes.buffer
-      }, [changes.buffer]);
+      };
+
+      if(result.props) {
+        msg.props = result.props;
+      }
+
+      postMessage(msg, [changes.buffer]);
     }
   }
 }

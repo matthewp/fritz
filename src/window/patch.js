@@ -1,5 +1,5 @@
 import { isFunction } from '../util.js';
-import { INSERT, REMOVE, REPLACE, SET_ATTR, RM_ATTR, EVENT, TEXT } from '../bc.js';
+import { INSERT, REMOVE, REPLACE, SET_ATTR, RM_ATTR, EVENT, TEXT, PROP } from '../bc.js';
 import { elementClose } from 'incremental-dom';
 
 const FN_HANDLE = Symbol('fritz.handle');
@@ -47,7 +47,7 @@ function getChild(parent, index) {
   return child;
 }
 
-function patch(ab, root, component) {
+function patch(ab, root, component, props) {
   let instr = new Uint16Array(ab);
   let iter = instr[Symbol.iterator]();
   let orphanedHandles = [];
@@ -146,6 +146,15 @@ function patch(ab, root, component) {
         let name = decodeString(iter);
         let parent = getNode(walker, id);
         parent.removeAttribute(name);
+        break;
+      }
+      case PROP: {
+        let id = iter.next().value;
+        let key = decodeString(iter);
+        let name = decodeString(iter);
+        let parent = getNode(walker, id);
+        let value = props[key];
+        parent[name] = value;
         break;
       }
       default:

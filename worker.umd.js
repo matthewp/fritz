@@ -117,8 +117,14 @@ const RM_ATTR = 3;
 const TEXT = 4;
 const EVENT$1 = 5;
 const REPLACE = 6;
+const PROP = 7;
 
 const enc = new TextEncoder();
+
+function Context() {
+  this.id = 0;
+  this.changes = null;
+}
 
 function* encodeString(str) {
   yield* enc.encode(str);
@@ -127,17 +133,19 @@ function* encodeString(str) {
 
 function diff(oldTree, newTree, instance) {
   let tree = newTree;
+  let ctx = new Context();
   if(newTree instanceof VNode) {
     tree = new VFrag();
     tree.children = [newTree];
   }
 
-  return Uint16Array.from(idiff(oldTree, tree, 0, {id:0}, null, instance));
+  ctx.changes = Uint16Array.from(idiff(oldTree, tree, 0, ctx, null, instance));
+  return ctx;
 }
 
-function* idiff(oldNode, newNode, parentId, id, index, instance, orphan) {
+function* idiff(oldNode, newNode, parentId, ctx, index, instance, orphan) {
   let out = oldNode;
-  let thisId = id.id;
+  let thisId = ctx.id;
 
   if(newNode == null || typeof newNode === 'boolean') newNode = '';
 
@@ -213,16 +221,16 @@ function* idiff(oldNode, newNode, parentId, id, index, instance, orphan) {
   }
   // Children
   else if(newNode.children && newNode.children.length) {
-    yield* innerDiffNode(out, newNode, id, instance);
+    yield* innerDiffNode(out, newNode, ctx, instance);
   }
 
   // Props
-  yield* diffProps(out, newNode, thisId, instance);
+  yield* diffProps(out, newNode, thisId, instance, ctx);
 
   return out;
 }
 
-function* innerDiffNode(oldNode, newNode, id, instance) {
+function* innerDiffNode(oldNode, newNode, ctx, instance) {
   let aChildren = oldNode.children && Array.from(oldNode.children),
     bChildren = newNode.children && Array.from(newNode.children),
     children = [],
@@ -232,7 +240,7 @@ function* innerDiffNode(oldNode, newNode, id, instance) {
     blen = bChildren && bChildren.length,
     childrenLen = 0,
     min = 0,
-    parentId = id.id,
+    parentId = ctx.id,
     j, c, f, child, vchild;
   
   if(aLen !== 0) {
@@ -273,9 +281,9 @@ function* innerDiffNode(oldNode, newNode, id, instance) {
         }
       }
 
-      id.id++;
+      ctx.id++;
       f = aChildren && aChildren[i];
-      child = yield* idiff(child, vchild, parentId, id, i, instance, f);
+      child = yield* idiff(child, vchild, parentId, ctx, i, instance, f);
       
       if(child && child !== oldNode && child !== f) {
         // TODO This should put stuff into place
@@ -303,7 +311,7 @@ function* innerDiffNode(oldNode, newNode, id, instance) {
 	}*/
 }
 
-function* diffProps(oldNode, newNode, parentId, instance) {
+function* diffProps(oldNode, newNode, parentId, instance, ctx) {
   let name;
   let oldProps = oldNode.props;
   let newProps = newNode.props;
@@ -340,10 +348,18 @@ function* diffProps(oldNode, newNode, parentId, instance) {
           instance._fritzHandles.set(handle.id, handle);
           yield handle.id;
         } else {
-          yield SET_ATTR;
-          yield parentId;
-          yield* encodeString(name);
-          yield* encodeString(value);
+          if(typeof value === 'object') {
+            let key = propKey(ctx, name, value);
+            yield PROP;
+            yield parentId;
+            yield* encodeString(key);
+            yield* encodeString(name);
+          } else {
+            yield SET_ATTR;
+            yield parentId;
+            yield* encodeString(name);
+            yield* encodeString(value);
+          }
         }
       }
     }
@@ -355,6 +371,26 @@ function isSameNodeType(aNode, bNode) {
     return aNode.type === 3;
   }
   return aNode.nodeName === bNode.nodeName;
+}
+
+function propKey(ctx, name, value) {
+  if(!ctx.props) {
+    ctx.props = {};
+  }
+  let props = ctx.props;
+  if(!props[name]) {
+    props[name] = value;
+    return name;
+  }
+  let i = 1;
+  while(true) {
+    let key = name + i;
+    if(!props[key]) {
+      props[key] = value;
+      return key;
+    }
+    i++;
+  }
 }
 
 let currentInstance = null;
@@ -394,14 +430,21 @@ function render(instance, sentProps) {
     instance._dirty = false;
 
     let tree = renderInstance(instance);
-    let changes = diff(instance._tree, tree, instance);
+    let result = diff(instance._tree, tree, instance);
+    let changes = result.changes;
 
     if(changes.length) {
-      postMessage({
+      let msg = {
         type: RENDER,
         id: instance._fritzId,
         tree: changes.buffer
-      }, [changes.buffer]);
+      };
+
+      if(result.props) {
+        msg.props = result.props;
+      }
+
+      postMessage(msg, [changes.buffer]);
     }
   }
 }

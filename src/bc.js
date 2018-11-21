@@ -5,3 +5,4 @@ export const RM_ATTR = 3;
 export const TEXT = 4;
 export const EVENT = 5;
 export const REPLACE = 6;
+export const PROP = 7;

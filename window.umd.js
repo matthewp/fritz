@@ -477,6 +477,7 @@ const RM_ATTR = 3;
 const TEXT = 4;
 const EVENT$1 = 5;
 const REPLACE = 6;
+const PROP = 7;
 
 /**
  * @license
@@ -722,7 +723,7 @@ function getChild(parent, index) {
   return child;
 }
 
-function patch$$1(ab, root, component) {
+function patch$$1(ab, root, component, props) {
   let instr = new Uint16Array(ab);
   let iter = instr[Symbol.iterator]();
   let orphanedHandles = [];
@@ -823,6 +824,15 @@ function patch$$1(ab, root, component) {
         parent.removeAttribute(name);
         break;
       }
+      case PROP: {
+        let id = iter.next().value;
+        let key = decodeString(iter);
+        let name = decodeString(iter);
+        let parent = getNode(walker, id);
+        let value = props[key];
+        parent[name] = value;
+        break;
+      }
       default:
         throw new Error(`The instruction ${c} has not been implemented.`);
     }
@@ -880,9 +890,9 @@ function withWorkerRender(Base = HTMLElement) {
     beforeRender() {}
     afterRender() {}
 
-    doRenderCallback(vdom) {
+    doRenderCallback(vdom, props) {
       this.beforeRender();
-      let out = patch$$1(vdom, this.shadowRoot, this);
+      let out = patch$$1(vdom, this.shadowRoot, this, props);
       this.afterRender();
       this.handleOrphanedHandles(out);
     }
@@ -953,7 +963,7 @@ function define(fritz, msg) {
 function render(fritz, msg) {
   let instance = getInstance(fritz, msg.id);
   if(instance !== undefined) {
-    instance.doRenderCallback(msg.tree);
+    instance.doRenderCallback(msg.tree, msg.props);
   }
 }
 

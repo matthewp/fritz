@@ -24,9 +24,9 @@ export function withWorkerRender(Base = HTMLElement) {
     beforeRender() {}
     afterRender() {}
 
-    doRenderCallback(vdom) {
+    doRenderCallback(vdom, props) {
       this.beforeRender();
-      let out = patch(vdom, this.shadowRoot, this);
+      let out = patch(vdom, this.shadowRoot, this, props);
       this.afterRender();
       this.handleOrphanedHandles(out);
     }

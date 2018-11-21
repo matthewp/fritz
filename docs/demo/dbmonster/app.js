@@ -19,10 +19,6 @@ function isFunction(val) {
 
 const defer = Promise.resolve().then.bind(Promise.resolve());
 
-const sym = typeof Symbol === 'function' ? Symbol : function (v) {
-  return '_' + v;
-};
-
 const DEFINE = 'define';
 const TRIGGER = 'trigger';
 const RENDER = 'render';
@@ -118,8 +114,14 @@ const RM_ATTR = 3;
 const TEXT = 4;
 const EVENT$1 = 5;
 const REPLACE = 6;
+const PROP = 7;
 
 const enc = new TextEncoder();
+
+function Context() {
+  this.id = 0;
+  this.changes = null;
+}
 
 function* encodeString(str) {
   yield* enc.encode(str);
@@ -128,19 +130,24 @@ function* encodeString(str) {
 
 function diff(oldTree, newTree, instance) {
   let tree = newTree;
+  let ctx = new Context();
   if (newTree instanceof VNode) {
     tree = new VFrag();
     tree.children = [newTree];
   }
 
-  return Uint16Array.from(idiff(oldTree, tree, 0, { id: 0 }, null, instance));
+  ctx.changes = Uint16Array.from(idiff(oldTree, tree, 0, ctx, null, instance));
+  return ctx;
 }
 
-function* idiff(oldNode, newNode, parentId, id, index, instance, orphan) {
+function* idiff(oldNode, newNode, parentId, ctx, index, instance, orphan) {
   let out = oldNode;
-  let thisId = id.id;
+  let thisId = ctx.id;
 
-  if (typeof newNode === 'string') {
+  if (newNode == null || typeof newNode === 'boolean') newNode = '';
+
+  let vtype = typeof newNode;
+  if (vtype === 'string' || vtype === 'number') {
     if (!oldNode) {
       out = new VNode();
       out.nodeValue = newNode;
@@ -159,7 +166,12 @@ function* idiff(oldNode, newNode, parentId, id, index, instance, orphan) {
         yield 3; // NodeType
         yield* encodeString(newNode);
       }
-    } else if (!oldNode.nodeValue) {
+    } else if (oldNode.type !== 3) {
+      /*yield REPLACE;
+      yield parentId;
+      yield index;
+      yield 3;
+      yield encodeString(newNode);*/
       throw new Error('Do not yet support replacing a node with a text node');
     } else if (oldNode.nodeValue === newNode) {
       return oldNode;
@@ -192,19 +204,29 @@ function* idiff(oldNode, newNode, parentId, id, index, instance, orphan) {
   }
 
   // TODO fast pass one child
+  let ochildren = out.children;
+  let vchildren = newNode.children;
+  if (false && vchildren && vchildren.length === 1 && typeof vchildren[0] === 'string' && ochildren && ochildren.length === 1 && ochildren[0].type === 3) {
+    if (out.children[0].nodeValue !== newNode.children[0]) {
+      out.children[0].nodeValue = newNode.children[0];
 
-  // Children
-  if (newNode.children && newNode.children.length) {
-    yield* innerDiffNode(out, newNode, id, instance);
+      yield TEXT;
+      yield thisId;
+      yield* encodeString(newNode.children[0]);
+    }
   }
+  // Children
+  else if (newNode.children && newNode.children.length) {
+      yield* innerDiffNode(out, newNode, ctx, instance);
+    }
 
   // Props
-  yield* diffProps(out, newNode, thisId, instance);
+  yield* diffProps(out, newNode, thisId, instance, ctx);
 
   return out;
 }
 
-function* innerDiffNode(oldNode, newNode, id, instance) {
+function* innerDiffNode(oldNode, newNode, ctx, instance) {
   let aChildren = oldNode.children && Array.from(oldNode.children),
       bChildren = newNode.children && Array.from(newNode.children),
       children = [],
@@ -214,7 +236,7 @@ function* innerDiffNode(oldNode, newNode, id, instance) {
       blen = bChildren && bChildren.length,
       childrenLen = 0,
       min = 0,
-      parentId = id.id,
+      parentId = ctx.id,
       j,
       c,
       f,
@@ -258,9 +280,9 @@ function* innerDiffNode(oldNode, newNode, id, instance) {
         }
       }
 
-      id.id++;
+      ctx.id++;
       f = aChildren && aChildren[i];
-      child = yield* idiff(child, vchild, parentId, id, i, instance, f);
+      child = yield* idiff(child, vchild, parentId, ctx, i, instance, f);
 
       if (child && child !== oldNode && child !== f) {
         // TODO This should put stuff into place
@@ -288,7 +310,7 @@ function* innerDiffNode(oldNode, newNode, id, instance) {
   }*/
 }
 
-function* diffProps(oldNode, newNode, parentId, instance) {
+function* diffProps(oldNode, newNode, parentId, instance, ctx) {
   let name;
   let oldProps = oldNode.props;
   let newProps = newNode.props;
@@ -325,10 +347,18 @@ function* diffProps(oldNode, newNode, parentId, instance) {
           instance._fritzHandles.set(handle.id, handle);
           yield handle.id;
         } else {
-          yield SET_ATTR;
-          yield parentId;
-          yield* encodeString(name);
-          yield* encodeString(value);
+          if (typeof value === 'object') {
+            let key = propKey(ctx, name, value);
+            yield PROP;
+            yield parentId;
+            yield* encodeString(key);
+            yield* encodeString(name);
+          } else {
+            yield SET_ATTR;
+            yield parentId;
+            yield* encodeString(name);
+            yield* encodeString(value);
+          }
         }
       }
     }
@@ -340,6 +370,26 @@ function isSameNodeType(aNode, bNode) {
     return aNode.type === 3;
   }
   return aNode.nodeName === bNode.nodeName;
+}
+
+function propKey(ctx, name, value) {
+  if (!ctx.props) {
+    ctx.props = {};
+  }
+  let props = ctx.props;
+  if (!props[name]) {
+    props[name] = value;
+    return name;
+  }
+  let i = 1;
+  while (true) {
+    let key = name + i;
+    if (!props[key]) {
+      props[key] = value;
+      return key;
+    }
+    i++;
+  }
 }
 
 let currentInstance = null;
@@ -380,14 +430,21 @@ function render(instance, sentProps) {
     instance._dirty = false;
 
     let tree = renderInstance(instance);
-    let changes = diff(instance._tree, tree, instance);
+    let result = diff(instance._tree, tree, instance);
+    let changes = result.changes;
 
     if (changes.length) {
-      postMessage({
+      let msg = {
         type: RENDER,
         id: instance._fritzId,
         tree: changes.buffer
-      }, [changes.buffer]);
+      };
+
+      if (result.props) {
+        msg.props = result.props;
+      }
+
+      postMessage(msg, [changes.buffer]);
     }
   }
 }
@@ -428,26 +485,10 @@ class Component {
   componentWillUnmount() {}
 }
 
-const _tree = sym('ftree');
-
-function createTree() {
-  var out = [];
-  out[_tree] = true;
-  return out;
-}
-
-function Fragment(attrs, children) {
-  var child;
-  var tree = createTree();
-  for (var i = 0; i < children.length; i++) {
-    child = children[i];
-    tree.push.apply(tree, child);
-  }
-  return tree;
-}
+function Fragment() {}
 
 function h(tag, props, ...args) {
-  let children, child, i;
+  let children, child, i, lastSimple, simple;
 
   if (Array.isArray(props)) {
     args.unshift(props);
@@ -458,16 +499,30 @@ function h(tag, props, ...args) {
     if ((child = args.pop()) && child.pop !== undefined) {
       for (i = child.length; i--;) args.push(child[i]);
     } else {
-      if (typeof children === 'undefined') {
+      if (simple = typeof tag !== 'function') {
+        if (child == null) child = '';else if (typeof child === 'number') child = String(child);else if (typeof child !== 'string') simple = false;
+      }
+
+      if (simple && lastSimple) {
+        children[children.length - 1] += child;
+      } else if (typeof children === 'undefined') {
         children = [child];
       } else {
         children.push(child);
       }
+
+      lastSimple = simple;
     }
   }
 
+  if (tag === Fragment) {
+    let p = new VFrag();
+    p.children = children;
+    return p;
+  }
+
   let p = new VNode();
-  p.nodeName = tag;
+  p.nodeName = isFunction(tag) ? tag.prototype.localName : tag;
   p.children = children;
   p.props = props;
   return p;
