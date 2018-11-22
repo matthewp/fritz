@@ -1,4 +1,4 @@
-import render from './lit-render.js';
+import { idomRender as render } from './idom-render.js';
 import { withRenderer } from '@matthewp/skatejs/dist/esnext/with-renderer';
 import { RENDER } from '../message-types.js';
 
@@ -24,7 +24,6 @@ export function withWorkerRender(Base = HTMLElement) {
     afterRender() {}
 
     doRenderCallback(tree) {
-      debugger;
       this.beforeRender();
       let shadowRoot = this.shadowRoot;
       let out = render(tree, shadowRoot, this);
