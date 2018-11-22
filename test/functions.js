@@ -7,7 +7,7 @@ describe('Functional components', () => {
     host.innerHTML = '';
   });
 
-  it('works', async () => {
+  it('can be used by other components', async () => {
     let { worker, registry } = createContext();
     fritz.use(worker);
 

@@ -35,4 +35,8 @@ function wait(ms = 4) {
   });
 }
 
-export { createContext, wait };
+function firstShadow() {
+  return host.firstChild.shadowRoot;
+}
+
+export { createContext, wait, firstShadow };

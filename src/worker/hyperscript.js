@@ -79,17 +79,23 @@ export function h2(tag, attrs, children){
   return tree;
 };
 
+const stack = [];
+
 export default function h(tag, props, ...args) {
   let children, child, i, lastSimple, simple;
 
+  for (i = args.length; i-- > 0;) {
+    stack.push(args[i]);
+  }
+
   if(Array.isArray(props)) {
-    args.unshift(props);
+    if(!stack.length) stack.unshift(props);
     props = null;
   }
 
-  while(args.length) {
-    if((child = args.pop()) && child.pop !== undefined) {
-      for(i = child.length; i--;) args.push(child[i]);
+  while(stack.length) {
+    if((child = stack.pop()) && child.pop !== undefined) {
+      for(i = child.length; i--;) stack.push(child[i]);
     }
     else {
       if ((simple = typeof tag !== 'function')) {
