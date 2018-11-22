@@ -22,7 +22,7 @@ class Component {
   setState(state) {
     let s = this.state;
     Object.assign(s, isFunction(state) ? state(s, this.props) : state);
-    enqueueRender(this);
+    enqueueRender(this, null, this._fritz);
   }
 
   // Force an update, will change to setState()

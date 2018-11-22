@@ -11,6 +11,10 @@ export function render(fritz, msg) {
     let constructor = fritz._tags[msg.tag];
     instance = new constructor();
     Object.defineProperties(instance, {
+      _fritz: {
+        enumerable: false,
+        value: fritz
+      },
       _fritzId: {
         enumerable: false,
         value: id
@@ -44,7 +48,7 @@ export function trigger(fritz, msg){
     let event = msg.event;
     method.call(inst, event);
 
-    enqueueRender(inst);
+    enqueueRender(inst, null, fritz);
   } else {
     // TODO warn?
   }

@@ -686,15 +686,15 @@ attributes[symbols.default] = applyAttributeTyped;
 attributes['style'] = applyStyle;
 
 const FN_HANDLE = Symbol('fritz.handle');
+const dec = new TextDecoder();
 
 function decodeString(iter) {
-  let out = "",
-      c;
-  while (true) {
-    c = iter.next().value;
-    if (c === 0) return out;
-    out += String.fromCharCode(c);
+  let len = iter.next().value;
+  let arr = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    arr[i] = iter.next().value;
   }
+  return dec.decode(arr);
 }
 
 function* walk(root, nextIndex) {
@@ -829,7 +829,12 @@ function patch$$1(ab, root, component, props) {
           let name = decodeString(iter);
           let value = decodeString(iter);
           let parent = getNode(walker, id);
-          parent.setAttribute(name, value);
+          if (name in parent) {
+            parent[name] = value;
+          } else {
+            parent.setAttribute(name, value);
+          }
+
           break;
         }
       case RM_ATTR:

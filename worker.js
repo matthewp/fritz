@@ -121,8 +121,9 @@ function Context() {
 }
 
 function* encodeString(str) {
-  yield* enc.encode(str);
-  yield 0;
+  let arr = enc.encode(str);
+  yield arr.length;
+  yield* arr;
 }
 
 function diff(oldTree, newTree, instance) {
@@ -139,7 +140,7 @@ function diff(oldTree, newTree, instance) {
 
 function* idiff(oldNode, newNode, parentId, ctx, index, instance, orphan) {
   let out = oldNode;
-  let thisId = ctx.id;
+  let thisId = oldNode ? oldNode.id : ctx.id;
 
   if(newNode == null || typeof newNode === 'boolean') newNode = '';
 
@@ -149,6 +150,7 @@ function* idiff(oldNode, newNode, parentId, ctx, index, instance, orphan) {
       out = new VNode();
       out.nodeValue = newNode;
       out.type = 3;
+      out.id = thisId;
 
       if(orphan) {
         yield REPLACE;
@@ -193,6 +195,7 @@ function* idiff(oldNode, newNode, parentId, ctx, index, instance, orphan) {
     out = new VNode();
     out.nodeName = vnodeName;
     out.type = 1;
+    out.id = thisId;
 
     yield INSERT;
     yield parentId;
@@ -245,8 +248,7 @@ function* innerDiffNode(oldNode, newNode, ctx, instance) {
   if(aLen !== 0) {
     for(let i = 0; i < aLen; i++) {
       let child = aChildren[i],
-      // TODO props
-        props = {},
+        props = child.props,
         key = blen && props ? props.key : null;
 
       if(key != null) {
@@ -266,7 +268,11 @@ function* innerDiffNode(oldNode, newNode, ctx, instance) {
       let key = vchild.key;
 
       if(key != null) {
-        throw new Error('Keyed matching not yet supported.');
+        if (keyedLen && keyed[key]!==undefined) {
+          child = keyed[key];
+          keyed[key] = undefined;
+          keyedLen--;
+        }
       }
       else if(min < childrenLen) {
         for(j = min; j < childrenLen; j++) {
@@ -467,7 +473,7 @@ class Component {
   setState(state) {
     let s = this.state;
     Object.assign(s, isFunction(state) ? state(s, this.props) : state);
-    enqueueRender(this);
+    enqueueRender(this, null, this._fritz);
   }
 
   // Force an update, will change to setState()
@@ -543,6 +549,7 @@ function h(tag, props, ...args) {
   p.nodeName = tag;
   p.children = children;
   p.props = props;
+  p.key = props == null ? undefined : props.key;
   return p;
 }
 
@@ -557,6 +564,10 @@ function render$1(fritz, msg) {
     let constructor = fritz._tags[msg.tag];
     instance = new constructor();
     Object.defineProperties(instance, {
+      _fritz: {
+        enumerable: false,
+        value: fritz
+      },
       _fritzId: {
         enumerable: false,
         value: id
@@ -590,7 +601,7 @@ function trigger(fritz, msg){
     let event = msg.event;
     method.call(inst, event);
 
-    enqueueRender(inst);
+    enqueueRender(inst, null, fritz);
   } else {
     // TODO warn?
   }

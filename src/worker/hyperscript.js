@@ -134,6 +134,7 @@ export default function h(tag, props, ...args) {
   p.nodeName = tag;
   p.children = children;
   p.props = props;
+  p.key = props == null ? undefined : props.key;
   return p;
 }
 
