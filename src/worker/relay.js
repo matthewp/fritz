@@ -3,7 +3,7 @@ import { RENDER, EVENT, STATE, DESTROY, RENDERED, CLEANUP } from '../message-typ
 
 let hasListened = false;
 
-export default function relay(fritz) {
+export default function relay(fritz, self) {
   if(!hasListened) {
     hasListened = true;
 

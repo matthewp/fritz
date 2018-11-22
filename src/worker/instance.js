@@ -13,8 +13,8 @@ export function renderInstance(instance) {
 
 let queue = [];
 
-export function enqueueRender(instance, sentProps) {
-  if(!instance._dirty && (instance._dirty = true) && queue.push([instance, sentProps])==1) {
+export function enqueueRender(instance, sentProps, fritz) {
+  if(!instance._dirty && (instance._dirty = true) && queue.push([instance, sentProps, fritz])==1) {
     defer(rerender);
   }
 }
@@ -23,11 +23,11 @@ function rerender() {
 	let p, list = queue;
 	queue = [];
 	while ( (p = list.pop()) ) {
-		if (p[0]._dirty) render(p[0], p[1]);
+		if (p[0]._dirty) render(p[0], p[1], p[2]);
 	}
 }
 
-function render(instance, sentProps) {
+function render(instance, sentProps, fritz) {
   if(sentProps) {
     var nextProps = Object.assign({}, instance.props, sentProps);
     instance.componentWillReceiveProps(nextProps);
@@ -52,8 +52,8 @@ function render(instance, sentProps) {
       if(result.props) {
         msg.props = result.props;
       }
-
-      postMessage(msg, [changes.buffer]);
+      
+      fritz.self.postMessage(msg, [changes.buffer]);
     }
   }
 }

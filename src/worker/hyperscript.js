@@ -117,8 +117,15 @@ export default function h(tag, props, ...args) {
     return p;
   }
 
+  if(isFunction(tag)) {
+    let localName = tag.prototype.localName;
+    if(localName) {
+      tag = localName;
+    }
+  }
+
   let p = new VNode();
-  p.nodeName = isFunction(tag) ? tag.prototype.localName : tag;
+  p.nodeName = tag;
   p.children = children;
   p.props = props;
   return p;

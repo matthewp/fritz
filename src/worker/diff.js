@@ -73,6 +73,11 @@ function* idiff(oldNode, newNode, parentId, ctx, index, instance, orphan) {
   }
 
   let vnodeName = newNode.nodeName;
+  if(typeof vnodeName === 'function') {
+    newNode = vnodeName(newNode.props);
+    return yield* idiff(oldNode, newNode, parentId, ctx, index, instance, orphan);
+  }
+
   if(!oldNode || false) {
     out = new VNode();
     out.nodeName = vnodeName;

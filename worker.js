@@ -184,6 +184,11 @@ function* idiff(oldNode, newNode, parentId, ctx, index, instance, orphan) {
   }
 
   let vnodeName = newNode.nodeName;
+  if(typeof vnodeName === 'function') {
+    newNode = vnodeName(newNode.props);
+    return yield* idiff(oldNode, newNode, parentId, ctx, index, instance, orphan);
+  }
+
   if(!oldNode || false) {
     out = new VNode();
     out.nodeName = vnodeName;
@@ -398,8 +403,8 @@ function renderInstance(instance) {
 
 let queue = [];
 
-function enqueueRender(instance, sentProps) {
-  if(!instance._dirty && (instance._dirty = true) && queue.push([instance, sentProps])==1) {
+function enqueueRender(instance, sentProps, fritz) {
+  if(!instance._dirty && (instance._dirty = true) && queue.push([instance, sentProps, fritz])==1) {
     defer(rerender);
   }
 }
@@ -408,11 +413,11 @@ function rerender() {
 	let p, list = queue;
 	queue = [];
 	while ( (p = list.pop()) ) {
-		if (p[0]._dirty) render(p[0], p[1]);
+		if (p[0]._dirty) render(p[0], p[1], p[2]);
 	}
 }
 
-function render(instance, sentProps) {
+function render(instance, sentProps, fritz) {
   if(sentProps) {
     var nextProps = Object.assign({}, instance.props, sentProps);
     instance.componentWillReceiveProps(nextProps);
@@ -437,8 +442,8 @@ function render(instance, sentProps) {
       if(result.props) {
         msg.props = result.props;
       }
-
-      postMessage(msg, [changes.buffer]);
+      
+      fritz.self.postMessage(msg, [changes.buffer]);
     }
   }
 }
@@ -521,8 +526,15 @@ function h(tag, props, ...args) {
     return p;
   }
 
+  if(isFunction(tag)) {
+    let localName = tag.prototype.localName;
+    if(localName) {
+      tag = localName;
+    }
+  }
+
   let p = new VNode();
-  p.nodeName = isFunction(tag) ? tag.prototype.localName : tag;
+  p.nodeName = tag;
   p.children = children;
   p.props = props;
   return p;
@@ -552,7 +564,7 @@ function render$1(fritz, msg) {
     setInstance(fritz, id, instance);
   }
 
-  enqueueRender(instance, props);
+  enqueueRender(instance, props, fritz);
 }
 
 function trigger(fritz, msg){
@@ -608,7 +620,7 @@ function cleanup(fritz, msg) {
 
 let hasListened = false;
 
-function relay(fritz) {
+function relay(fritz, self) {
   if(!hasListened) {
     hasListened = true;
 
@@ -638,43 +650,50 @@ function relay(fritz) {
   }
 }
 
-const fritz = Object.create(null);
-fritz.Component = Component;
-fritz.define = define;
-fritz.h = h;
-fritz._tags = Object.create(null);
-fritz._instances = Object.create(null);
-
-function define(tag, constructor) {
-  if(constructor === undefined) {
-    throw new Error('fritz.define expects 2 arguments');
-  }
-  if(constructor.prototype === undefined ||
-    constructor.prototype.render === undefined) {
-    let render = constructor;
-    constructor = class extends Component{};
-    constructor.prototype.render = render;
-  }
-
-  fritz._tags[tag] = constructor;
-
-  Object.defineProperty(constructor.prototype, 'localName', {
-    enumerable: false,
-    value: tag
-  });
-
-  relay(fritz);
-
-  postMessage({
-    type: DEFINE,
-    tag: tag,
-    props: constructor.props,
-    events: constructor.events,
-    features: {
-      mount: !!constructor.prototype.componentDidMount
+function create(self) {
+  const fritz = Object.create(null);
+  fritz.Component = Component;
+  fritz.define = define;
+  fritz.h = h;
+  fritz.self = self;
+  fritz._tags = Object.create(null);
+  fritz._instances = Object.create(null);
+  
+  function define(tag, constructor) {
+    if(constructor === undefined) {
+      throw new Error('fritz.define expects 2 arguments');
     }
-  });
+    if(constructor.prototype === undefined ||
+      constructor.prototype.render === undefined) {
+      let render = constructor;
+      constructor = class extends Component{};
+      constructor.prototype.render = render;
+    }
+  
+    fritz._tags[tag] = constructor;
+  
+    Object.defineProperty(constructor.prototype, 'localName', {
+      enumerable: false,
+      value: tag
+    });
+  
+    relay(fritz, self);
+  
+    self.postMessage({
+      type: DEFINE,
+      tag: tag,
+      props: constructor.props,
+      events: constructor.events,
+      features: {
+        mount: !!constructor.prototype.componentDidMount
+      }
+    });
+  }
+
+  return fritz;
 }
+
+const fritz = create(self);
 
 let state;
 Object.defineProperty(fritz, 'state', {
@@ -682,4 +701,4 @@ Object.defineProperty(fritz, 'state', {
   get: function() { return state; }
 });
 
-export { Component, h, Fragment, state };export default fritz;
+export { Component, h, Fragment, state, create };export default fritz;
