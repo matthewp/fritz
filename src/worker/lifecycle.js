@@ -9,7 +9,7 @@ export function render(fritz, msg) {
   let instance = getInstance(fritz, id);
   if(!instance) {
     let constructor = fritz._tags[msg.tag];
-    instance = new constructor();
+    instance = new constructor(msg.props);
     Object.defineProperties(instance, {
       _fritz: {
         enumerable: false,

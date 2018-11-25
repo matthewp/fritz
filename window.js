@@ -788,7 +788,7 @@ function patch$$1(ab, root, component, props) {
         fn = component.addEventCallback(handleId);
         fn[FN_HANDLE] = handleId;
 
-        if(!(name in parent) && isFunction(parent.addEventProperty)) {
+        if(!(prop in parent) && isFunction(parent.addEventProperty)) {
           parent.addEventProperty(prop);
         }
 

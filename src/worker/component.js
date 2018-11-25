@@ -4,9 +4,9 @@ import { enqueueRender } from './instance.js';
 import { VFrag } from './vnode.js';
 
 class Component {
-  constructor() {
+  constructor(props = {}) {
     this.state = {};
-    this.props = {};
+    this.props = props;
     this._tree = new VFrag();
   }
 

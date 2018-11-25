@@ -455,9 +455,9 @@ function render(instance, sentProps, fritz) {
 }
 
 class Component {
-  constructor() {
+  constructor(props = {}) {
     this.state = {};
-    this.props = {};
+    this.props = props;
     this._tree = new VFrag();
   }
 
@@ -562,7 +562,7 @@ function render$1(fritz, msg) {
   let instance = getInstance(fritz, id);
   if(!instance) {
     let constructor = fritz._tags[msg.tag];
-    instance = new constructor();
+    instance = new constructor(msg.props);
     Object.defineProperties(instance, {
       _fritz: {
         enumerable: false,
