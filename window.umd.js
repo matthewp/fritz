@@ -377,17 +377,23 @@ function withMount(Base) {
 function postEvent(event, inst, handle) {
   let worker = inst._worker;
   let id = inst._id;
+  let eventMsg = {
+    type: event.type,
+    detail: event.detail,
+    value: event.target.value
+  };
+  if(event instanceof KeyboardEvent) {
+    eventMsg.key = event.key;
+    eventMsg.code = event.code;
+    eventMsg.which = event.which;
+  }
   worker.postMessage({
     type: EVENT,
-    event: {
-      type: event.type,
-      detail: event.detail,
-      value: event.target.value
-    },
-    id: id,
-    handle: handle
+    event, id, handle
   });
 }
+
+const preventables = new Set(['click']);
 
 function withWorkerEvents(Base = HTMLElement) {
   return class extends Base {
@@ -406,7 +412,8 @@ function withWorkerEvents(Base = HTMLElement) {
       // TODO optimize this so functions are reused if possible.
       var self = this;
       fn = function(ev){
-        ev.preventDefault();
+        if(preventables.has(ev.type))
+          ev.preventDefault();
         postEvent(ev, self, handleId);
       };
       this._handlers[key] = fn;
