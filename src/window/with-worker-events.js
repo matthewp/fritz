@@ -11,11 +11,12 @@ function postEvent(event, inst, handle) {
   if(event instanceof KeyboardEvent) {
     eventMsg.key = event.key;
     eventMsg.code = event.code;
+    eventMsg.keyCode = event.keyCode;
     eventMsg.which = event.which;
   }
   worker.postMessage({
     type: EVENT,
-    event, id, handle
+    event: eventMsg, id, handle
   });
 }
 
