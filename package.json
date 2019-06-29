@@ -32,6 +32,7 @@
     "web-worker"
   ],
   "devDependencies": {
+    "@matthewp/compile": "^2.1.0",
     "@matthewp/skatejs": "^5.1.1",
     "babel-cli": "^6.24.1",
     "babel-plugin-syntax-class-properties": "^6.13.0",
