@@ -1,7 +1,7 @@
 importScripts('../../worker.umd.js');
 importScripts('../worker-debug.js');
 
-const { html, Component } = fritz;
+const { h, Component } = fritz;
 
 class App extends Component {
   constructor() {
@@ -16,16 +16,22 @@ class App extends Component {
 
   render({}, {count}) {
     var size = this._fritzHandles.size;
-    return html`
-      <div>
-        <button id="increment" on-click="${() => this.setState({count: count + 1})}">Increment></button>
-        <button id="decrement" on-click="${this.decrement}">Increment></button>
-        <div>Count: ${count}</div>
-        <div>
-          Handles: <span id="handleSize">${size}</span>
-        </div>
-      </div>
-    `;
+    return (
+      h('div', [
+        h('button', {
+          id: 'increment',
+          onClick: () => this.setState({count: count + 1})
+        }, 'Increment'),
+        h('button', {
+          onClick: this.decrement
+        }, 'Decrement'),
+        h('div', ['Count: ' + count]),
+        h('div', [
+          'Handles: ',
+          h('span', {id:'handleSize'}, [size])
+        ])
+      ])
+    );
   }
 }
 

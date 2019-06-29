@@ -29,6 +29,8 @@ const RENDER = 'render';
 const EVENT = 'event';
 const STATE = 'state';
 const DESTROY = 'destroy';
+const RENDERED = 'rendered';
+const CLEANUP = 'cleanup';
 
 let currentInstance = null;
 
@@ -118,6 +120,7 @@ Store = class {
     this.handleMap = new WeakMap();
     this.idMap = new Map();
     this.id = 0;
+    this.inUse = true;
   }
 
   from(fn) {
@@ -175,7 +178,8 @@ function signal(tagName, attrName, attrValue, attrs) {
   if (eventAttrExp.test(attrName)) {
     let eventName = attrName.toLowerCase();
     let handle = Handle$1.from(attrValue);
-    currentInstance._fritzHandles[handle.id] = handle;
+    handle.inUse = true;
+    currentInstance._fritzHandles.set(handle.id, handle);
     return [1, eventName, handle.id];
   }
 }
@@ -192,14 +196,25 @@ function createTree() {
   return out;
 }
 
+function Fragment(attrs, children) {
+  var child;
+  var tree = createTree();
+  for (var i = 0; i < children.length; i++) {
+    child = children[i];
+    tree.push.apply(tree, child);
+  }
+  return tree;
+}
+
 function h(tag, attrs, children) {
-  const argsLen = arguments.length;
+  var argsLen = arguments.length;
+  var childrenType = typeof children;
   if (argsLen === 2) {
     if (typeof attrs !== 'object' || Array.isArray(attrs)) {
       children = attrs;
       attrs = null;
     }
-  } else if (argsLen > 3 || isTree(children) || typeof children === 'string') {
+  } else if (argsLen > 3 || isTree(children) || isPrimitive(childrenType)) {
     children = Array.prototype.slice.call(arguments, 2);
   }
 
@@ -263,12 +278,21 @@ function h(tag, attrs, children) {
   return tree;
 }
 
+h.frag = Fragment;
+
+function isPrimitive(type) {
+  return type === 'string' || type === 'number' || type === 'boolean';
+}
+
+var html = function (strings, ...vals) {
+  return [1, strings, 2, vals];
+};
+
 function render$1(fritz, msg) {
   let id = msg.id;
   let props = msg.props || {};
 
   let instance = getInstance(fritz, id);
-  let events;
   if (!instance) {
     let constructor = fritz._tags[msg.tag];
     instance = new constructor();
@@ -280,7 +304,7 @@ function render$1(fritz, msg) {
       _fritzHandles: {
         enumerable: false,
         writable: true,
-        value: Object.create(null)
+        value: new Map()
       }
     });
     setInstance(fritz, id, instance);
@@ -297,7 +321,8 @@ function trigger(fritz, msg) {
   if (msg.handle != null) {
     method = Handle$1.get(msg.handle).fn;
   } else {
-    let methodName = 'on' + msg.name[0].toUpperCase() + msg.name.substr(1);
+    let name = msg.event.type;
+    let methodName = 'on' + name[0].toUpperCase() + name.substr(1);
     method = inst[methodName];
   }
 
@@ -314,12 +339,29 @@ function trigger(fritz, msg) {
 function destroy(fritz, msg) {
   let instance = getInstance(fritz, msg.id);
   instance.componentWillUnmount();
-  Object.keys(instance._fritzHandles).forEach(function (key) {
-    let handle = instance._fritzHandles[key];
+
+  let handles = instance._fritzHandles;
+  handles.forEach(function (handle) {
     handle.del();
   });
-  instance._fritzHandles = Object.create(null);
+  handles.clear();
+
   delInstance(fritz, msg.id);
+}
+
+function rendered(fritz, msg) {
+  let instance = getInstance(fritz, msg.id);
+  instance.componentDidMount();
+}
+
+function cleanup(fritz, msg) {
+  let instance = getInstance(fritz, msg.id);
+  let handles = instance._fritzHandles;
+  msg.handles.forEach(function (id) {
+    let handle = handles.get(id);
+    handle.del();
+    handles.delete(id);
+  });
 }
 
 let hasListened = false;
@@ -343,6 +385,12 @@ function relay(fritz) {
         case DESTROY:
           destroy(fritz, msg);
           break;
+        case RENDERED:
+          rendered(fritz, msg);
+          break;
+        case CLEANUP:
+          cleanup(fritz, msg);
+          break;
       }
     });
   }
@@ -352,6 +400,7 @@ const fritz = Object.create(null);
 fritz.Component = Component;
 fritz.define = define;
 fritz.h = h;
+fritz.html = html;
 fritz._tags = Object.create(null);
 fritz._instances = Object.create(null);
 
@@ -359,7 +408,7 @@ function define(tag, constructor) {
   if (constructor === undefined) {
     throw new Error('fritz.define expects 2 arguments');
   }
-  if (constructor.prototype.render === undefined) {
+  if (constructor.prototype === undefined || constructor.prototype.render === undefined) {
     let render = constructor;
     constructor = class extends Component {};
     constructor.prototype.render = render;
@@ -378,7 +427,10 @@ function define(tag, constructor) {
     type: DEFINE,
     tag: tag,
     props: constructor.props,
-    events: constructor.events
+    events: constructor.events,
+    features: {
+      mount: !!constructor.prototype.componentDidMount
+    }
   });
 }
 
@@ -422,7 +474,7 @@ fritz.define('table-row', TableRow);
 
 var styles$1 = ".table {\n  font-family: \"Helvetica Neue\",Helvetica,Arial,sans-serif;\n  font-size: 14px;\n  line-height: 1.42857143;\n  color: #333;\n  background-color: #fff;\n}\n\n#link {\n  position: fixed;\n  top: 0; right: 0;\n  font-size: 12px;\n  padding: 5px 10px;\n  background: rgba(255,255,255,0.85);\n  z-index: 5;\n  box-shadow: 0 0 8px rgba(0,0,0,0.6);\n}\n  #link .center {\n    display: block;\n    text-align: center;\n  }\n\n.Query {\n  position: relative;\n}\n\n.Query:hover .popover {\n  left: -100%;\n  width: 100%;\n  display: block;\n}\n\ntable-row {\n  display: block;\n}\n\ntable-row:nth-child(odd) {\n  background: #f9f9f9;\n}";
 
-importScripts('https://cdn.rawgit.com/WebReflection/dbmonster/master/data.js');
+importScripts('./src/data.js');
 
 class App extends Component {
   static get props() {

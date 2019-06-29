@@ -22,7 +22,7 @@
 
           it('Renders the provided props', function(){
             let shadow = doc.querySelector('x-hello').shadowRoot;
-            let span = shadow.firstElementChild;
+            let span = shadow.firstChild;
             
             assert.equal(span.localName, 'span');
             assert.equal(span.textContent, 'Hello world');

@@ -277,7 +277,6 @@ const STATE = 'state';
 const DESTROY = 'destroy';
 const RENDERED = 'rendered';
 const CLEANUP = 'cleanup';
-const REGISTER = 'register';
 
 let currentComponent;
 
@@ -391,7 +390,7 @@ function withWorkerEvents(Base = HTMLElement) {
       this._handlers = Object.create(null);
     }
 
-    addEventCallback(handleId) {
+    addEventCallback(handleId, eventProp) {
       var key = handleId;
       var fn;
       if(fn = this._handlers[key]) {
@@ -449,807 +448,1298 @@ function withWorkerEvents(Base = HTMLElement) {
 
 /**
  * @license
- * Copyright (c) 2017 The Polymer Project Authors. All rights reserved.
- * This code may only be used under the BSD style license found at
- * http://polymer.github.io/LICENSE.txt
- * The complete set of authors may be found at
- * http://polymer.github.io/AUTHORS.txt
- * The complete set of contributors may be found at
- * http://polymer.github.io/CONTRIBUTORS.txt
- * Code distributed by Google as part of the polymer project is also
- * subject to an additional IP rights grant found at
- * http://polymer.github.io/PATENTS.txt
- */
-// The first argument to JS template tags retain identity across multiple
-// calls to a tag for the same literal, so we can cache work done per literal
-// in a Map.
-const templateCaches = new Map();
-/**
- * Interprets a template literal as an HTML template that can efficiently
- * render to and update a container.
+ * Copyright 2015 The Incremental DOM Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS-IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 /**
- * Interprets a template literal as an SVG template that can efficiently
- * render to and update a container.
+ * Copyright 2015 The Incremental DOM Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS-IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 /**
- * The return type of `html`, which holds a Template and the values from
- * interpolated expressions.
+ * A cached reference to the hasOwnProperty function.
  */
-class TemplateResult {
-    constructor(strings, values, type, partCallback = defaultPartCallback) {
-        this.strings = strings;
-        this.values = values;
-        this.type = type;
-        this.partCallback = partCallback;
-    }
-    /**
-     * Returns a string of HTML used to create a <template> element.
-     */
-    getHTML() {
-        const l = this.strings.length - 1;
-        let html = '';
-        let isTextBinding = true;
-        for (let i = 0; i < l; i++) {
-            const s = this.strings[i];
-            html += s;
-            // We're in a text position if the previous string closed its tags.
-            // If it doesn't have any tags, then we use the previous text position
-            // state.
-            const closing = findTagClose(s);
-            isTextBinding = closing > -1 ? closing < s.length : isTextBinding;
-            html += isTextBinding ? nodeMarker : marker;
-        }
-        html += this.strings[l];
-        return html;
-    }
-    getTemplateElement() {
-        const template = document.createElement('template');
-        template.innerHTML = this.getHTML();
-        return template;
-    }
-}
-/**
- * A TemplateResult for SVG fragments.
- *
- * This class wraps HTMl in an <svg> tag in order to parse its contents in the
- * SVG namespace, then modifies the template to remove the <svg> tag so that
- * clones only container the original fragment.
- */
+var hasOwnProperty = Object.prototype.hasOwnProperty;
 
 /**
- * The default TemplateFactory which caches Templates keyed on
- * result.type and result.strings.
+ * A constructor function that will create blank objects.
+ * @constructor
  */
-function defaultTemplateFactory(result) {
-    let templateCache = templateCaches.get(result.type);
-    if (templateCache === undefined) {
-        templateCache = new Map();
-        templateCaches.set(result.type, templateCache);
-    }
-    let template = templateCache.get(result.strings);
-    if (template === undefined) {
-        template = new Template(result, result.getTemplateElement());
-        templateCache.set(result.strings, template);
-    }
-    return template;
-}
+function Blank() {}
+
+Blank.prototype = Object.create(null);
+
 /**
- * Renders a template to a container.
- *
- * To update a container with new values, reevaluate the template literal and
- * call `render` with the new result.
- *
- * @param result a TemplateResult created by evaluating a template tag like
- *     `html` or `svg`.
- * @param container A DOM parent to render to. The entire contents are either
- *     replaced, or efficiently updated if the same result type was previous
- *     rendered there.
- * @param templateFactory a function to create a Template or retreive one from
- *     cache.
+ * Used to prevent property collisions between our "map" and its prototype.
+ * @param {!Object<string, *>} map The map to check.
+ * @param {string} property The property to check.
+ * @return {boolean} Whether map has property.
  */
-function render$2(result, container, templateFactory = defaultTemplateFactory) {
-    const template = templateFactory(result);
-    let instance = container.__templateInstance;
-    // Repeat render, just call update()
-    if (instance !== undefined && instance.template === template &&
-        instance._partCallback === result.partCallback) {
-        instance.update(result.values);
-        return;
-    }
-    // First render, create a new TemplateInstance and append it
-    instance =
-        new TemplateInstance(template, result.partCallback, templateFactory);
-    container.__templateInstance = instance;
-    const fragment = instance._clone();
-    instance.update(result.values);
-    removeNodes(container, container.firstChild);
-    container.appendChild(fragment);
-}
-/**
- * An expression marker with embedded unique key to avoid collision with
- * possible text in templates.
- */
-const marker = `{{lit-${String(Math.random()).slice(2)}}}`;
-/**
- * An expression marker used text-posisitions, not attribute positions,
- * in template.
- */
-const nodeMarker = `<!--${marker}-->`;
-const markerRegex = new RegExp(`${marker}|${nodeMarker}`);
-/**
- * This regex extracts the attribute name preceding an attribute-position
- * expression. It does this by matching the syntax allowed for attributes
- * against the string literal directly preceding the expression, assuming that
- * the expression is in an attribute-value position.
- *
- * See attributes in the HTML spec:
- * https://www.w3.org/TR/html5/syntax.html#attributes-0
- *
- * "\0-\x1F\x7F-\x9F" are Unicode control characters
- *
- * " \x09\x0a\x0c\x0d" are HTML space characters:
- * https://www.w3.org/TR/html5/infrastructure.html#space-character
- *
- * So an attribute is:
- *  * The name: any character except a control character, space character, ('),
- *    ("), ">", "=", or "/"
- *  * Followed by zero or more space characters
- *  * Followed by "="
- *  * Followed by zero or more space characters
- *  * Followed by:
- *    * Any character except space, ('), ("), "<", ">", "=", (`), or
- *    * (") then any non-("), or
- *    * (') then any non-(')
- */
-const lastAttributeNameRegex = /[ \x09\x0a\x0c\x0d]([^\0-\x1F\x7F-\x9F \x09\x0a\x0c\x0d"'>=/]+)[ \x09\x0a\x0c\x0d]*=[ \x09\x0a\x0c\x0d]*(?:[^ \x09\x0a\x0c\x0d"'`<>=]*|"[^"]*|'[^']*)$/;
-/**
- * Finds the closing index of the last closed HTML tag.
- * This has 3 possible return values:
- *   - `-1`, meaning there is no tag in str.
- *   - `string.length`, meaning the last opened tag is unclosed.
- *   - Some positive number < str.length, meaning the index of the closing '>'.
- */
-function findTagClose(str) {
-    const close = str.lastIndexOf('>');
-    const open = str.indexOf('<', close + 1);
-    return open > -1 ? str.length : close;
-}
-/**
- * A placeholder for a dynamic expression in an HTML template.
- *
- * There are two built-in part types: AttributePart and NodePart. NodeParts
- * always represent a single dynamic expression, while AttributeParts may
- * represent as many expressions are contained in the attribute.
- *
- * A Template's parts are mutable, so parts can be replaced or modified
- * (possibly to implement different template semantics). The contract is that
- * parts can only be replaced, not removed, added or reordered, and parts must
- * always consume the correct number of values in their `update()` method.
- *
- * TODO(justinfagnani): That requirement is a little fragile. A
- * TemplateInstance could instead be more careful about which values it gives
- * to Part.update().
- */
-class TemplatePart {
-    constructor(type, index, name, rawName, strings) {
-        this.type = type;
-        this.index = index;
-        this.name = name;
-        this.rawName = rawName;
-        this.strings = strings;
-    }
-}
-/**
- * An updateable Template that tracks the location of dynamic parts.
- */
-class Template {
-    constructor(result, element) {
-        this.parts = [];
-        this.element = element;
-        const content = this.element.content;
-        // Edge needs all 4 parameters present; IE11 needs 3rd parameter to be null
-        const walker = document.createTreeWalker(content, 133 /* NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_COMMENT |
-               NodeFilter.SHOW_TEXT */, null, false);
-        let index = -1;
-        let partIndex = 0;
-        const nodesToRemove = [];
-        // The actual previous node, accounting for removals: if a node is removed
-        // it will never be the previousNode.
-        let previousNode;
-        // Used to set previousNode at the top of the loop.
-        let currentNode;
-        while (walker.nextNode()) {
-            index++;
-            previousNode = currentNode;
-            const node = currentNode = walker.currentNode;
-            if (node.nodeType === 1 /* Node.ELEMENT_NODE */) {
-                if (!node.hasAttributes()) {
-                    continue;
-                }
-                const attributes = node.attributes;
-                // Per https://developer.mozilla.org/en-US/docs/Web/API/NamedNodeMap,
-                // attributes are not guaranteed to be returned in document order. In
-                // particular, Edge/IE can return them out of order, so we cannot assume
-                // a correspondance between part index and attribute index.
-                let count = 0;
-                for (let i = 0; i < attributes.length; i++) {
-                    if (attributes[i].value.indexOf(marker) >= 0) {
-                        count++;
-                    }
-                }
-                while (count-- > 0) {
-                    // Get the template literal section leading up to the first
-                    // expression in this attribute attribute
-                    const stringForPart = result.strings[partIndex];
-                    // Find the attribute name
-                    const attributeNameInPart = lastAttributeNameRegex.exec(stringForPart)[1];
-                    // Find the corresponding attribute
-                    // TODO(justinfagnani): remove non-null assertion
-                    const attribute = attributes.getNamedItem(attributeNameInPart);
-                    const stringsForAttributeValue = attribute.value.split(markerRegex);
-                    this.parts.push(new TemplatePart('attribute', index, attribute.name, attributeNameInPart, stringsForAttributeValue));
-                    node.removeAttribute(attribute.name);
-                    partIndex += stringsForAttributeValue.length - 1;
-                }
-            }
-            else if (node.nodeType === 3 /* Node.TEXT_NODE */) {
-                const nodeValue = node.nodeValue;
-                if (nodeValue.indexOf(marker) < 0) {
-                    continue;
-                }
-                const parent = node.parentNode;
-                const strings = nodeValue.split(markerRegex);
-                const lastIndex = strings.length - 1;
-                // We have a part for each match found
-                partIndex += lastIndex;
-                // Generate a new text node for each literal section
-                // These nodes are also used as the markers for node parts
-                for (let i = 0; i < lastIndex; i++) {
-                    parent.insertBefore((strings[i] === '')
-                        ? document.createComment('')
-                        : document.createTextNode(strings[i]), node);
-                    this.parts.push(new TemplatePart('node', index++));
-                }
-                parent.insertBefore(strings[lastIndex] === '' ?
-                    document.createComment('') :
-                    document.createTextNode(strings[lastIndex]), node);
-                nodesToRemove.push(node);
-            }
-            else if (node.nodeType === 8 /* Node.COMMENT_NODE */ &&
-                node.nodeValue === marker) {
-                const parent = node.parentNode;
-                // Add a new marker node to be the startNode of the Part if any of the
-                // following are true:
-                //  * We don't have a previousSibling
-                //  * previousSibling is being removed (thus it's not the
-                //    `previousNode`)
-                //  * previousSibling is not a Text node
-                //
-                // TODO(justinfagnani): We should be able to use the previousNode here
-                // as the marker node and reduce the number of extra nodes we add to a
-                // template. See https://github.com/PolymerLabs/lit-html/issues/147
-                const previousSibling = node.previousSibling;
-                if (previousSibling === null || previousSibling !== previousNode ||
-                    previousSibling.nodeType !== Node.TEXT_NODE) {
-                    parent.insertBefore(document.createComment(''), node);
-                }
-                else {
-                    index--;
-                }
-                this.parts.push(new TemplatePart('node', index++));
-                nodesToRemove.push(node);
-                // If we don't have a nextSibling add a marker node.
-                // We don't have to check if the next node is going to be removed,
-                // because that node will induce a new marker if so.
-                if (node.nextSibling === null) {
-                    parent.insertBefore(document.createComment(''), node);
-                }
-                else {
-                    index--;
-                }
-                currentNode = previousNode;
-                partIndex++;
-            }
-        }
-        // Remove text binding nodes after the walk to not disturb the TreeWalker
-        for (const n of nodesToRemove) {
-            n.parentNode.removeChild(n);
-        }
-    }
-}
-/**
- * Returns a value ready to be inserted into a Part from a user-provided value.
- *
- * If the user value is a directive, this invokes the directive with the given
- * part. If the value is null, it's converted to undefined to work better
- * with certain DOM APIs, like textContent.
- */
-const getValue = (part, value) => {
-    // `null` as the value of a Text node will render the string 'null'
-    // so we convert it to undefined
-    if (isDirective(value)) {
-        value = value(part);
-        return directiveValue;
-    }
-    return value === null ? undefined : value;
+var has = function (map, property) {
+  return hasOwnProperty.call(map, property);
 };
 
-const isDirective = (o) => typeof o === 'function' && o.__litDirective === true;
 /**
- * A sentinel value that signals that a value was handled by a directive and
- * should not be written to the DOM.
+ * Creates an map object without a prototype.
+ * @return {!Object}
  */
-const directiveValue = {};
-const isPrimitiveValue = (value) => value === null ||
-    !(typeof value === 'object' || typeof value === 'function');
-class AttributePart {
-    constructor(instance, element, name, strings) {
-        this.instance = instance;
-        this.element = element;
-        this.name = name;
-        this.strings = strings;
-        this.size = strings.length - 1;
-        this._previousValues = [];
-    }
-    _interpolate(values, startIndex) {
-        const strings = this.strings;
-        const l = strings.length - 1;
-        let text = '';
-        for (let i = 0; i < l; i++) {
-            text += strings[i];
-            const v = getValue(this, values[startIndex + i]);
-            if (v && v !== directiveValue &&
-                (Array.isArray(v) || typeof v !== 'string' && v[Symbol.iterator])) {
-                for (const t of v) {
-                    // TODO: we need to recursively call getValue into iterables...
-                    text += t;
-                }
-            }
-            else {
-                text += v;
-            }
-        }
-        return text + strings[l];
-    }
-    _equalToPreviousValues(values, startIndex) {
-        for (let i = startIndex; i < startIndex + this.size; i++) {
-            if (this._previousValues[i] !== values[i] ||
-                !isPrimitiveValue(values[i])) {
-                return false;
-            }
-        }
-        return true;
-    }
-    setValue(values, startIndex) {
-        if (this._equalToPreviousValues(values, startIndex)) {
-            return;
-        }
-        const s = this.strings;
-        let value;
-        if (s.length === 2 && s[0] === '' && s[1] === '') {
-            // An expression that occupies the whole attribute value will leave
-            // leading and trailing empty strings.
-            value = getValue(this, values[startIndex]);
-            if (Array.isArray(value)) {
-                value = value.join('');
-            }
-        }
-        else {
-            value = this._interpolate(values, startIndex);
-        }
-        if (value !== directiveValue) {
-            this.element.setAttribute(this.name, value);
-        }
-        this._previousValues = values;
-    }
-}
-class NodePart {
-    constructor(instance, startNode, endNode) {
-        this.instance = instance;
-        this.startNode = startNode;
-        this.endNode = endNode;
-        this._previousValue = undefined;
-    }
-    setValue(value) {
-        value = getValue(this, value);
-        if (value === directiveValue) {
-            return;
-        }
-        if (isPrimitiveValue(value)) {
-            // Handle primitive values
-            // If the value didn't change, do nothing
-            if (value === this._previousValue) {
-                return;
-            }
-            this._setText(value);
-        }
-        else if (value instanceof TemplateResult) {
-            this._setTemplateResult(value);
-        }
-        else if (Array.isArray(value) || value[Symbol.iterator]) {
-            this._setIterable(value);
-        }
-        else if (value instanceof Node) {
-            this._setNode(value);
-        }
-        else if (value.then !== undefined) {
-            this._setPromise(value);
-        }
-        else {
-            // Fallback, will render the string representation
-            this._setText(value);
-        }
-    }
-    _insert(node) {
-        this.endNode.parentNode.insertBefore(node, this.endNode);
-    }
-    _setNode(value) {
-        if (this._previousValue === value) {
-            return;
-        }
-        this.clear();
-        this._insert(value);
-        this._previousValue = value;
-    }
-    _setText(value) {
-        const node = this.startNode.nextSibling;
-        value = value === undefined ? '' : value;
-        if (node === this.endNode.previousSibling &&
-            node.nodeType === Node.TEXT_NODE) {
-            // If we only have a single text node between the markers, we can just
-            // set its value, rather than replacing it.
-            // TODO(justinfagnani): Can we just check if _previousValue is
-            // primitive?
-            node.textContent = value;
-        }
-        else {
-            this._setNode(document.createTextNode(value));
-        }
-        this._previousValue = value;
-    }
-    _setTemplateResult(value) {
-        const template = this.instance._getTemplate(value);
-        let instance;
-        if (this._previousValue && this._previousValue.template === template) {
-            instance = this._previousValue;
-        }
-        else {
-            instance = new TemplateInstance(template, this.instance._partCallback, this.instance._getTemplate);
-            this._setNode(instance._clone());
-            this._previousValue = instance;
-        }
-        instance.update(value.values);
-    }
-    _setIterable(value) {
-        // For an Iterable, we create a new InstancePart per item, then set its
-        // value to the item. This is a little bit of overhead for every item in
-        // an Iterable, but it lets us recurse easily and efficiently update Arrays
-        // of TemplateResults that will be commonly returned from expressions like:
-        // array.map((i) => html`${i}`), by reusing existing TemplateInstances.
-        // If _previousValue is an array, then the previous render was of an
-        // iterable and _previousValue will contain the NodeParts from the previous
-        // render. If _previousValue is not an array, clear this part and make a new
-        // array for NodeParts.
-        if (!Array.isArray(this._previousValue)) {
-            this.clear();
-            this._previousValue = [];
-        }
-        // Lets us keep track of how many items we stamped so we can clear leftover
-        // items from a previous render
-        const itemParts = this._previousValue;
-        let partIndex = 0;
-        for (const item of value) {
-            // Try to reuse an existing part
-            let itemPart = itemParts[partIndex];
-            // If no existing part, create a new one
-            if (itemPart === undefined) {
-                // If we're creating the first item part, it's startNode should be the
-                // container's startNode
-                let itemStart = this.startNode;
-                // If we're not creating the first part, create a new separator marker
-                // node, and fix up the previous part's endNode to point to it
-                if (partIndex > 0) {
-                    const previousPart = itemParts[partIndex - 1];
-                    itemStart = previousPart.endNode = document.createTextNode('');
-                    this._insert(itemStart);
-                }
-                itemPart = new NodePart(this.instance, itemStart, this.endNode);
-                itemParts.push(itemPart);
-            }
-            itemPart.setValue(item);
-            partIndex++;
-        }
-        if (partIndex === 0) {
-            this.clear();
-            this._previousValue = undefined;
-        }
-        else if (partIndex < itemParts.length) {
-            const lastPart = itemParts[partIndex - 1];
-            // Truncate the parts array so _previousValue reflects the current state
-            itemParts.length = partIndex;
-            this.clear(lastPart.endNode.previousSibling);
-            lastPart.endNode = this.endNode;
-        }
-    }
-    _setPromise(value) {
-        this._previousValue = value;
-        value.then((v) => {
-            if (this._previousValue === value) {
-                this.setValue(v);
-            }
-        });
-    }
-    clear(startNode = this.startNode) {
-        removeNodes(this.startNode.parentNode, startNode.nextSibling, this.endNode);
-    }
-}
-const defaultPartCallback = (instance, templatePart, node) => {
-    if (templatePart.type === 'attribute') {
-        return new AttributePart(instance, node, templatePart.name, templatePart.strings);
-    }
-    else if (templatePart.type === 'node') {
-        return new NodePart(instance, node, node.nextSibling);
-    }
-    throw new Error(`Unknown part type ${templatePart.type}`);
-};
-/**
- * An instance of a `Template` that can be attached to the DOM and updated
- * with new values.
- */
-class TemplateInstance {
-    constructor(template, partCallback, getTemplate) {
-        this._parts = [];
-        this.template = template;
-        this._partCallback = partCallback;
-        this._getTemplate = getTemplate;
-    }
-    update(values) {
-        let valueIndex = 0;
-        for (const part of this._parts) {
-            if (part.size === undefined) {
-                part.setValue(values[valueIndex]);
-                valueIndex++;
-            }
-            else {
-                part.setValue(values, valueIndex);
-                valueIndex += part.size;
-            }
-        }
-    }
-    _clone() {
-        const fragment = document.importNode(this.template.element.content, true);
-        const parts = this.template.parts;
-        if (parts.length > 0) {
-            // Edge needs all 4 parameters present; IE11 needs 3rd parameter to be
-            // null
-            const walker = document.createTreeWalker(fragment, 133 /* NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_COMMENT |
-                   NodeFilter.SHOW_TEXT */, null, false);
-            let index = -1;
-            for (let i = 0; i < parts.length; i++) {
-                const part = parts[i];
-                while (index < part.index) {
-                    index++;
-                    walker.nextNode();
-                }
-                this._parts.push(this._partCallback(this, part, walker.currentNode));
-            }
-        }
-        return fragment;
-    }
-}
-/**
- * Reparents nodes, starting from `startNode` (inclusive) to `endNode`
- * (exclusive), into another container (could be the same container), before
- * `beforeNode`. If `beforeNode` is null, it appends the nodes to the
- * container.
- */
-
-/**
- * Removes nodes, starting from `startNode` (inclusive) to `endNode`
- * (exclusive), from `container`.
- */
-const removeNodes = (container, startNode, endNode = null) => {
-    let node = startNode;
-    while (node !== endNode) {
-        const n = node.nextSibling;
-        container.removeChild(node);
-        node = n;
-    }
+var createMap = function () {
+  return new Blank();
 };
 
-const FN_HANDLE$1 = Symbol('fritz.handle');
+/**
+ * Keeps track of information needed to perform diffs for a given DOM node.
+ * @param {!string} nodeName
+ * @param {?string=} key
+ * @constructor
+ */
+function NodeData(nodeName, key) {
+  /**
+   * The attributes and their values.
+   * @const {!Object<string, *>}
+   */
+  this.attrs = createMap();
 
-const orphans = [];
+  /**
+   * An array of attribute name/value pairs, used for quickly diffing the
+   * incomming attributes to see if the DOM node's attributes need to be
+   * updated.
+   * @const {Array<*>}
+   */
+  this.attrsArr = [];
 
-function track(fn, handleId) {
-  if(!(FN_HANDLE$1 in fn)) {
-    fn[FN_HANDLE$1] = handleId;
+  /**
+   * The incoming attributes for this Node, before they are updated.
+   * @const {!Object<string, *>}
+   */
+  this.newAttrs = createMap();
+
+  /**
+   * Whether or not the statics have been applied for the node yet.
+   * {boolean}
+   */
+  this.staticsApplied = false;
+
+  /**
+   * The key used to identify this node, used to preserve DOM nodes when they
+   * move within their parent.
+   * @const
+   */
+  this.key = key;
+
+  /**
+   * Keeps track of children within this node by their key.
+   * {!Object<string, !Element>}
+   */
+  this.keyMap = createMap();
+
+  /**
+   * Whether or not the keyMap is currently valid.
+   * @type {boolean}
+   */
+  this.keyMapValid = true;
+
+  /**
+   * Whether or the associated node is, or contains, a focused Element.
+   * @type {boolean}
+   */
+  this.focused = false;
+
+  /**
+   * The node name for this node.
+   * @const {string}
+   */
+  this.nodeName = nodeName;
+
+  /**
+   * @type {?string}
+   */
+  this.text = null;
+}
+
+/**
+ * Initializes a NodeData object for a Node.
+ *
+ * @param {Node} node The node to initialize data for.
+ * @param {string} nodeName The node name of node.
+ * @param {?string=} key The key that identifies the node.
+ * @return {!NodeData} The newly initialized data object
+ */
+var initData = function (node, nodeName, key) {
+  var data = new NodeData(nodeName, key);
+  node['__incrementalDOMData'] = data;
+  return data;
+};
+
+/**
+ * Retrieves the NodeData object for a Node, creating it if necessary.
+ *
+ * @param {?Node} node The Node to retrieve the data for.
+ * @return {!NodeData} The NodeData for this Node.
+ */
+var getData = function (node) {
+  importNode(node);
+  return node['__incrementalDOMData'];
+};
+
+/**
+ * Imports node and its subtree, initializing caches.
+ *
+ * @param {?Node} node The Node to import.
+ */
+var importNode = function (node) {
+  if (node['__incrementalDOMData']) {
+    return;
   }
 
+  var isElement = node instanceof Element;
+  var nodeName = isElement ? node.localName : node.nodeName;
+  var key = isElement ? node.getAttribute('key') : null;
+  var data = initData(node, nodeName, key);
+
+  if (key) {
+    getData(node.parentNode).keyMap[key] = node;
+  }
+
+  if (isElement) {
+    var attributes = node.attributes;
+    var attrs = data.attrs;
+    var newAttrs = data.newAttrs;
+    var attrsArr = data.attrsArr;
+
+    for (var i = 0; i < attributes.length; i += 1) {
+      var attr = attributes[i];
+      var name = attr.name;
+      var value = attr.value;
+
+      attrs[name] = value;
+      newAttrs[name] = undefined;
+      attrsArr.push(name);
+      attrsArr.push(value);
+    }
+  }
+
+  for (var child = node.firstChild; child; child = child.nextSibling) {
+    importNode(child);
+  }
+};
+
+/**
+ * Gets the namespace to create an element (of a given tag) in.
+ * @param {string} tag The tag to get the namespace for.
+ * @param {?Node} parent
+ * @return {?string} The namespace to create the tag in.
+ */
+var getNamespaceForTag = function (tag, parent) {
+  if (tag === 'svg') {
+    return 'http://www.w3.org/2000/svg';
+  }
+
+  if (getData(parent).nodeName === 'foreignObject') {
+    return null;
+  }
+
+  return parent.namespaceURI;
+};
+
+/**
+ * Creates an Element.
+ * @param {Document} doc The document with which to create the Element.
+ * @param {?Node} parent
+ * @param {string} tag The tag for the Element.
+ * @param {?string=} key A key to identify the Element.
+ * @return {!Element}
+ */
+var createElement = function (doc, parent, tag, key) {
+  var namespace = getNamespaceForTag(tag, parent);
+  var el = undefined;
+
+  if (namespace) {
+    el = doc.createElementNS(namespace, tag);
+  } else {
+    el = doc.createElement(tag);
+  }
+
+  initData(el, tag, key);
+
+  return el;
+};
+
+/**
+ * Creates a Text Node.
+ * @param {Document} doc The document with which to create the Element.
+ * @return {!Text}
+ */
+var createText = function (doc) {
+  var node = doc.createTextNode('');
+  initData(node, '#text', null);
+  return node;
+};
+
+/**
+ * Copyright 2015 The Incremental DOM Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS-IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/** @const */
+var notifications = {
+  /**
+   * Called after patch has compleated with any Nodes that have been created
+   * and added to the DOM.
+   * @type {?function(Array<!Node>)}
+   */
+  nodesCreated: null,
+
+  /**
+   * Called after patch has compleated with any Nodes that have been removed
+   * from the DOM.
+   * Note it's an applications responsibility to handle any childNodes.
+   * @type {?function(Array<!Node>)}
+   */
+  nodesDeleted: null
+};
+
+/**
+ * Keeps track of the state of a patch.
+ * @constructor
+ */
+function Context() {
+  /**
+   * @type {(Array<!Node>|undefined)}
+   */
+  this.created = notifications.nodesCreated && [];
+
+  /**
+   * @type {(Array<!Node>|undefined)}
+   */
+  this.deleted = notifications.nodesDeleted && [];
+}
+
+/**
+ * @param {!Node} node
+ */
+Context.prototype.markCreated = function (node) {
+  if (this.created) {
+    this.created.push(node);
+  }
+};
+
+/**
+ * @param {!Node} node
+ */
+Context.prototype.markDeleted = function (node) {
+  if (this.deleted) {
+    this.deleted.push(node);
+  }
+};
+
+/**
+ * Notifies about nodes that were created during the patch opearation.
+ */
+Context.prototype.notifyChanges = function () {
+  if (this.created && this.created.length > 0) {
+    notifications.nodesCreated(this.created);
+  }
+
+  if (this.deleted && this.deleted.length > 0) {
+    notifications.nodesDeleted(this.deleted);
+  }
+};
+
+/**
+ * Copyright 2015 The Incremental DOM Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS-IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+  * Keeps track whether or not we are in an attributes declaration (after
+  * elementOpenStart, but before elementOpenEnd).
+  * @type {boolean}
+  */
+var inAttributes = false;
+
+/**
+  * Keeps track whether or not we are in an element that should not have its
+  * children cleared.
+  * @type {boolean}
+  */
+var inSkip = false;
+
+/**
+ * Makes sure that a patch closes every node that it opened.
+ * @param {?Node} openElement
+ * @param {!Node|!DocumentFragment} root
+ */
+var assertNoUnclosedTags = function (openElement, root) {
+  if (openElement === root) {
+    return;
+  }
+
+  var currentElement = openElement;
+  var openTags = [];
+  while (currentElement && currentElement !== root) {
+    openTags.push(currentElement.nodeName.toLowerCase());
+    currentElement = currentElement.parentNode;
+  }
+
+  throw new Error('One or more tags were not closed:\n' + openTags.join('\n'));
+};
+
+/**
+ * Makes sure that the caller is not where attributes are expected.
+ * @param {string} functionName
+ */
+var assertNotInAttributes = function (functionName) {
+  if (inAttributes) {
+    throw new Error(functionName + '() can not be called between ' + 'elementOpenStart() and elementOpenEnd().');
+  }
+};
+
+/**
+ * Makes sure that the caller is not inside an element that has declared skip.
+ * @param {string} functionName
+ */
+var assertNotInSkip = function (functionName) {
+  if (inSkip) {
+    throw new Error(functionName + '() may not be called inside an element ' + 'that has called skip().');
+  }
+};
+
+/**
+ * Makes sure the patch closes virtual attributes call
+ */
+var assertVirtualAttributesClosed = function () {
+  if (inAttributes) {
+    throw new Error('elementOpenEnd() must be called after calling ' + 'elementOpenStart().');
+  }
+};
+
+/**
+  * Makes sure that tags are correctly nested.
+  * @param {string} nodeName
+  * @param {string} tag
+  */
+var assertCloseMatchesOpenTag = function (nodeName, tag) {
+  if (nodeName !== tag) {
+    throw new Error('Received a call to close "' + tag + '" but "' + nodeName + '" was open.');
+  }
+};
+
+/**
+ * Updates the state of being in an attribute declaration.
+ * @param {boolean} value
+ * @return {boolean} the previous value.
+ */
+var setInAttributes = function (value) {
+  var previous = inAttributes;
+  inAttributes = value;
+  return previous;
+};
+
+/**
+ * Updates the state of being in a skip element.
+ * @param {boolean} value
+ * @return {boolean} the previous value.
+ */
+var setInSkip = function (value) {
+  var previous = inSkip;
+  inSkip = value;
+  return previous;
+};
+
+/**
+ * Copyright 2016 The Incremental DOM Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS-IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * @param {!Node} node
+ * @return {boolean} True if the node the root of a document, false otherwise.
+ */
+var isDocumentRoot = function (node) {
+  // For ShadowRoots, check if they are a DocumentFragment instead of if they
+  // are a ShadowRoot so that this can work in 'use strict' if ShadowRoots are
+  // not supported.
+  return node instanceof Document || node instanceof DocumentFragment;
+};
+
+/**
+ * @param {!Node} node The node to start at, inclusive.
+ * @param {?Node} root The root ancestor to get until, exclusive.
+ * @return {!Array<!Node>} The ancestry of DOM nodes.
+ */
+var getAncestry = function (node, root) {
+  var ancestry = [];
+  var cur = node;
+
+  while (cur !== root) {
+    ancestry.push(cur);
+    cur = cur.parentNode;
+  }
+
+  return ancestry;
+};
+
+/**
+ * @param {!Node} node
+ * @return {!Node} The root node of the DOM tree that contains node.
+ */
+var getRoot = function (node) {
+  var cur = node;
+  var prev = cur;
+
+  while (cur) {
+    prev = cur;
+    cur = cur.parentNode;
+  }
+
+  return prev;
+};
+
+/**
+ * @param {!Node} node The node to get the activeElement for.
+ * @return {?Element} The activeElement in the Document or ShadowRoot
+ *     corresponding to node, if present.
+ */
+var getActiveElement = function (node) {
+  var root = getRoot(node);
+  return isDocumentRoot(root) ? root.activeElement : null;
+};
+
+/**
+ * Gets the path of nodes that contain the focused node in the same document as
+ * a reference node, up until the root.
+ * @param {!Node} node The reference node to get the activeElement for.
+ * @param {?Node} root The root to get the focused path until.
+ * @return {!Array<Node>}
+ */
+var getFocusedPath = function (node, root) {
+  var activeElement = getActiveElement(node);
+
+  if (!activeElement || !node.contains(activeElement)) {
+    return [];
+  }
+
+  return getAncestry(activeElement, root);
+};
+
+/**
+ * Like insertBefore, but instead instead of moving the desired node, instead
+ * moves all the other nodes after.
+ * @param {?Node} parentNode
+ * @param {!Node} node
+ * @param {?Node} referenceNode
+ */
+var moveBefore = function (parentNode, node, referenceNode) {
+  var insertReferenceNode = node.nextSibling;
+  var cur = referenceNode;
+
+  while (cur !== node) {
+    var next = cur.nextSibling;
+    parentNode.insertBefore(cur, insertReferenceNode);
+    cur = next;
+  }
+};
+
+/** @type {?Context} */
+var context = null;
+
+/** @type {?Node} */
+var currentNode = null;
+
+/** @type {?Node} */
+var currentParent = null;
+
+/** @type {?Document} */
+var doc = null;
+
+/**
+ * @param {!Array<Node>} focusPath The nodes to mark.
+ * @param {boolean} focused Whether or not they are focused.
+ */
+var markFocused = function (focusPath, focused) {
+  for (var i = 0; i < focusPath.length; i += 1) {
+    getData(focusPath[i]).focused = focused;
+  }
+};
+
+/**
+ * Returns a patcher function that sets up and restores a patch context,
+ * running the run function with the provided data.
+ * @param {function((!Element|!DocumentFragment),!function(T),T=): ?Node} run
+ * @return {function((!Element|!DocumentFragment),!function(T),T=): ?Node}
+ * @template T
+ */
+var patchFactory = function (run) {
+  /**
+   * TODO(moz): These annotations won't be necessary once we switch to Closure
+   * Compiler's new type inference. Remove these once the switch is done.
+   *
+   * @param {(!Element|!DocumentFragment)} node
+   * @param {!function(T)} fn
+   * @param {T=} data
+   * @return {?Node} node
+   * @template T
+   */
+  var f = function (node, fn, data) {
+    var prevContext = context;
+    var prevDoc = doc;
+    var prevCurrentNode = currentNode;
+    var prevCurrentParent = currentParent;
+    var previousInAttributes = false;
+    var previousInSkip = false;
+
+    context = new Context();
+    doc = node.ownerDocument;
+    currentParent = node.parentNode;
+
+    {
+      previousInAttributes = setInAttributes(false);
+      previousInSkip = setInSkip(false);
+    }
+
+    var focusPath = getFocusedPath(node, currentParent);
+    markFocused(focusPath, true);
+    var retVal = run(node, fn, data);
+    markFocused(focusPath, false);
+
+    {
+      assertVirtualAttributesClosed();
+      setInAttributes(previousInAttributes);
+      setInSkip(previousInSkip);
+    }
+
+    context.notifyChanges();
+
+    context = prevContext;
+    doc = prevDoc;
+    currentNode = prevCurrentNode;
+    currentParent = prevCurrentParent;
+
+    return retVal;
+  };
+  return f;
+};
+
+/**
+ * Patches the document starting at node with the provided function. This
+ * function may be called during an existing patch operation.
+ * @param {!Element|!DocumentFragment} node The Element or Document
+ *     to patch.
+ * @param {!function(T)} fn A function containing elementOpen/elementClose/etc.
+ *     calls that describe the DOM.
+ * @param {T=} data An argument passed to fn to represent DOM state.
+ * @return {!Node} The patched node.
+ * @template T
+ */
+var patchInner = patchFactory(function (node, fn, data) {
+  currentNode = node;
+
+  enterNode();
+  fn(data);
+  exitNode();
+
+  {
+    assertNoUnclosedTags(currentNode, node);
+  }
+
+  return node;
+});
+
+/**
+ * Checks whether or not the current node matches the specified nodeName and
+ * key.
+ *
+ * @param {!Node} matchNode A node to match the data to.
+ * @param {?string} nodeName The nodeName for this node.
+ * @param {?string=} key An optional key that identifies a node.
+ * @return {boolean} True if the node matches, false otherwise.
+ */
+var matches = function (matchNode, nodeName, key) {
+  var data = getData(matchNode);
+
+  // Key check is done using double equals as we want to treat a null key the
+  // same as undefined. This should be okay as the only values allowed are
+  // strings, null and undefined so the == semantics are not too weird.
+  return nodeName === data.nodeName && key == data.key;
+};
+
+/**
+ * Aligns the virtual Element definition with the actual DOM, moving the
+ * corresponding DOM node to the correct location or creating it if necessary.
+ * @param {string} nodeName For an Element, this should be a valid tag string.
+ *     For a Text, this should be #text.
+ * @param {?string=} key The key used to identify this element.
+ */
+var alignWithDOM = function (nodeName, key) {
+  if (currentNode && matches(currentNode, nodeName, key)) {
+    return;
+  }
+
+  var parentData = getData(currentParent);
+  var currentNodeData = currentNode && getData(currentNode);
+  var keyMap = parentData.keyMap;
+  var node = undefined;
+
+  // Check to see if the node has moved within the parent.
+  if (key) {
+    var keyNode = keyMap[key];
+    if (keyNode) {
+      if (matches(keyNode, nodeName, key)) {
+        node = keyNode;
+      } else if (keyNode === currentNode) {
+        context.markDeleted(keyNode);
+      } else {
+        removeChild(currentParent, keyNode, keyMap);
+      }
+    }
+  }
+
+  // Create the node if it doesn't exist.
+  if (!node) {
+    if (nodeName === '#text') {
+      node = createText(doc);
+    } else {
+      node = createElement(doc, currentParent, nodeName, key);
+    }
+
+    if (key) {
+      keyMap[key] = node;
+    }
+
+    context.markCreated(node);
+  }
+
+  // Re-order the node into the right position, preserving focus if either
+  // node or currentNode are focused by making sure that they are not detached
+  // from the DOM.
+  if (getData(node).focused) {
+    // Move everything else before the node.
+    moveBefore(currentParent, node, currentNode);
+  } else if (currentNodeData && currentNodeData.key && !currentNodeData.focused) {
+    // Remove the currentNode, which can always be added back since we hold a
+    // reference through the keyMap. This prevents a large number of moves when
+    // a keyed item is removed or moved backwards in the DOM.
+    currentParent.replaceChild(node, currentNode);
+    parentData.keyMapValid = false;
+  } else {
+    currentParent.insertBefore(node, currentNode);
+  }
+
+  currentNode = node;
+};
+
+/**
+ * @param {?Node} node
+ * @param {?Node} child
+ * @param {?Object<string, !Element>} keyMap
+ */
+var removeChild = function (node, child, keyMap) {
+  node.removeChild(child);
+  context.markDeleted( /** @type {!Node}*/child);
+
+  var key = getData(child).key;
+  if (key) {
+    delete keyMap[key];
+  }
+};
+
+/**
+ * Clears out any unvisited Nodes, as the corresponding virtual element
+ * functions were never called for them.
+ */
+var clearUnvisitedDOM = function () {
+  var node = currentParent;
+  var data = getData(node);
+  var keyMap = data.keyMap;
+  var keyMapValid = data.keyMapValid;
+  var child = node.lastChild;
+  var key = undefined;
+
+  if (child === currentNode && keyMapValid) {
+    return;
+  }
+
+  while (child !== currentNode) {
+    removeChild(node, child, keyMap);
+    child = node.lastChild;
+  }
+
+  // Clean the keyMap, removing any unusued keys.
+  if (!keyMapValid) {
+    for (key in keyMap) {
+      child = keyMap[key];
+      if (child.parentNode !== node) {
+        context.markDeleted(child);
+        delete keyMap[key];
+      }
+    }
+
+    data.keyMapValid = true;
+  }
+};
+
+/**
+ * Changes to the first child of the current node.
+ */
+var enterNode = function () {
+  currentParent = currentNode;
+  currentNode = null;
+};
+
+/**
+ * @return {?Node} The next Node to be patched.
+ */
+var getNextNode = function () {
+  if (currentNode) {
+    return currentNode.nextSibling;
+  } else {
+    return currentParent.firstChild;
+  }
+};
+
+/**
+ * Changes to the next sibling of the current node.
+ */
+var nextNode = function () {
+  currentNode = getNextNode();
+};
+
+/**
+ * Changes to the parent of the current node, removing any unvisited children.
+ */
+var exitNode = function () {
+  clearUnvisitedDOM();
+
+  currentNode = currentParent;
+  currentParent = currentParent.parentNode;
+};
+
+/**
+ * Makes sure that the current node is an Element with a matching tagName and
+ * key.
+ *
+ * @param {string} tag The element's tag.
+ * @param {?string=} key The key used to identify this element. This can be an
+ *     empty string, but performance may be better if a unique value is used
+ *     when iterating over an array of items.
+ * @return {!Element} The corresponding Element.
+ */
+var coreElementOpen = function (tag, key) {
+  nextNode();
+  alignWithDOM(tag, key);
+  enterNode();
+  return (/** @type {!Element} */currentParent
+  );
+};
+
+/**
+ * Closes the currently open Element, removing any unvisited children if
+ * necessary.
+ *
+ * @return {!Element} The corresponding Element.
+ */
+var coreElementClose = function () {
+  {
+    setInSkip(false);
+  }
+
+  exitNode();
+  return (/** @type {!Element} */currentNode
+  );
+};
+
+/**
+ * Makes sure the current node is a Text node and creates a Text node if it is
+ * not.
+ *
+ * @return {!Text} The corresponding Text Node.
+ */
+var coreText = function () {
+  nextNode();
+  alignWithDOM('#text', null);
+  return (/** @type {!Text} */currentNode
+  );
+};
+
+/**
+ * Copyright 2015 The Incremental DOM Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS-IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/** @const */
+var symbols = {
+  default: '__default'
+};
+
+/**
+ * @param {string} name
+ * @return {string|undefined} The namespace to use for the attribute.
+ */
+var getNamespace = function (name) {
+  if (name.lastIndexOf('xml:', 0) === 0) {
+    return 'http://www.w3.org/XML/1998/namespace';
+  }
+
+  if (name.lastIndexOf('xlink:', 0) === 0) {
+    return 'http://www.w3.org/1999/xlink';
+  }
+};
+
+/**
+ * Applies an attribute or property to a given Element. If the value is null
+ * or undefined, it is removed from the Element. Otherwise, the value is set
+ * as an attribute.
+ * @param {!Element} el
+ * @param {string} name The attribute's name.
+ * @param {?(boolean|number|string)=} value The attribute's value.
+ */
+var applyAttr = function (el, name, value) {
+  if (value == null) {
+    el.removeAttribute(name);
+  } else {
+    var attrNS = getNamespace(name);
+    if (attrNS) {
+      el.setAttributeNS(attrNS, name, value);
+    } else {
+      el.setAttribute(name, value);
+    }
+  }
+};
+
+/**
+ * Applies a property to a given Element.
+ * @param {!Element} el
+ * @param {string} name The property's name.
+ * @param {*} value The property's value.
+ */
+var applyProp = function (el, name, value) {
+  el[name] = value;
+};
+
+/**
+ * Applies a value to a style declaration. Supports CSS custom properties by
+ * setting properties containing a dash using CSSStyleDeclaration.setProperty.
+ * @param {CSSStyleDeclaration} style
+ * @param {!string} prop
+ * @param {*} value
+ */
+var setStyleValue = function (style, prop, value) {
+  if (prop.indexOf('-') >= 0) {
+    style.setProperty(prop, /** @type {string} */value);
+  } else {
+    style[prop] = value;
+  }
+};
+
+/**
+ * Applies a style to an Element. No vendor prefix expansion is done for
+ * property names/values.
+ * @param {!Element} el
+ * @param {string} name The attribute's name.
+ * @param {*} style The style to set. Either a string of css or an object
+ *     containing property-value pairs.
+ */
+var applyStyle = function (el, name, style) {
+  if (typeof style === 'string') {
+    el.style.cssText = style;
+  } else {
+    el.style.cssText = '';
+    var elStyle = el.style;
+    var obj = /** @type {!Object<string,string>} */style;
+
+    for (var prop in obj) {
+      if (has(obj, prop)) {
+        setStyleValue(elStyle, prop, obj[prop]);
+      }
+    }
+  }
+};
+
+/**
+ * Updates a single attribute on an Element.
+ * @param {!Element} el
+ * @param {string} name The attribute's name.
+ * @param {*} value The attribute's value. If the value is an object or
+ *     function it is set on the Element, otherwise, it is set as an HTML
+ *     attribute.
+ */
+var applyAttributeTyped = function (el, name, value) {
+  var type = typeof value;
+
+  if (type === 'object' || type === 'function') {
+    applyProp(el, name, value);
+  } else {
+    applyAttr(el, name, /** @type {?(boolean|number|string)} */value);
+  }
+};
+
+/**
+ * Calls the appropriate attribute mutator for this attribute.
+ * @param {!Element} el
+ * @param {string} name The attribute's name.
+ * @param {*} value The attribute's value.
+ */
+var updateAttribute = function (el, name, value) {
+  var data = getData(el);
+  var attrs = data.attrs;
+
+  if (attrs[name] === value) {
+    return;
+  }
+
+  var mutator = attributes[name] || attributes[symbols.default];
+  mutator(el, name, value);
+
+  attrs[name] = value;
+};
+
+/**
+ * A publicly mutable object to provide custom mutators for attributes.
+ * @const {!Object<string, function(!Element, string, *)>}
+ */
+var attributes = createMap();
+
+// Special generic mutator that's called for any attribute that does not
+// have a specific mutator.
+attributes[symbols.default] = applyAttributeTyped;
+
+attributes['style'] = applyStyle;
+
+/**
+ * The offset in the virtual element declaration where the attributes are
+ * specified.
+ * @const
+ */
+var ATTRIBUTES_OFFSET = 3;
+
+/**
+ * @param {string} tag The element's tag.
+ * @param {?string=} key The key used to identify this element. This can be an
+ *     empty string, but performance may be better if a unique value is used
+ *     when iterating over an array of items.
+ * @param {?Array<*>=} statics An array of attribute name/value pairs of the
+ *     static attributes for the Element. These will only be set once when the
+ *     Element is created.
+ * @param {...*} var_args, Attribute name/value pairs of the dynamic attributes
+ *     for the Element.
+ * @return {!Element} The corresponding Element.
+ */
+var elementOpen = function (tag, key, statics, var_args) {
+  {
+    assertNotInAttributes('elementOpen');
+    assertNotInSkip('elementOpen');
+  }
+
+  var node = coreElementOpen(tag, key);
+  var data = getData(node);
+
+  if (!data.staticsApplied) {
+    if (statics) {
+      for (var _i = 0; _i < statics.length; _i += 2) {
+        var name = /** @type {string} */statics[_i];
+        var value = statics[_i + 1];
+        updateAttribute(node, name, value);
+      }
+    }
+    // Down the road, we may want to keep track of the statics array to use it
+    // as an additional signal about whether a node matches or not. For now,
+    // just use a marker so that we do not reapply statics.
+    data.staticsApplied = true;
+  }
+
+  /*
+   * Checks to see if one or more attributes have changed for a given Element.
+   * When no attributes have changed, this is much faster than checking each
+   * individual argument. When attributes have changed, the overhead of this is
+   * minimal.
+   */
+  var attrsArr = data.attrsArr;
+  var newAttrs = data.newAttrs;
+  var isNew = !attrsArr.length;
+  var i = ATTRIBUTES_OFFSET;
+  var j = 0;
+
+  for (; i < arguments.length; i += 2, j += 2) {
+    var _attr = arguments[i];
+    if (isNew) {
+      attrsArr[j] = _attr;
+      newAttrs[_attr] = undefined;
+    } else if (attrsArr[j] !== _attr) {
+      break;
+    }
+
+    var value = arguments[i + 1];
+    if (isNew || attrsArr[j + 1] !== value) {
+      attrsArr[j + 1] = value;
+      updateAttribute(node, _attr, value);
+    }
+  }
+
+  if (i < arguments.length || j < attrsArr.length) {
+    for (; i < arguments.length; i += 1, j += 1) {
+      attrsArr[j] = arguments[i];
+    }
+
+    if (j < attrsArr.length) {
+      attrsArr.length = j;
+    }
+
+    /*
+     * Actually perform the attribute update.
+     */
+    for (i = 0; i < attrsArr.length; i += 2) {
+      var name = /** @type {string} */attrsArr[i];
+      var value = attrsArr[i + 1];
+      newAttrs[name] = value;
+    }
+
+    for (var _attr2 in newAttrs) {
+      updateAttribute(node, _attr2, newAttrs[_attr2]);
+      newAttrs[_attr2] = undefined;
+    }
+  }
+
+  return node;
+};
+
+/**
+ * Closes an open virtual Element.
+ *
+ * @param {string} tag The element's tag.
+ * @return {!Element} The corresponding Element.
+ */
+var elementClose = function (tag) {
+  {
+    assertNotInAttributes('elementClose');
+  }
+
+  var node = coreElementClose();
+
+  {
+    assertCloseMatchesOpenTag(getData(node).nodeName, tag);
+  }
+
+  return node;
+};
+
+/**
+ * Declares a virtual Text at this point in the document.
+ *
+ * @param {string|number|boolean} value The value of the Text.
+ * @param {...(function((string|number|boolean)):string)} var_args
+ *     Functions to format the value which are called only when the value has
+ *     changed.
+ * @return {!Text} The corresponding text node.
+ */
+var text = function (value, var_args) {
+  {
+    assertNotInAttributes('text');
+    assertNotInSkip('text');
+  }
+
+  var node = coreText();
+  var data = getData(node);
+
+  if (data.text !== value) {
+    data.text = /** @type {string} */value;
+
+    var formatted = value;
+    for (var i = 1; i < arguments.length; i += 1) {
+      /*
+       * Call the formatter function directly to prevent leaking arguments.
+       * https://github.com/google/incremental-dom/pull/204#issuecomment-178223574
+       */
+      var fn = arguments[i];
+      formatted = fn(formatted);
+    }
+
+    node.data = formatted;
+  }
+
+  return node;
+};
+
+var patch = patchInner;
+var elementOpen_1 = elementOpen;
+var elementClose_1 = elementClose;
+var text_1 = text;
+var symbols_1 = symbols;
+var attributes_1 = attributes;
+
+function getInstance(fritz, id){
+  return fritz._instances[id];
+}
+
+function setInstance(fritz, id, instance){
+  fritz._instances[id] = instance;
+}
+
+function delInstance(fritz, id){
+  delete fritz._instances[id];
+}
+
+function isFunction(val) {
+  return typeof val === 'function';
+}
+
+const defer = Promise.resolve().then.bind(Promise.resolve());
+
+const sym$1 = typeof Symbol === 'function' ? Symbol : function(v) { return '_' + v };
+
+var eventAttrExp = /^on[a-z]/;
+var orphanedHandles = null;
+var FN_HANDLE = sym$1('fritz.handle');
+
+var attributesSet = attributes_1[symbols_1.default];
+attributes_1[symbols_1.default] = preferProps;
+
+function preferProps(element, name, value){
+  if(name in element && !isSVG(element)) {
+    if(isEventProperty(name, value)) {
+      element[name] = setupEventHandler(element, name, value);
+    } else {
+      element[name] = value;
+    }
+  }
+
+  else if(isEventProperty(name, value) && isFunction(element.addEventProperty)) {
+    element.addEventProperty(name);
+    element[name] = setupEventHandler(element, name, value);
+  }
+  else
+    attributesSet(element, name, value);
+}
+
+function isEventProperty(name, value) {
+  return eventAttrExp.test(name) && Array.isArray(value) && isFunction(value[1]);
+}
+
+function isSVG(element) {
+  return element.namespaceURI === 'http://www.w3.org/2000/svg';
+}
+
+function setupEventHandler(element, name, value) {
+  var currentValue = element[name];
+  var fn = value[1];
+  if(currentValue) {
+    if(currentValue !== fn) {
+      fn[FN_HANDLE] = value[0];
+      orphanedHandles.push(currentValue[FN_HANDLE]);
+    }
+  } else {
+    fn[FN_HANDLE] = value[0];
+  }
   return fn;
 }
 
-function reset() {
-  orphans.length = 0;
-}
+const TAG = 1;
+const ID = 2;
+const ATTRS = 3;
+const EVENTS = 4;
 
-function trap() {
-  reset();
-  return function(){
-    let out = Array.from(orphans);
-    reset();
-    return out;
-  };
-}
-
-function mark(fn) {
-  orphans.push(fn[FN_HANDLE$1]);
-}
-
-function html$$1(strings, values) {
-  return new TemplateResult(strings, values, 'html', partCallback);
-}
-
-function partCallback(instance, templatePart, node) {
-  if (templatePart.type === 'attribute') {
-    if (templatePart.rawName.startsWith('on-')) {
-      const eventName = templatePart.rawName.substring(3);
-      return new EventPart(instance, node, eventName);
-    }
-
-    // What to do about properties
-    if(templatePart.name.startsWith(".")) {
-      const name = templatePart.name.substr(1);
-      return new PropertyPart(instance, node, name, templatePart.strings);
-    }
-    return new AttributePart(instance, node, templatePart.rawName, templatePart.strings);
-    //return new PropertyPart(instance, node, templatePart.rawName, templatePart.strings);
-  }
-  return defaultPartCallback(instance, templatePart, node);
-}
-
-class EventPart {
-  constructor(instance, element, eventName) {
-    this.instance = instance;
-    this.element = element;
-    this.eventName = eventName;
-  }
-  setValue(value) {
-    const listener = getValue(this, value);
-    if (listener === this._listener) {
-      return;
-    }
-    // Mark garbage if the value has changed
-    if(listener && this._listener && listener !== this._listener) {
-      mark(this._listener);
-    }
-    if (listener == null) {
-      this.element.removeEventListener(this.eventName, this);
-    }
-    else if (this._listener == null) {
-      this.element.addEventListener(this.eventName, this);
-    }
-    this._listener = listener;
-  }
-  handleEvent(event) {
-    if (typeof this._listener === 'function') {
-      this._listener.call(this.element, event);
-    }
-    else if (typeof this._listener.handleEvent === 'function') {
-      this._listener.handleEvent(event);
-    }
-  }
-}
-
-class PropertyPart extends AttributePart {
-  setValue(values, startIndex) {
-    const s = this.strings;
-    let value;
-    if (s.length === 2 && s[0] === '' && s[s.length - 1] === '') {
-      // An expression that occupies the whole attribute value will leave
-      // leading and trailing empty strings.
-      value = getValue(this, values[startIndex]);
-    }
-    else {
-      // Interpolation, so interpolate
-      value = '';
-      for (let i = 0; i < s.length; i++) {
-        value += s[i];
-        if (i < s.length - 1) {
-          value += getValue(this, values[startIndex + i]);
+function render$1(bc, component){
+  var n;
+  for(var i = 0, len = bc.length; i < len; i++) {
+    n = bc[i];
+    switch(n[0]) {
+      // Open
+      case 1:
+        if(n[EVENTS]) {
+          var k;
+          for(var j = 0, jlen = n[EVENTS].length; j < jlen; j++) {
+            k = n[EVENTS][j];
+            let handler = component.addEventCallback(k[2], k[1]);
+            n[ATTRS].push(k[1], [k[2], handler]);
+          }
         }
-      }
+
+        var openArgs = [n[TAG], n[ID], null].concat(n[ATTRS]);
+        elementOpen_1.apply(null, openArgs);
+        break;
+      case 2:
+        elementClose_1(n[1]);
+        break;
+      case 4:
+        text_1(n[1]);
+        break;
     }
-    this.element[this.name] = value;
   }
 }
 
-const registry = new WeakMap();
-let globalId = 0;
-
-function add(worker) {
-  if(registry.has(worker)) {
-    return registry.get(worker);
-  }
-  globalId = globalId + 1;
-  let id = globalId;
-  registry.set(worker, id);
-  return id;
-}
-
-function get$1(worker) {
-  return registry.get(worker);
-}
-
-const templates = new Map();
-
-function getId(worker, workerUniqueId) {
-  let workerId = get$1(worker);
-  let id = workerId + '|' + workerUniqueId;
-  return id;
-}
-
-function register$1(worker, workerUniqueId, strings) {
-  let id = getId(worker, workerUniqueId);
-  templates.set(id, strings);
-}
-
-function get$$1(worker, workerUniqueId) {
-  let id = getId(worker, workerUniqueId);
-  return templates.get(id);
-}
-
-const templateTag = 0;
-
-function renderTemplate(tree, root, instance){
-  let result = createTemplateResult.call(this, tree, 
-    getValues.call(this, tree, instance));
-
-  let release = trap();
-  render$2(result, root);
-  return release();
-}
-
-function getValues(tree, instance) {
-  let rawValues = tree[3];
-
-  return rawValues.map(value => {
-    if(value instanceof Uint8Array) {
-      // This assumes it's always an event
-      
-      // TODO use handleEvent instead
-      //return instance;
-      
-      let handleId = value[1];
-      let fn = instance.addEventCallback(handleId);
-      return track(fn, handleId);
-    } else if(Array.isArray(value)) {
-      let tag = value[0];
-      let val = value[1];
-      if(tag === templateTag) {
-        return createTemplateResult.call(this, val,
-          getValues.call(this, val, instance));
-      }
-      return val;
-    }
-    
-    return value;
-  });
-}
-
-function createTemplateResult(tree, values) {
-  let workerUniqueId = tree[1];
-  let template = get$$1(this, workerUniqueId);
-
-  if(!template) {
-     throw new Error('Something went wrong. A template was queued to render before it registered itself. This shouldn\'t happen.');
-  }
-
-  let result = html$$1(template, values);
-  return result;
+function idomRender(vdom, root, component) {
+  orphanedHandles = [];
+  patch(root, () => render$1(vdom, component));
+  let out = orphanedHandles;
+  orphanedHandles = null;
+  return out;
 }
 
 function shadow(elem) {
@@ -1304,10 +1794,8 @@ function withWorkerRender(Base = HTMLElement) {
     doRenderCallback(tree) {
       this.beforeRender();
       let shadowRoot = this.shadowRoot;
-      let worker = this._worker;
-      let out = renderTemplate.call(worker, tree, shadowRoot, this);
+      let out = idomRender(tree, shadowRoot, this);
       this.afterRender();
-
       this.handleOrphanedHandles(out);
     }
   }
@@ -1324,22 +1812,6 @@ function withComponent(options) {
 
   return Base;
 }
-
-function getInstance(fritz, id){
-  return fritz._instances[id];
-}
-
-function setInstance(fritz, id, instance){
-  fritz._instances[id] = instance;
-}
-
-function delInstance(fritz, id){
-  delete fritz._instances[id];
-}
-
-
-
-const defer = Promise.resolve().then.bind(Promise.resolve());
 
 function withWorkerConnection(fritz, events, props, worker, Base) {
   return class extends Base {
@@ -1411,13 +1883,6 @@ function trigger(fritz, msg) {
   inst.dispatchEvent(event);
 }
 
-function register$$1(fritz, msg) {
-  let worker = this;
-  let strings = msg.template;
-  let workerUniqueId = msg.id;
-  register$1(worker, workerUniqueId, strings); 
-}
-
 function sendState(fritz, worker) {
   let workers = worker ? [worker] : fritz._workers;
   let state = fritz.state;
@@ -1438,7 +1903,6 @@ fritz._work = [];
 
 function use(worker) {
   fritz._workers.push(worker);
-  add(worker);
   worker.addEventListener('message', handleMessage);
   if(fritz.state) {
     sendState(fritz, worker);
@@ -1456,10 +1920,6 @@ function handleMessage(ev) {
       break;
     case TRIGGER:
       trigger(fritz, msg);
-      break;
-    case REGISTER:
-      register$$1.call(this, fritz, msg);
-      break;
   }
 }
 

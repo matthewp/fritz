@@ -1,6 +1,6 @@
 importScripts('../../worker.umd.js');
 
-const { html, Component } = fritz;
+const { h, Component } = fritz;
 
 class Third extends Component {
   componentDidMount() {
@@ -8,7 +8,7 @@ class Third extends Component {
   }
 
   render() {
-    return html`<div></div>`;
+    return h('div');
   }
 }
 
@@ -24,7 +24,7 @@ Second.prototype.componentDidMount = function(){
   postMessage({ type: 'app-rendered', detail: 'second' });
 };
 Second.prototype.render = function(){
-  return html`<third-el></third-el>`;
+  return h('third-el');
 };
 
 fritz.define('second-el', Second);
@@ -38,7 +38,7 @@ class NoMount extends Component {
   }
 
   render() {
-    return html`<div></div>`;
+    return h('div');
   }
 }
 
@@ -54,12 +54,10 @@ class First extends Component {
   }
 
   render() {
-    return html`
-      <div>
-        <second-el></second-el>
-        <no-mount on-error="${this.onNoMountError}"></no-mount>
-      </div>
-    `;
+    return h('div', [
+      h('second-el'),
+      h('no-mount', { onError: this.onNoMountError })
+    ])
   }
 }
 

@@ -1,21 +1,20 @@
 importScripts('../../worker.umd.js');
 importScripts('../worker-debug.js');
 
-const { html, Component } = fritz;
+const { h, Component } = fritz;
 
 fritz.define('loading-indicator', () => (
-  html`
-    <svg class="icon-loading" xmls="http://www.w3.org/2000/svg" viewBox="0 0 32 32"></svg>
-  `
+  h('svg', {
+    class: 'icon-loading', xmlns: 'http://www.w3.org/2000/svg',
+    viewBox: '0 0 32 32'
+  })
 ));
 
 class AnotherEl extends Component {
   doStuff(){}
 
   render() {
-    return html`
-      <div on-click="${this.doStuff}">Another el</div>
-    `;
+    return h('div', { onClick: this.doStuff }, ['Another el']);
   }
 }
 
@@ -23,9 +22,7 @@ fritz.define('another-el', AnotherEl);
 
 class MathEl extends Component {
   render() {
-    return html`
-      <div>${15} of ${15}</div>
-    `;
+    return h('div', null, 15, ' of ', 15);
   }
 }
 
@@ -33,12 +30,10 @@ fritz.define('math-el', MathEl);
 
 class TypedEl extends Component {
   render() {
-    return html`
-      <div>
-        <div class="c-number">${27}</div>
-        <div class="c-boolean">${false}</div>
-      </div>
-    `;
+    return h('div', {}, [
+      h('div', {'class':'c-number'}, 27),
+      h('div', {'class':'c-boolean'}, false),
+    ]);
   }
 }
 
@@ -46,33 +41,30 @@ fritz.define('typed-el', TypedEl);
 
 fritz.define('frag-el', class extends Component {
   render() {
-    return html`
-      <div id="one">One</div>
-      <div id="two">Two</div>
-      <div>
-        <span id="three">Three</span>
-      </div>
-    `;
+    return (
+      h(h.frag, null,
+        h("div", {id:'one'}, "One"),
+        h("div", {id:'two'}, "Two"),
+        h("div", null,
+          h(h.frag, null,
+            h("span", {id:'three'}, "Three")
+          )
+        )
+      )
+    );
   }
-});
-
-function nested() {
-  return html`<div id="nested">This is nested</div>`;
-}
+})
 
 class BasicApp extends Component {
   render() {
-    return html`
-      <div id="root">
-        Hello world!
-        <another-el></another-el>
-        <math-el></math-el>
-        <typed-el></typed-el>
-        <loading-indicator></loading-indicator>
-        ${nested()}
-        <frag-el></frag-el>
-      </div>
-    `;
+    return h('div', {id:'root'}, [
+      'Hello world!',
+      h(AnotherEl),
+      h(MathEl),
+      h(TypedEl),
+      h('loading-indicator'),
+      h('frag-el')
+    ]);
   }
 }
 

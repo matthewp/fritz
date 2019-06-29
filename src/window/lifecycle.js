@@ -1,7 +1,6 @@
 import { withComponent } from './component.js';
 import { withWorkerConnection } from './with-worker-connection.js';
 import { getInstance } from '../util.js';
-import { register as registerTemplate } from './templates.js';
 
 export function define(fritz, msg) {
   let worker = this;
@@ -38,10 +37,3 @@ export function trigger(fritz, msg) {
 
   inst.dispatchEvent(event);
 };
-
-export function register(fritz, msg) {
-  let worker = this;
-  let strings = msg.template;
-  let workerUniqueId = msg.id;
-  registerTemplate(worker, workerUniqueId, strings); 
-}
