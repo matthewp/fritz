@@ -8,6 +8,12 @@ class EventEl extends Component {
     this.state = { foo: 'none' };
   }
 
+  componentDidMount() {
+    setTimeout(() => {
+      this.dispatch({ type: 'mount' });
+    }, 10);
+  }
+
   myHandler() {
     this.setState({clicked: true});
   }
@@ -27,7 +33,7 @@ class EventEl extends Component {
 
     return h('div', [
       h('a', {
-        href: '/foo',
+        href: '#foo',
         onClick: this.myHandler
       }, ['Click me']),
 
@@ -68,6 +74,10 @@ class InputEl extends Component {
   constructor() {
     super();
     this.filter = '';
+  }
+
+  componentDidMount() {
+    this.dispatch({ type: 'mount' });
   }
 
   setFilter(ev) {

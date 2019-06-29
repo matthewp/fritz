@@ -56,6 +56,10 @@ fritz.define('frag-el', class extends Component {
 })
 
 class BasicApp extends Component {
+  componentDidMount() {
+    this.dispatch({ type: 'mount' });
+  }
+
   render() {
     return h('div', {id:'root'}, [
       'Hello world!',
