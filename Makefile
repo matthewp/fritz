@@ -4,21 +4,22 @@ COMPILE = node_modules/.bin/compile
 # Source files
 SRCES := $(shell find src -name '*.js')
 
-all: worker window.js
+all: worker.js worker.umd.js window.js
 .PHONY: all
 
 worker.js: $(SRCES)
-	$(ROLLUP) -o worker.js -c rollup.config.js -f es -n fritz src/worker/index.js
+	$(COMPILE) -o $@ -f es src/worker/index.js
 
 worker.umd.js: $(SRCES)
-	$(ROLLUP) -o $@ -c rollup.config.js -f umd -n fritz src/worker/umd.js
-
-# Build the worker modules
-worker: worker.js worker.umd.js
-.PHONY: worker
+	$(COMPILE) -o $@ -f umd -n fritz --exports default src/worker/umd.js
 
 window.js: $(SRCES)
-	$(ROLLUP) -o $@ -c rollup.config.js -f es -n fritz src/window/index.js
+	$(COMPILE) -o $@ -f es src/window/index.js
+
+# Clean
+clean:
+	@rm -f worker.js worker.umd.js window.js
+.PHONY: clean
 
 # Serve the current directory (port 8008)
 serve:

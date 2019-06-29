@@ -2,8 +2,8 @@
   "name": "fritz",
   "version": "3.2.0",
   "description": "Create web components that run in a Web Worker",
-  "main": "worker.umd.js",
-  "jsnext:main": "worker.js",
+  "main": "worker.js",
+  "module": "worker.js",
   "scripts": {
     "test": "testee test/basics.html test/events.html test/props.html test/state.html --browsers chrome",
     "prepublishOnly": "make all"
@@ -19,7 +19,6 @@
   },
   "files": [
     "window.js",
-    "window.umd.js",
     "worker.js",
     "worker.umd.js"
   ],
@@ -34,26 +33,9 @@
   "devDependencies": {
     "@matthewp/compile": "^2.1.0",
     "@matthewp/skatejs": "^5.1.1",
-    "babel-cli": "^6.24.1",
-    "babel-plugin-syntax-class-properties": "^6.13.0",
-    "babel-plugin-transform-class-properties": "^6.24.1",
-    "babel-plugin-transform-es2015-computed-properties": "^6.24.1",
-    "babel-plugin-transform-es2015-spread": "^6.22.0",
-    "babel-plugin-transform-react-jsx": "^6.24.1",
-    "babel-preset-stage-2": "^6.24.1",
     "highlight.js": "^9.11.0",
     "incremental-dom": "^0.5.1",
-    "is-promise": "^2.1.0",
-    "lit-html": "^0.10.0",
     "mocha-test": "^2.0.2",
-    "path-to-regexp": "^1.7.0",
-    "rollup": "^0.41.4",
-    "rollup-plugin-babel": "^2.7.1",
-    "rollup-plugin-commonjs": "^5.0.5",
-    "rollup-plugin-node-resolve": "^2.0.0",
-    "rollup-plugin-replace": "^1.1.1",
-    "rollup-plugin-string": "^2.0.2",
-    "sw-precache": "^5.2.0",
     "testee": "^0.3.0"
   }
 }
