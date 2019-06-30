@@ -28,19 +28,30 @@ fritz.define('x-hello', Hello);
 
 ```html
 <!doctype html>
+<html lang="en">
+<title>My App</title>
 
 <x-hello name="world"></x-hello>
 
-<script src="../node_modules/fritz/window.umd.js"></script>
-<script>
-  fritz.use(new Worker("./worker.js"));
+<script type="module">
+  import fritz from '//unpkg.com/fritz@next/window.js';
+
+  fritz.use(new Worker('./worker.js'));
 </script>
 ```
 
 ## Install
 
+Using [Yarn](https://yarnpkg.com/en/):
+
 ```shell
 yarn add fritz
+```
+
+Using npm:
+
+```shell
+npm install fritz
 ```
 
 ## License
