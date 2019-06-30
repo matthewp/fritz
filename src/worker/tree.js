@@ -1,13 +1,11 @@
-import { sym } from '../util.js';
-
-const _tree = sym('ftree');
+const _tree = Symbol('ftree');
 
 export function isTree(obj) {
   return !!(obj && obj[_tree]);
 };
 
 export function createTree() {
-  var out = [];
+  let out = [];
   out[_tree] = true;
   return out;
 }

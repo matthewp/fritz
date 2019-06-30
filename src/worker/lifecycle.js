@@ -8,7 +8,7 @@ export function render(fritz, msg) {
 
   let instance = getInstance(fritz, id);
   if(!instance) {
-    let constructor = fritz._tags[msg.tag];
+    let constructor = fritz._tags.get(msg.tag);
     instance = new constructor();
     Object.defineProperties(instance, {
       _fritzId: {
@@ -29,7 +29,6 @@ export function render(fritz, msg) {
 
 export function trigger(fritz, msg){
   let inst = getInstance(fritz, msg.id);
-  let response = Object.create(null);
 
   let method;
   if(msg.handle != null) {

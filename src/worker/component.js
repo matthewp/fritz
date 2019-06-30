@@ -1,5 +1,5 @@
 import { isFunction } from '../util.js';
-import { RENDER, TRIGGER } from '../message-types.js';
+import { TRIGGER } from '../message-types.js';
 import { enqueueRender } from './instance.js';
 
 class Component {
@@ -21,12 +21,6 @@ class Component {
     let s = this.state;
     Object.assign(s, isFunction(state) ? state(s, this.props) : state);
     enqueueRender(this);
-  }
-
-  // Force an update, will change to setState()
-  update() {
-    console.warn('update() is deprecated. Use setState() instead.');
-    this.setState({});
   }
 
   componentWillReceiveProps(){}

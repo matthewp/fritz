@@ -5,7 +5,7 @@ import { sendState } from './cmd.js';
 const fritz = Object.create(null);
 fritz.tags = Object.create(null);
 fritz._id = 1;
-fritz._instances = Object.create(null);
+fritz._instances = new Map();
 fritz._workers = [];
 fritz._work = [];
 
