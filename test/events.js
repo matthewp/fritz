@@ -16,9 +16,7 @@ customElements.define('special-el', class extends HTMLElement {
   }
 });
 
-
-
-QUnit.module('Events', hooks => {
+QUnit.module('Events', () => {
   fritz.use(new Worker('./events/app.js'));
   let eventEl, inputEl;
 

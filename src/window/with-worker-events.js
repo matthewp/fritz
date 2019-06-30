@@ -23,7 +23,6 @@ export function withWorkerEvents(Base = HTMLElement) {
     }
 
     addEventCallback(handleId, eventProp) {
-      console.log('event cb', eventProp)
       let key = handleId;
       let fn;
       if(fn = this._handlers[key]) {
@@ -32,7 +31,6 @@ export function withWorkerEvents(Base = HTMLElement) {
 
       // TODO optimize this so functions are reused if possible.
       fn = ev => {
-        console.log('preventing', eventProp);
         ev.preventDefault();
         postEvent(ev, this, handleId);
       };
