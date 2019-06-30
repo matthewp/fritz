@@ -6,7 +6,7 @@ export function waitForMount(...els) {
       el.addEventListener('mount', () => {
         remaining--;
         if(remaining === 0) {
-          resolve();
+          setTimeout(resolve, 50);
         }
       }, { once: true });
     }

@@ -35,7 +35,6 @@
     "@matthewp/skatejs": "^5.1.1",
     "highlight.js": "^9.11.0",
     "incremental-dom": "^0.5.1",
-    "mocha-test": "^2.0.2",
-    "testee": "^0.3.0"
+    "testee": "0.9.1"
   }
 }

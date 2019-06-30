@@ -1,17 +1,15 @@
 import fritz from '../window.js';
+import { waitForMount } from './helpers.js';
 
 let app;
 
 QUnit.module('Basics', {
-  before(assert) {
-    let done = assert.async();
+  async before() {
     let worker = new Worker('./basics/app.js');
     fritz.use(worker);
     app = document.createElement('basic-app');
-    app.addEventListener('mount', () => {
-      done();
-    });
     document.body.append(app);
+    await waitForMount(app);
   },
   after() {
     app.remove();
