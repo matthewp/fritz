@@ -1,5 +1,4 @@
 importScripts('../../worker.umd.js');
-importScripts('../worker-debug.js');
 
 const { h, Component } = fritz;
 

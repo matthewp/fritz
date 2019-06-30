@@ -1,6 +1,8 @@
 <!doctype html>
+<html lang="en">
+<title>Garbage collection</title>
 <gc-app></gc-app>
-<script src="../../window.umd.js"></script>
-<script>
+<script type="module">
+  import fritz from '../../window.js';
   fritz.use(new Worker('./app.js'));
 </script>
