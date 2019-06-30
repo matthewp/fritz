@@ -2,14 +2,15 @@ import { withUpdate } from '@matthewp/skatejs/dist/esnext/with-update';
 import { withMount } from './with-mount.js';
 import { withWorkerEvents } from './with-worker-events.js';
 import { withWorkerRender } from './with-worker-render.js';
-import { EVENT, RENDER } from '../message-types.js';
 
-export function withComponent(options) {
-  let Base = withWorkerRender(withUpdate(HTMLElement));
+export function withComponent({ mount }) {
+  let Base = withWorkerEvents(
+    withWorkerRender(
+      withUpdate(HTMLElement)
+    )
+  );
 
-  Base = withWorkerEvents(Base);
-
-  if(options.mount) {
+  if(mount) {
     Base = withMount(Base);
   }
 

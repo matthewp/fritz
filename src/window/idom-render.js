@@ -6,11 +6,11 @@ import {
   text,
   patch
 } from 'incremental-dom';
-import { isFunction, sym } from '../util.js';
+import { isFunction } from '../util.js';
 
 var eventAttrExp = /^on[a-z]/;
 var orphanedHandles = null;
-var FN_HANDLE = sym('fritz.handle');
+var FN_HANDLE = Symbol('fritz.handle');
 
 var attributesSet = attributes[symbols.default];
 attributes[symbols.default] = preferProps;
