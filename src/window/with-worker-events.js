@@ -23,17 +23,16 @@ export function withWorkerEvents(Base = HTMLElement) {
     }
 
     addEventCallback(handleId, eventProp) {
-      var key = handleId;
-      var fn;
+      let key = handleId;
+      let fn;
       if(fn = this._handlers[key]) {
         return fn;
       }
 
       // TODO optimize this so functions are reused if possible.
-      var self = this;
-      fn = function(ev){
+      fn = ev => {
         ev.preventDefault();
-        postEvent(ev, self, handleId);
+        postEvent(ev, this, handleId);
       };
       this._handlers[key] = fn;
       return fn;

@@ -8,6 +8,10 @@ class Stateful extends Component {
     this.name = fritz.state.name;
   }
 
+  componentDidMount() {
+    this.dispatch({ type: 'mount' });
+  }
+
   render() {
     return h('span', [`Hello ${this.name}`]);
   }

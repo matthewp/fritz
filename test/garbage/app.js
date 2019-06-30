@@ -1,5 +1,4 @@
 importScripts('../../worker.umd.js');
-importScripts('../worker-debug.js');
 
 const { h, Component } = fritz;
 
@@ -7,6 +6,10 @@ class App extends Component {
   constructor() {
     super();
     this.state = { count: 0 };
+  }
+
+  componentDidMount() {
+    this.dispatch({ type: 'mount' });
   }
 
   decrement() {
