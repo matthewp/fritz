@@ -1,15 +1,12 @@
 <!doctype html>
-<html>
-<head>
-  <title>Worker framework</title>
-</head>
-<body>
-  <h1>Number of clicks</h1>
-  <click-counter></click-counter>
+<html lang="en">
+<title>Worker framework</title>
 
-  <script src="../../../window.umd.js"></script>
-  <script>
-    fritz.use(new Worker('./app.js'));
-  </script>
-</body>
-</html>
+<h1>Number of clicks</h1>
+<click-counter></click-counter>
+
+<script type="module">
+  import fritz from '../../../window.js';
+
+  fritz.use(new Worker('./app.js'));
+</script>

@@ -33,8 +33,11 @@
   "devDependencies": {
     "@matthewp/compile": "^2.1.0",
     "@matthewp/skatejs": "^5.1.1",
+    "add": "^2.0.6",
     "highlight.js": "^9.11.0",
+    "htm": "^2.1.1",
     "incremental-dom": "^0.5.1",
-    "testee": "0.9.1"
+    "testee": "0.9.1",
+    "yarn": "^1.16.0"
   }
 }

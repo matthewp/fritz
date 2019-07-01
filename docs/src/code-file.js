@@ -1,4 +1,5 @@
-import fritz, { Component, h } from '../../worker';
+import fritz, { Component } from '../../worker';
+import html from './html.js';
 import styles from './code-file.css';
 
 class CodeFile extends Component {
@@ -10,13 +11,13 @@ class CodeFile extends Component {
   }
 
   render({code, name}) {
-    return (
+    return html`
       <div>
-        <style>{styles}</style>
-        <div class="title">{name}</div>
-        <code-snippet code={code}></code-snippet>
+        <style>${styles}</style>
+        <div class="title">${name}</div>
+        <code-snippet code=${code}></code-snippet>
       </div>
-    );
+    `;
   }
 }
 
