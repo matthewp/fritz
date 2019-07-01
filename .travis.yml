@@ -6,4 +6,4 @@ before_install:
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
 addons:
-  chrome: stable
+  firefox: "66.0"

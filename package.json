@@ -5,7 +5,7 @@
   "main": "worker.js",
   "module": "worker.js",
   "scripts": {
-    "test": "testee --browsers chrome test/test.html --config=testee.json",
+    "test": "testee --browsers firefox test/test.html",
     "prepublishOnly": "make all"
   },
   "repository": {
