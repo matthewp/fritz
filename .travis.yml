@@ -3,3 +3,6 @@ node_js:
   - "10"
 addons:
   chrome: stable
+dist: xenial
+services:
+  - xvfb
