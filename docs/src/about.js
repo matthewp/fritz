@@ -2,11 +2,11 @@ import html from './html.js';
 import styles from './about.css';
 
 const npmInstall = `
-npm install fritz --save
+npm install fritz@next --save
 `;
 
 const yarnAdd = `
-yarn add fritz
+yarn add fritz@next
 `;
 
 function about() {
