@@ -30,7 +30,15 @@
 <its-fritz-yall></its-fritz-yall>
 
 <script src="./main.js"></script>
-<script src="./service-worker-registration.js" async></script>
+<script>
+  // Check that service workers are supported
+  if ('serviceWorker' in navigator) {
+    // Use the window load event to keep the page load performant
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js');
+    });
+  }
+</script>
 
 <noscript>
   <h1>Oops!</h1>

@@ -416,11 +416,11 @@
   var styles = ".about {\n  background-color: var(--alt-bg);\n  max-width: 80%;\n  margin: auto;\n  font-size: 120%;\n}\n\n.about p, .about ul {\n  line-height: 2rem;\n}\n\n.about h1 {\n  color: var(--vermilion);\n  font-size: 220%;\n}\n\n.about a, .about a:visited {\n  color: var(--main-color);\n}\n\n.about code-snippet,\n.about code-file {\n  width: 60%;\n}\n\n.about code-file {\n  --box-shadow: none;\n}\n\n@media only screen and (max-width: 768px) {\n  .about code-snippet,\n  .about code-file {\n    width: 100%;\n    font-size: 90%;\n  }\n}";
 
   const npmInstall = `
-npm install fritz --save
+npm install fritz@next --save
 `;
 
   const yarnAdd = `
-yarn add fritz
+yarn add fritz@next
 `;
 
   function about() {
@@ -438,10 +438,10 @@ yarn add fritz
       <h2>Installation</h2>
 
       <p>Install Fritz with npm:</p>
-      <code-snippet code=${npmInstall}></code-snippet>
+      <code-snippet lang="shell" code=${npmInstall}></code-snippet>
 
       <p>Or with Yarn:</p>
-      <code-snippet code=${yarnAdd}></code-snippet>
+      <code-snippet lang="shell" code=${yarnAdd}></code-snippet>
 
       <h2>Using Fritz</h2>
       <p>Fritz lets you define <a href="https://www.webcomponents.org/introduction">web components</a> inside of a Web Worker. So, the first step to using Fritz is to create a Worker. Use <code>new Worker</code> to do so:</p>
@@ -450,7 +450,7 @@ yarn add fritz
 
       <p>And then define a component inside of that worker. We'll assume you know how to configure your bundler tool and skip that part. But we should point out that you want to change your <a href="https://babeljs.io/">Babel</a> config so that it renders JSX to Fritz <code>h()</code> calls.</p>
 
-      <code-snippet code=${`
+      <code-snippet lang="json" code=${`
 {
   "plugins": [
     ["transform-react-jsx", { "pragma":"h" }]
@@ -496,7 +496,7 @@ fritz.use(worker);
 
 <hello-message name="World"></hello-message>
 
-<script src="./main.js" async></script>
+<script type="module" src="./main.js"></script>
 `}></code-file>
 
       <p>And that's it!</p>
@@ -514,7 +514,7 @@ fritz.use(worker);
       <p>This will allow you to transform JSX both for the React and Fritz sides of your application. As before, we won't explain how to configure your bundler, but know that you will need to create a worker bundle (that contains Fritz code) and a bundle for your React code.</p>
 
       <p>React doesn't properly handle passing data to web components, but luckily there is a helper library that fixes the issue for us. Install <a href="https://github.com/skatejs/val">skatejs/val</a> like so:</p>
-      <code-snippet code=${'npm install @skatejs/val'}></code-snippet>
+      <code-snippet lang="shell" code=${'npm install @skatejs/val'}></code-snippet>
 
       <p>Then create the module that will act as our wrapper:</p>
 
@@ -528,7 +528,7 @@ export default val(React.createElement);
       <p>And within your React code, use it:</p>
 
 
-      <code-file name="app.js" code=${`
+      <code-file name="app.js" lang="jsx" code=${`
 import React from 'react';
 import ReactDOM from 'react-dom';
 import fritz from 'fritz/window';
@@ -541,7 +541,7 @@ class Home extends React.Component {
     return (
       <div>
         <span>Hello world</span>
-        <worker-component name={"Wilbur"}></worker-component>
+        <worker-component name="Wilbur"></worker-component>
       </div>
     );
   }
@@ -608,16 +608,17 @@ fritz.define('worker-component', MyWorkerComponent);
     static get props() {
       return {
         code: 'string',
-        name: 'string'
+        name: 'string',
+        lang: 'string'
       }
     }
 
-    render({code, name}) {
+    render({code, lang, name}) {
       return html`
       <div>
         <style>${styles$2}</style>
         <div class="title">${name}</div>
-        <code-snippet code=${code}></code-snippet>
+        <code-snippet lang=${lang} code=${code}></code-snippet>
       </div>
     `;
     }
@@ -646,8 +647,9 @@ fritz.define('hello-message', HelloMessage);
   const htmlCode = `
 <hello-message name="World"></hello-message>
 
-<script src="./node_modules/fritz/window.umd.js"></script>
-<script>
+<script type="module">
+  import fritz from 'https://unpkg.com/fritz@next/window.js';
+
   fritz.use(new Worker('./worker.js'));
 </script>
 `;
@@ -670,8 +672,8 @@ fritz.define('hello-message', HelloMessage);
 
         <a class="github" href="https://github.com/matthewp/fritz">GitHub</a>
 
-        <code-file name="worker.js" code=${jsCode}></code-file>
-        <code-file name="index.html" code=${htmlCode}></code-file>
+        <code-file name="worker.js" lang="js" code=${jsCode}></code-file>
+        <code-file name="index.html" lang="html" code=${htmlCode}></code-file>
       </section>
 
       ${about()}

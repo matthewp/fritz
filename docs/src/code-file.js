@@ -6,16 +6,17 @@ class CodeFile extends Component {
   static get props() {
     return {
       code: 'string',
-      name: 'string'
+      name: 'string',
+      lang: 'string'
     }
   }
 
-  render({code, name}) {
+  render({code, lang, name}) {
     return html`
       <div>
         <style>${styles}</style>
         <div class="title">${name}</div>
-        <code-snippet code=${code}></code-snippet>
+        <code-snippet lang=${lang} code=${code}></code-snippet>
       </div>
     `;
   }

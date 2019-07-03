@@ -25,8 +25,9 @@ fritz.define('hello-message', HelloMessage);
 const htmlCode = `
 <hello-message name="World"></hello-message>
 
-<script src="./node_modules/fritz/window.umd.js"></script>
-<script>
+<script type="module">
+  import fritz from 'https://unpkg.com/fritz@next/window.js';
+
   fritz.use(new Worker('./worker.js'));
 </script>
 `;
@@ -49,8 +50,8 @@ function main() {
 
         <a class="github" href="https://github.com/matthewp/fritz">GitHub</a>
 
-        <code-file name="worker.js" code=${jsCode}></code-file>
-        <code-file name="index.html" code=${htmlCode}></code-file>
+        <code-file name="worker.js" lang="js" code=${jsCode}></code-file>
+        <code-file name="index.html" lang="html" code=${htmlCode}></code-file>
       </section>
 
       ${About()}

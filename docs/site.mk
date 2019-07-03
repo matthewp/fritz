@@ -14,6 +14,9 @@ docs/app.js: $(DOC_SRCES)
 docs/main.js: $(DOC_SRCES)
 	$(COMPILE) -f es -o $@ --string css docs/src/main.js
 
+docs/sw.js:
+	workbox generateSW workbox-config.js
+
 # Tasks
 site-watch:
 	find docs/src -name "*.*" | entr make site
@@ -22,10 +25,6 @@ site-watch:
 site-dev:
 	make serve & make site-watch
 .PHONY: site-dev
-
-site-sw:
-	$(SW) --root=docs --static-file-globs='docs/*({app,main,service-worker-registration}.js|index.html|*.{png,webp})'
-.PHONY: site-sw
 
 site-release: site site-sw
 .PHONY: site-release

@@ -4,7 +4,7 @@ import hljs from './hljs.js';
 
 class CodeSnippet extends HTMLElement {
   static get observedAttributes() {
-    return ['code'];
+    return ['code', 'lang'];
   }
   
   connectedCallback() {
@@ -17,8 +17,8 @@ class CodeSnippet extends HTMLElement {
       root.appendChild(style);
 
       let pre = doc.createElement('pre');
-      pre.appendChild(doc.createElement('code'));
-      root.appendChild(pre);
+      pre.append(doc.createElement('code'));
+      root.append(pre);
     }
   }
 
@@ -26,12 +26,20 @@ class CodeSnippet extends HTMLElement {
     this[name] = newVal;
   }
 
+  set lang(val) {
+    this._lang = val;
+  }
+
   set code(val) {
     // Remove loading newline
     this._code = val[0] === '\n' ? val.substr(1) : val;
     let tn = this.ownerDocument.createTextNode(this._code);
     let code = this.shadowRoot.querySelector('code');
-    code.appendChild(tn);
+    let lang = this._lang;
+    if(lang) {
+      code.classList.add(lang);
+    }
+    code.append(tn);
     hljs.highlightBlock(code);
   }
 }
