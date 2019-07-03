@@ -28,3 +28,7 @@ site-dev:
 
 site-release: site site-sw
 .PHONY: site-release
+
+deploy:
+	aws s3 sync docs s3://fritz.work --delete
+.PHONY: deploy
