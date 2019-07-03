@@ -5,9 +5,9 @@ import styles from './code-file.css';
 class CodeFile extends Component {
   static get props() {
     return {
-      code: 'string',
-      name: 'string',
-      lang: 'string'
+      code: { attribute: true },
+      name: { attribute: true },
+      lang: { attribute: true }
     }
   }
 
