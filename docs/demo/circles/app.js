@@ -34,7 +34,7 @@ class CirclesDemo extends Component {
 
   onSubmit() {
     this.id = setInterval(_ => {
-      this.update();
+      this.setState({});
 
       if(this.count >= 1000) {
         clearInterval(this.id);

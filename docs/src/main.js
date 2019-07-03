@@ -1,8 +1,6 @@
 import fritz from '../../window';
 import styles from './agate.css';
-import './hljs.js';
-
-const { highlightBlock } = self.hljs;
+import hljs from './hljs.js';
 
 class CodeSnippet extends HTMLElement {
   static get observedAttributes() {
@@ -34,7 +32,7 @@ class CodeSnippet extends HTMLElement {
     let tn = this.ownerDocument.createTextNode(this._code);
     let code = this.shadowRoot.querySelector('code');
     code.appendChild(tn);
-    highlightBlock(code);
+    hljs.highlightBlock(code);
   }
 }
 

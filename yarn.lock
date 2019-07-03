@@ -3,8 +3,8 @@
 
 
 "@matthewp/compile@^2.1.0":
-  version "2.3.0"
-  resolved "https://registry.yarnpkg.com/@matthewp/compile/-/compile-2.3.0.tgz#bd2df8a872975dd2b7167f3bdea5abb4b6383652"
+  version "2.4.2"
+  resolved "https://registry.yarnpkg.com/@matthewp/compile/-/compile-2.4.2.tgz#8aa7166f08fcf0f198fff63e9c24c7b768a39b26"
   dependencies:
     follow-redirects "^1.5.1"
     meow "^5.0.0"
@@ -14,6 +14,7 @@
     rollup-plugin-node-builtins "^2.1.2"
     rollup-plugin-node-globals "^1.4.0"
     rollup-plugin-node-resolve "4.0.1"
+    rollup-plugin-string "^3.0.0"
 
 "@matthewp/skatejs@^5.1.1":
   version "5.1.1"
@@ -92,6 +93,10 @@ acorn@^5.7.3:
 acorn@^6.1.1:
   version "6.1.1"
   resolved "https://registry.yarnpkg.com/acorn/-/acorn-6.1.1.tgz#7d25ae05bb8ad1f9b699108e1094ecd7884adc1f"
+
+add@^2.0.6:
+  version "2.0.6"
+  resolved "https://registry.yarnpkg.com/add/-/add-2.0.6.tgz#248f0a9f6e5a528ef2295dbeec30532130ae2235"
 
 after@0.8.2:
   version "0.8.2"
@@ -1455,6 +1460,10 @@ hosted-git-info@^2.1.4:
   version "2.7.1"
   resolved "https://registry.yarnpkg.com/hosted-git-info/-/hosted-git-info-2.7.1.tgz#97f236977bd6e125408930ff6de3eec6281ec047"
 
+htm@^2.1.1:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/htm/-/htm-2.1.1.tgz#5a53e5f2845c3181b1672f95c9bffaf3d621bb0e"
+
 http-errors@~1.6.1:
   version "1.6.1"
   resolved "https://registry.yarnpkg.com/http-errors/-/http-errors-1.6.1.tgz#5f8b8ed98aca545656bf572997387f904a722257"
@@ -1962,8 +1971,8 @@ magic-string@^0.22.5:
     vlq "^0.2.2"
 
 magic-string@^0.25.1:
-  version "0.25.2"
-  resolved "https://registry.yarnpkg.com/magic-string/-/magic-string-0.25.2.tgz#139c3a729515ec55e96e69e82a11fe890a293ad9"
+  version "0.25.3"
+  resolved "https://registry.yarnpkg.com/magic-string/-/magic-string-0.25.3.tgz#34b8d2a2c7fec9d9bdf9929a3fd81d271ef35be9"
   dependencies:
     sourcemap-codec "^1.4.4"
 
@@ -2728,7 +2737,13 @@ rollup-plugin-node-resolve@4.0.1:
     is-module "^1.0.0"
     resolve "^1.10.0"
 
-rollup-pluginutils@^2.3.1, rollup-pluginutils@^2.3.3, rollup-pluginutils@^2.5.0:
+rollup-plugin-string@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/rollup-plugin-string/-/rollup-plugin-string-3.0.0.tgz#fed2d6301fae1e59eb610957df757ef13fada3f0"
+  dependencies:
+    rollup-pluginutils "^2.4.1"
+
+rollup-pluginutils@^2.3.1, rollup-pluginutils@^2.3.3, rollup-pluginutils@^2.4.1, rollup-pluginutils@^2.5.0:
   version "2.8.1"
   resolved "https://registry.yarnpkg.com/rollup-pluginutils/-/rollup-pluginutils-2.8.1.tgz#8fa6dd0697344938ef26c2c09d2488ce9e33ce97"
   dependencies:
@@ -3315,6 +3330,10 @@ yargs@~3.10.0:
     cliui "^2.1.0"
     decamelize "^1.0.0"
     window-size "0.1.0"
+
+yarn@^1.16.0:
+  version "1.16.0"
+  resolved "https://registry.yarnpkg.com/yarn/-/yarn-1.16.0.tgz#5701b58ac555ff91f7b889b7d791b3dc86f8f999"
 
 yeast@0.1.2:
   version "0.1.2"
