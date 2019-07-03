@@ -7,8 +7,15 @@
 <div id="qunit-fixture"></div>
 
 <script src="https://code.jquery.com/qunit/qunit-2.9.2.js"></script>
+<script>QUnit.config.autostart = false;</script>
 <script type="module" src="./basics.js"></script>
 <script type="module" src="./events.js"></script>
 <script type="module" src="./props.js"></script>
 <script type="module" src="./state.js"></script>
 <script type="module" src="./garbage.js"></script>
+<script type="module">
+  if(window.Testee) {
+    window.Testee.init();
+  }
+  QUnit.start();
+</script>
