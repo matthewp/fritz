@@ -1946,10 +1946,19 @@ class CodeSnippet extends HTMLElement {
   static get observedAttributes() {
     return ['code', 'lang'];
   }
+
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+  }
   
   connectedCallback() {
-    if(!this.shadowRoot) {
-      let root = this.attachShadow({mode:'open'});
+    this._render();
+  }
+
+  _render() {
+    if(!this.shadowRoot.firstChild) {
+      let root = this.shadowRoot;
       let doc = this.ownerDocument;
 
       let style = doc.createElement('style');
@@ -1963,6 +1972,7 @@ class CodeSnippet extends HTMLElement {
   }
 
   attributeChangedCallback(name, oldVal, newVal) {
+    this._render();
     this[name] = newVal;
   }
 

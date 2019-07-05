@@ -2,6 +2,7 @@ import Component from './component.js';
 import h, { Fragment } from './hyperscript.js';
 import relay from './relay.js';
 import { DEFINE } from '../message-types.js';
+import { postMessage } from './env.js';
 
 const fritz = Object.create(null);
 fritz.Component = Component;
@@ -9,6 +10,7 @@ fritz.define = define;
 fritz.h = h;
 fritz._tags = new Map();
 fritz._instances = new Map();
+fritz.fritz = fritz;
 
 function define(tag, constructor) {
   if(constructor === undefined) {

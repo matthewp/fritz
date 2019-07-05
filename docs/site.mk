@@ -14,6 +14,9 @@ docs/app.js: $(DOC_SRCES)
 docs/main.js: $(DOC_SRCES)
 	$(COMPILE) -f es -o $@ --string css docs/src/main.js
 
+docs/prerender.js: $(DOC_SRCES)
+	$(COMPILE) -f umd -o $@ --string css docs/scripts/render.js
+
 docs/sw.js:
 	workbox generateSW workbox-config.js
 

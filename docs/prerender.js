@@ -1,5 +1,7 @@
-(function () {
-  'use strict';
+(function (factory) {
+  typeof define === 'function' && define.amd ? define(factory) :
+  factory();
+}(function () { 'use strict';
 
   function getInstance(fritz, id){
     return fritz._instances.get(id);
@@ -416,6 +418,76 @@
     get: function() { return state; }
   });
 
+  const OPEN = 1;
+  const CLOSE = 2;
+  const TEXT = 4;
+
+  const encodeEntities = s => String(s)
+  	.replace(/&/g, '&amp;')
+  	.replace(/</g, '&lt;')
+  	.replace(/>/g, '&gt;')
+  	.replace(/"/g, '&quot;');
+
+  function* render$2(vnode) {
+    let position = 0, len = vnode.length;
+    while(position < len) {
+      let instr = vnode[position];
+      let command = instr[0];
+
+      switch(command) {
+        case OPEN: {
+          let tagName = instr[1];
+          let Component = fritz._tags.get(tagName);
+          let props = Component ? {} : null;
+          let pushProps = props ? (name, value) => props[name] = value : Function.prototype;
+
+          yield '<' + tagName;
+          let attrs = instr[3];
+          let i = 0, attrLen = attrs ? attrs.length : 0;
+          while(i < attrLen) {
+            if(i === 0) {
+              yield ' ';
+            }
+            let attrName = attrs[i];
+            let attrValue = attrs[i + 1];
+            pushProps(attrName, attrValue);
+            yield attrName + '="' + encodeEntities(attrValue) + '"';
+            i += 2;
+          }
+          yield '>';
+
+          
+          if(Component) {
+            yield '<template>';
+            let instance = new Component();
+            yield* render$2(instance.render(props, {}));
+            yield '</template><f-shadow></f-shadow>';
+          }
+
+          break;
+        }
+        case CLOSE: {
+          yield '</' + instr[1] + '>';
+          break;
+        }
+        case TEXT: {
+          yield encodeEntities(instr[1]);
+          break;
+        }
+      }
+
+      position++;
+    }
+  }
+
+  function renderToString(vnode) {
+    let out = '';
+    for(let part of render$2(vnode)) {
+      out += part;
+    }
+    return out;
+  }
+
   var n=function(t,r,u,e){for(var p=1;p<r.length;p++){var s=r[p++],a="number"==typeof s?u[s]:s;1===r[p]?e[0]=a:2===r[p]?(e[1]=e[1]||{})[r[++p]]=a:3===r[p]?e[1]=Object.assign(e[1]||{},a):e.push(r[p]?t.apply(null,n(t,a,u,["",null])):a);}return e},t=function(n){for(var t,r,u=1,e="",p="",s=[0],a=function(n){1===u&&(n||(e=e.replace(/^\s*\n\s*|\s*\n\s*$/g,"")))?s.push(n||e,0):3===u&&(n||e)?(s.push(n||e,1),u=2):2===u&&"..."===e&&n?s.push(n,3):2===u&&e&&!n?s.push(!0,2,e):4===u&&r&&(s.push(n||e,2,r),r=""),e="";},f=0;f<n.length;f++){f&&(1===u&&a(),a(f));for(var h=0;h<n[f].length;h++)t=n[f][h],1===u?"<"===t?(a(),s=[s],u=3):e+=t:p?t===p?p="":e+=t:'"'===t||"'"===t?p=t:">"===t?(a(),u=1):u&&("="===t?(u=4,r=e,e=""):"/"===t?(a(),3===u&&(s=s[0]),u=s,(s=s[0]).push(u,4),u=0):" "===t||"\t"===t||"\n"===t||"\r"===t?(a(),u=2):e+=t);}return a(),s},r="function"==typeof Map,u=r?new Map:{},e=r?function(n){var r=u.get(n);return r||u.set(n,r=t(n)),r}:function(n){for(var r="",e=0;e<n.length;e++)r+=n[e].length+"-"+n[e];return u[r]||(u[r]=t(n))};function htm(t){var r=n(this,e(t),arguments,[]);return r.length>1?r:r[0]}
 
   var html = htm.bind(h);
@@ -694,4 +766,57 @@ fritz.define('hello-message', HelloMessage);
 
   fritz.define('its-fritz-yall', main);
 
-}());
+  const html$1 = htm.bind(h);
+
+  let out = renderToString(html$1`<its-fritz-yall></its-fritz-yall>`);
+
+  console.log(`<!doctype html>
+<!doctype html>
+<html lang="en">
+<title>Fritz - Take your UI off the main thread</title>
+<link rel="preload" href="./app.js" as="worker">
+<link rel="preload" href="./main.js" as="script">
+<link rel="manifest" href="./manifest.json">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+<meta name="theme-color" content="#58A4B0"/>
+<link rel="shortcut icon" href="/favicon.ico">
+<script>
+customElements.define('f-shadow', class extends HTMLElement {
+  connectedCallback() {
+    let p = this.parentNode, t = p.firstElementChild;
+    this.remove();
+    p.attachShadow({ mode: 'open' }).append(t.content.cloneNode(true));
+  }
+});
+</script>
+<style>
+  :root {
+    --gray: #BAC1B8;
+    --cadetblue: #58A4B0;
+    --jet: #303030;
+    --cyan: #0C7C59;
+    --vermilion: #D64933; 
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 100;
+    background-color: var(--gray);
+    margin: 0;
+  }
+</style>
+
+${out}
+
+<script src="./main.js"></script>
+
+<noscript>
+  <h1>Oops!</h1>
+  <p>It looks like you have JavaScript turned off. Since this is a website about a JavaScript library there's no reason to have it off.</p>
+</noscript>
+`);
+
+}));
