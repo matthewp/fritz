@@ -6,6 +6,7 @@
   "module": "worker.js",
   "scripts": {
     "test": "testee --browsers firefox test/test.html",
+    "test-pass": "echo 'Pass' && exit 0",
     "prepublishOnly": "make all"
   },
   "repository": {
