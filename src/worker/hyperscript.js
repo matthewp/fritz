@@ -12,9 +12,7 @@ function Fragment(attrs, children) {
   return tree;
 }
 
-export { Fragment };
-
-export default function h(tag, attrs, children){
+function h(tag, attrs, children){
   let argsLen = arguments.length;
   let childrenType = typeof children;
   if(argsLen === 2) {
@@ -90,3 +88,8 @@ h.frag = Fragment;
 function isPrimitive(type) {
   return type === 'string' || type === 'number' || type === 'boolean';
 }
+
+export {
+  Fragment,
+  h as default
+};
