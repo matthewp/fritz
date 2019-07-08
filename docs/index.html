@@ -35,8 +35,6 @@
   if ('serviceWorker' in navigator) {
     // Use the window load event to keep the page load performant
     window.addEventListener('load', async () => {
-      navigator.serviceWorker.register('./sw.js');
-
       let registrations = await navigator.serviceWorker.getRegistrations();
 
       for(let registration of registrations) {
@@ -46,6 +44,8 @@
           registration.unregister();
         }
       }
+
+      navigator.serviceWorker.register('./sw.js');
     });
   }
 </script>

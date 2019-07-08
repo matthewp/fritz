@@ -43,7 +43,7 @@ self.__precacheManifest = [
   },
   {
     "url": "index.html",
-    "revision": "bdbf41716cb80eb6fcd0ca30ce33ff33"
+    "revision": "e59c0dd2d30ba68350908eb72e66cc5a"
   },
   {
     "url": "main.js",
@@ -59,7 +59,7 @@ self.__precacheManifest = [
   },
   {
     "url": "service-worker.js",
-    "revision": "36cc955b67c8d0e3b5f7156bb25b0473"
+    "revision": "1a74471f1f9522c25f49eb818b44853c"
   },
   {
     "url": "images/logo-144.png",
