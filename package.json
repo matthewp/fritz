@@ -2,7 +2,7 @@
   "name": "fritz",
   "version": "5.0.0-alpha.0",
   "description": "Create web components that run in a Web Worker",
-  "main": "worker.js",
+  "main": "worker.umd.js",
   "module": "worker.js",
   "scripts": {
     "test": "testee --browsers firefox test/test.html",
