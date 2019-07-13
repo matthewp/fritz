@@ -1,0 +1,36 @@
+.about {
+  background-color: var(--alt-bg);
+  max-width: 80%;
+  margin: auto;
+  font-size: 120%;
+}
+
+.about p, .about ul {
+  line-height: 2rem;
+}
+
+.about h1 {
+  color: var(--vermilion);
+  font-size: 220%;
+}
+
+.about a, .about a:visited {
+  color: var(--main-color);
+}
+
+.about code-snippet,
+.about code-file {
+  width: 60%;
+}
+
+.about code-file {
+  --box-shadow: none;
+}
+
+@media only screen and (max-width: 768px) {
+  .about code-snippet,
+  .about code-file {
+    width: 100%;
+    font-size: 90%;
+  }
+}

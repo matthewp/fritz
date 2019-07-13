@@ -1,5 +1,5 @@
 node_modules/
-window.js
+/window.js
 window.umd.js
-worker.js
-worker.umd.js
+/worker.js
+/worker.umd.js
