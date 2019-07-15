@@ -6,9 +6,9 @@ import styles from './agate.css';
 class CodeSnippet extends Component {
   static get props() {
     return {
-      code: {},
-      name: {},
-      lang: {}
+      code: { attribute: true },
+      name: { attribute: true },
+      lang: { attribute: true }
     };
   }
 

@@ -36,4 +36,4 @@ dev:
 	make serve & make watch
 .PHONY: dev
 
-include docs/site.mk
+include site/site.mk

@@ -27,7 +27,7 @@ self.addEventListener('message', (event) => {
 self.__precacheManifest = [
   {
     "url": "app.js",
-    "revision": "afc6ebe53e72e6aefd7357f9ab908579"
+    "revision": "2983a4b1bf8763e5c3018d73bd9385f4"
   },
   {
     "url": "favicon.ico",
@@ -43,19 +43,15 @@ self.__precacheManifest = [
   },
   {
     "url": "index.html",
-    "revision": "e59c0dd2d30ba68350908eb72e66cc5a"
+    "revision": "432275db1d0c0afa19380fb2aa5596ca"
   },
   {
     "url": "main.js",
-    "revision": "8402af0d5cefc750fa7b025524e36b5c"
+    "revision": "2c45122305f0c7391f9cad97dfafeabf"
   },
   {
     "url": "manifest.json",
     "revision": "4c5a863777c53de7143a363767de0ad8"
-  },
-  {
-    "url": "prerender.js",
-    "revision": "ac129236d779dcc775e986f82de9beb1"
   },
   {
     "url": "service-worker.js",

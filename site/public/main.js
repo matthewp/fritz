@@ -1927,4 +1927,4 @@ Object.defineProperty(fritz, 'state', {
   }
 });
 
-fritz.use(new Worker('./app.js'));
+fritz.use(APP);

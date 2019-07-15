@@ -1,10 +1,6 @@
 import html from './html.js';
 import hljs from './highlight.pack.js';
 
-const isNode = typeof process !== 'undefined' && Object.prototype.toString.call(global.process) === '[object process]';
-
-debugger;
-
 hljs.configure({ useBR: true });
 
 const entities = /(&lt;|&gt;|\n)/g;
@@ -52,11 +48,6 @@ function clean(value) {
 export default function(code, lang) {
   const result = hljs.highlightAuto(code.trim(), [lang]);
   let { value } = result;
-
-  if(code.includes('HelloMessage')) {
-    debugger;
-  }
-  
 
   let [strings, values] = clean(value);
 

@@ -18,8 +18,8 @@ module.exports = function({ shim, body }) {
     <html lang="en">
     <meta charset="utf-8">
     <title>Fritz - Take your UI off the main thread</title>
-    <link rel="preload" href="./app.js" as="worker">
     <link rel="modulepreload" href="./main.js">
+    <script>APP = new Worker('./app.js');</script>
     <link rel="manifest" href="./manifest.json">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
     <meta name="theme-color" content="#58A4B0"/>
@@ -46,7 +46,7 @@ module.exports = function({ shim, body }) {
 
     ${body}
 
-    <!--<script type="module" src="./main.js"></script>-->
+    <script type="module" src="./main.js"></script>
     <script>
       // Check that service workers are supported
       if ('serviceWorker' in navigator && location.port != 1931) {
