@@ -1,4 +1,4 @@
-import fritz from '../../../worker';
+import fritz from 'fritz';
 import About from './about.js';
 import html from './html.js';
 import styles from './app.css';

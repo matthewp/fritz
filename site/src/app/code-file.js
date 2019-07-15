@@ -1,6 +1,7 @@
-import fritz, { Component } from '../../../worker';
+import fritz, { Component } from 'fritz';
 import html from './html.js';
 import styles from './code-file.css';
+import './code-snippet.js';
 
 class CodeFile extends Component {
   static get props() {
@@ -8,7 +9,7 @@ class CodeFile extends Component {
       code: { attribute: true },
       name: { attribute: true },
       lang: { attribute: true }
-    }
+    };
   }
 
   render({code, lang, name}) {

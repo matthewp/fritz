@@ -128,6 +128,12 @@ eventemitter3@^3.0.0:
   version "3.1.2"
   resolved "https://registry.yarnpkg.com/eventemitter3/-/eventemitter3-3.1.2.tgz#2d3d48f9c346698fce83a85d7d664e98535df6e7"
 
+fault@^1.0.2:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/fault/-/fault-1.0.3.tgz#4da88cf979b6b792b4e13c7ec836767725170b7e"
+  dependencies:
+    format "^0.2.2"
+
 find-up@^2.0.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/find-up/-/find-up-2.1.0.tgz#45d1b7e506c717ddd482775a2b77920a3c0c57a7"
@@ -139,6 +145,10 @@ follow-redirects@^1.0.0:
   resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.7.0.tgz#489ebc198dc0e7f64167bd23b03c4c19b5784c76"
   dependencies:
     debug "^3.2.6"
+
+format@^0.2.2:
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/format/-/format-0.2.2.tgz#d6170107e9efdc4ed30c9dc39016df942b5cb58b"
 
 fritz-cli@0.2.0:
   version "0.2.0"
@@ -152,8 +162,8 @@ fritz-cli@0.2.0:
     strip-indent "^3.0.0"
 
 fritz-render-to-string@^1.0.0-alpha.0:
-  version "1.0.0-alpha.6"
-  resolved "https://registry.yarnpkg.com/fritz-render-to-string/-/fritz-render-to-string-1.0.0-alpha.6.tgz#d70506f5d5efb658706f74549a9ba0d0e82d6e04"
+  version "1.0.0-alpha.7"
+  resolved "https://registry.yarnpkg.com/fritz-render-to-string/-/fritz-render-to-string-1.0.0-alpha.7.tgz#73cea856d6af6917413bb270f20747955db7716e"
 
 fritz@^5.0.0-alpha.0:
   version "5.0.0-alpha.1"
@@ -166,6 +176,10 @@ graceful-fs@^4.1.2:
 he@^1.1.1:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/he/-/he-1.2.0.tgz#84ae65fa7eafb165fddb61566ae14baf05664f0f"
+
+highlight.js@~9.15.0:
+  version "9.15.8"
+  resolved "https://registry.yarnpkg.com/highlight.js/-/highlight.js-9.15.8.tgz#f344fda123f36f1a65490e932cf90569e4999971"
 
 hosted-git-info@^2.1.4:
   version "2.7.1"
@@ -248,6 +262,13 @@ loud-rejection@^1.0.0:
   dependencies:
     currently-unhandled "^0.4.1"
     signal-exit "^3.0.0"
+
+lowlight@^1.12.1:
+  version "1.12.1"
+  resolved "https://registry.yarnpkg.com/lowlight/-/lowlight-1.12.1.tgz#014acf8dd73a370e02ff1cc61debcde3bb1681eb"
+  dependencies:
+    fault "^1.0.2"
+    highlight.js "~9.15.0"
 
 magic-string@^0.22.5:
   version "0.22.5"
