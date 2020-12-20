@@ -5,7 +5,8 @@
   "main": "worker.umd.js",
   "module": "worker.js",
   "scripts": {
-    "test": "testee --browsers firefox test/test.html",
+    "server": "http-server -p 1931",
+    "test": "node-qunit-puppeteer http://localhost:1931/test/test.html 10000",
     "test-pass": "echo 'Pass' && exit 0",
     "prepublishOnly": "make all"
   },
@@ -37,7 +38,9 @@
     "add": "^2.0.6",
     "highlight.js": "^9.11.0",
     "htm": "^2.1.1",
+    "http-server": "^0.12.3",
     "incremental-dom": "^0.5.1",
+    "node-qunit-puppeteer": "^2.0.3",
     "testee": "0.9.1",
     "workbox-cli": "^4.3.1",
     "yarn": "^1.16.0"

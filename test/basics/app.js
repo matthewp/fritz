@@ -1,6 +1,4 @@
-importScripts('../../worker.umd.js');
-
-const { h, Component } = fritz;
+import fritz, { h, Component } from '../../src/worker/index.js';
 
 fritz.define('loading-indicator', () => (
   h('svg', {

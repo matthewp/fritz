@@ -1,6 +1,4 @@
-importScripts('../../worker.umd.js');
-
-const { Component, h } = fritz;
+import fritz, { Component, h } from '../../src/worker/index.js';
 
 class Hello extends Component {
   static get props() {

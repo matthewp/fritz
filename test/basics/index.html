@@ -1,7 +1,11 @@
 <!doctype html>
+<html lang="en">
+<head></head>
+<body>
 <basic-app></basic-app>
 <script type="module">
   import fritz from '../../window.js';
 
-  fritz.use(new Worker('./app.js'));
+  fritz.use(new Worker('./app.js', { type: 'module' }));
 </script>
+</body>

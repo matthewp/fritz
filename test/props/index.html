@@ -3,6 +3,6 @@
 <title>Props</title>
 <script type="module">
   import fritz from '../../window.js';
-  fritz.use(new Worker('./app.js'));
+  fritz.use(new Worker('./app.js', { type: 'module' }));
 </script>
 <x-hello name="world"></x-hello>

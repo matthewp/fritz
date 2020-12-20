@@ -5,7 +5,7 @@ let garbageEl;
 
 QUnit.module('Garbage collection', {
   async before() {
-    fritz.use(new Worker('./garbage/app.js'));
+    fritz.use(new Worker('./garbage/app.js', { type: 'module' }));
     garbageEl = document.createElement('gc-app');
     document.body.append(garbageEl);
     await waitForMount(garbageEl);
