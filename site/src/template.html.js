@@ -46,7 +46,7 @@ module.exports = function({ shim, body }) {
 
     ${body}
 
-    <script type="module" src="./main.js"></script>
+    <!--<script type="module" src="./main.js"></script>-->
     <script>
       // Check that service workers are supported
       if ('serviceWorker' in navigator && location.port != 1931) {

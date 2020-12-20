@@ -8,13 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
     <meta name="theme-color" content="#58A4B0"/>
     <link rel="shortcut icon" href="/favicon.ico">
-    <script>customElements.define('f-shadow', class extends HTMLElement {
-  connectedCallback() {
-    let p = this.parentNode, t = p.firstElementChild;
-    this.remove(); t.remove();
-    p.attachShadow({ mode: 'open' }).append(t.content.cloneNode(true));
-  }
-});</script>
+    <script>customElements.define('f-shadow',class extends HTMLElement{connectedCallback(){let a=this.parentNode,b=a.firstElementChild;this.remove(),b.remove();let c=b.content.cloneNode(!0);if(this.hasAttribute('styles'))for(let a of c.querySelectorAll('style[data-f]')){let b=document.getElementById(a.dataset.f).content.firstChild.textContent;a.textContent=b,delete a.dataset.f}a.attachShadow({mode:'open'}).append(c)}});</script>
     <style>
       :root {
         --gray: #BAC1B8;
@@ -34,7 +28,123 @@
       }
     </style>
 
-    <its-fritz-yall><template><main><style>:host {
+    <template id="style-1"><style>.title {
+  text-align: center;
+  font-weight: 100;
+}
+
+code-snippet {
+  display: block;
+  box-shadow: var(--box-shadow, 3px 3px 12px 1px rgba(0,0,0,0.4));
+}</style></template><template id="style-2"><style>/*!
+ * Agate by Taufik Nurrohman <https://github.com/tovic>
+ * ----------------------------------------------------
+ *
+ * #ade5fc
+ * #a2fca2
+ * #c6b4f0
+ * #d36363
+ * #fcc28c
+ * #fc9b9b
+ * #ffa
+ * #fff
+ * #333
+ * #62c8f3
+ * #888
+ *
+ */
+
+.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 0.5em;
+  background: #333;
+  color: white;
+}
+
+.hljs-name,
+.hljs-strong {
+  font-weight: bold;
+}
+
+.hljs-code,
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-tag {
+  color: #62c8f3;
+}
+
+.hljs-variable,
+.hljs-template-variable,
+.hljs-selector-id,
+.hljs-selector-class {
+  color: #ade5fc;
+}
+
+.hljs-string,
+.hljs-bullet {
+  color: #a2fca2;
+}
+
+.hljs-type,
+.hljs-title,
+.hljs-section,
+.hljs-attribute,
+.hljs-quote,
+.hljs-built_in,
+.hljs-builtin-name {
+  color: #ffa;
+}
+
+.hljs-number,
+.hljs-symbol,
+.hljs-bullet {
+  color: #d36363;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal {
+  color: #fcc28c;
+}
+
+.hljs-comment,
+.hljs-deletion,
+.hljs-code {
+  color: #888;
+}
+
+.hljs-regexp,
+.hljs-link {
+  color: #c6b4f0;
+}
+
+.hljs-meta {
+  color: #fc9b9b;
+}
+
+.hljs-deletion {
+  background-color: #fc9b9b;
+  color: #333;
+}
+
+.hljs-addition {
+  background-color: #a2fca2;
+  color: #333;
+}
+
+.hljs a {
+  color: inherit;
+}
+
+.hljs a:focus,
+.hljs a:hover {
+  color: inherit;
+  text-decoration: underline;
+}
+</style></template><its-fritz-yall><template><main>:host {
   display: block;
   --main-bg: var(--cadetblue);
   --alt-bg: var(--gray);
@@ -132,7 +242,7 @@ footer a:visited {
   color: #fff;
   font-weight: 600;
 }
-</style><section class="intro shadow-section"><header class="title"><h1 class="primary-title">Fritz</h1><picture><source srcset="./frankenstein-fritz-flame.webp"type="image/webp"><source srcset="./frankenstein-fritz-flame.png"type="image/jpeg"><img src="./frankenstein-fritz-flame.png"class="fritz-flame"title="Fritz, with a flame"></picture><h2>Take your UI off the main thread.</h2></header><a class="github"href="https://github.com/matthewp/fritz">GitHub</a><code-file name="worker.js"lang="js"code="
+<section class="intro shadow-section"><header class="title"><h1 class="primary-title">Fritz</h1><picture><source srcset="./frankenstein-fritz-flame.webp"type="image/webp"><source srcset="./frankenstein-fritz-flame.png"type="image/jpeg"><img src="./frankenstein-fritz-flame.png"class="fritz-flame"title="Fritz, with a flame"></picture><h2>Take your UI off the main thread.</h2></header><a class="github"href="https://github.com/matthewp/fritz">GitHub</a><code-file name="worker.js"lang="js"code="
 class HelloMessage extends Component {
   static props = {
     name: { attribute: true }
@@ -146,15 +256,7 @@ class HelloMessage extends Component {
 }
 
 fritz.define('hello-message', HelloMessage);
-"><template><div><style>.title {
-  text-align: center;
-  font-weight: 100;
-}
-
-code-snippet {
-  display: block;
-  box-shadow: var(--box-shadow, 3px 3px 12px 1px rgba(0,0,0,0.4));
-}</style><div class="title">worker.js</div><code-snippet lang="js"code="
+"><template><div><style data-f="style-1"></style><div class="title">worker.js</div><code-snippet lang="js"code="
 class HelloMessage extends Component {
   static props = {
     name: { attribute: true }
@@ -168,115 +270,7 @@ class HelloMessage extends Component {
 }
 
 fritz.define('hello-message', HelloMessage);
-"><template><div><style>/*!
- * Agate by Taufik Nurrohman &lt;https://github.com/tovic&gt;
- * ----------------------------------------------------
- *
- * #ade5fc
- * #a2fca2
- * #c6b4f0
- * #d36363
- * #fcc28c
- * #fc9b9b
- * #ffa
- * #fff
- * #333
- * #62c8f3
- * #888
- *
- */
-
-.hljs {
-  display: block;
-  overflow-x: auto;
-  padding: 0.5em;
-  background: #333;
-  color: white;
-}
-
-.hljs-name,
-.hljs-strong {
-  font-weight: bold;
-}
-
-.hljs-code,
-.hljs-emphasis {
-  font-style: italic;
-}
-
-.hljs-tag {
-  color: #62c8f3;
-}
-
-.hljs-variable,
-.hljs-template-variable,
-.hljs-selector-id,
-.hljs-selector-class {
-  color: #ade5fc;
-}
-
-.hljs-string,
-.hljs-bullet {
-  color: #a2fca2;
-}
-
-.hljs-type,
-.hljs-title,
-.hljs-section,
-.hljs-attribute,
-.hljs-quote,
-.hljs-built_in,
-.hljs-builtin-name {
-  color: #ffa;
-}
-
-.hljs-number,
-.hljs-symbol,
-.hljs-bullet {
-  color: #d36363;
-}
-
-.hljs-keyword,
-.hljs-selector-tag,
-.hljs-literal {
-  color: #fcc28c;
-}
-
-.hljs-comment,
-.hljs-deletion,
-.hljs-code {
-  color: #888;
-}
-
-.hljs-regexp,
-.hljs-link {
-  color: #c6b4f0;
-}
-
-.hljs-meta {
-  color: #fc9b9b;
-}
-
-.hljs-deletion {
-  background-color: #fc9b9b;
-  color: #333;
-}
-
-.hljs-addition {
-  background-color: #a2fca2;
-  color: #333;
-}
-
-.hljs a {
-  color: inherit;
-}
-
-.hljs a:focus,
-.hljs a:hover {
-  color: inherit;
-  text-decoration: underline;
-}
-</style><pre><code class="hljs js"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">HelloMessage</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Component</span> </span>{<br>  <span class="hljs-keyword">static</span> props = {<br>    <span class="hljs-attr">name</span>: { <span class="hljs-attr">attribute</span>: <span class="hljs-literal">true</span> }<br>  }<br><br>  render() {<br>    <span class="hljs-keyword">return</span> (<br>      <span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span>Hello {this.name}!<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></span><br>    );<br>  }<br>}<br><br>fritz.define(<span class="hljs-string">'hello-message'</span>, HelloMessage);</code></pre></div></template><f-shadow></f-shadow></code-snippet></div></template><f-shadow></f-shadow></code-file><code-file name="index.html"lang="html"code="
+"><template><div><style data-f="style-2"></style><pre><code class="hljs js"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">HelloMessage</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Component</span> </span>{<br>  <span class="hljs-keyword">static</span> props = {<br>    <span class="hljs-attr">name</span>: { <span class="hljs-attr">attribute</span>: <span class="hljs-literal">true</span> }<br>  }<br><br>  render() {<br>    <span class="hljs-keyword">return</span> (<br>      <span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span>Hello {this.name}!<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></span><br>    );<br>  }<br>}<br><br>fritz.define(<span class="hljs-string">'hello-message'</span>, HelloMessage);</code></pre></div></template><f-shadow styles></f-shadow></code-snippet></div></template><f-shadow styles></f-shadow></code-file><code-file name="index.html"lang="html"code="
 &lt;hello-message name=&quot;World&quot;&gt;&lt;/hello-message&gt;
 
 &lt;script type=&quot;module&quot;&gt;
@@ -284,15 +278,7 @@ fritz.define('hello-message', HelloMessage);
 
   fritz.use(new Worker('./worker.js'));
 &lt;/script&gt;
-"><template><div><style>.title {
-  text-align: center;
-  font-weight: 100;
-}
-
-code-snippet {
-  display: block;
-  box-shadow: var(--box-shadow, 3px 3px 12px 1px rgba(0,0,0,0.4));
-}</style><div class="title">index.html</div><code-snippet lang="html"code="
+"><template><div><style data-f="style-1"></style><div class="title">index.html</div><code-snippet lang="html"code="
 &lt;hello-message name=&quot;World&quot;&gt;&lt;/hello-message&gt;
 
 &lt;script type=&quot;module&quot;&gt;
@@ -300,115 +286,7 @@ code-snippet {
 
   fritz.use(new Worker('./worker.js'));
 &lt;/script&gt;
-"><template><div><style>/*!
- * Agate by Taufik Nurrohman &lt;https://github.com/tovic&gt;
- * ----------------------------------------------------
- *
- * #ade5fc
- * #a2fca2
- * #c6b4f0
- * #d36363
- * #fcc28c
- * #fc9b9b
- * #ffa
- * #fff
- * #333
- * #62c8f3
- * #888
- *
- */
-
-.hljs {
-  display: block;
-  overflow-x: auto;
-  padding: 0.5em;
-  background: #333;
-  color: white;
-}
-
-.hljs-name,
-.hljs-strong {
-  font-weight: bold;
-}
-
-.hljs-code,
-.hljs-emphasis {
-  font-style: italic;
-}
-
-.hljs-tag {
-  color: #62c8f3;
-}
-
-.hljs-variable,
-.hljs-template-variable,
-.hljs-selector-id,
-.hljs-selector-class {
-  color: #ade5fc;
-}
-
-.hljs-string,
-.hljs-bullet {
-  color: #a2fca2;
-}
-
-.hljs-type,
-.hljs-title,
-.hljs-section,
-.hljs-attribute,
-.hljs-quote,
-.hljs-built_in,
-.hljs-builtin-name {
-  color: #ffa;
-}
-
-.hljs-number,
-.hljs-symbol,
-.hljs-bullet {
-  color: #d36363;
-}
-
-.hljs-keyword,
-.hljs-selector-tag,
-.hljs-literal {
-  color: #fcc28c;
-}
-
-.hljs-comment,
-.hljs-deletion,
-.hljs-code {
-  color: #888;
-}
-
-.hljs-regexp,
-.hljs-link {
-  color: #c6b4f0;
-}
-
-.hljs-meta {
-  color: #fc9b9b;
-}
-
-.hljs-deletion {
-  background-color: #fc9b9b;
-  color: #333;
-}
-
-.hljs-addition {
-  background-color: #a2fca2;
-  color: #333;
-}
-
-.hljs a {
-  color: inherit;
-}
-
-.hljs a:focus,
-.hljs a:hover {
-  color: inherit;
-  text-decoration: underline;
-}
-</style><pre><code class="hljs html"><span class="hljs-tag">&lt;<span class="hljs-name">hello-message</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;World&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">hello-message</span>&gt;</span><br><br><span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;module&quot;</span>&gt;</span><span class="javascript"><br>  <span class="hljs-keyword">import</span> fritz <span class="hljs-keyword">from</span> <span class="hljs-string">'https://unpkg.com/fritz@next/window.js'</span>;<br><br>  fritz.use(<span class="hljs-keyword">new</span> Worker(<span class="hljs-string">'./worker.js'</span>));<br></span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></code></pre></div></template><f-shadow></f-shadow></code-snippet></div></template><f-shadow></f-shadow></code-file></section><section class="about"><style>.about {
+"><template><div><style data-f="style-2"></style><pre><code class="hljs html"><span class="hljs-tag">&lt;<span class="hljs-name">hello-message</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;World&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">hello-message</span>&gt;</span><br><br><span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;module&quot;</span>&gt;</span><span class="javascript"><br>  <span class="hljs-keyword">import</span> fritz <span class="hljs-keyword">from</span> <span class="hljs-string">'https://unpkg.com/fritz@next/window.js'</span>;<br><br>  fritz.use(<span class="hljs-keyword">new</span> Worker(<span class="hljs-string">'./worker.js'</span>));<br></span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></code></pre></div></template><f-shadow styles></f-shadow></code-snippet></div></template><f-shadow styles></f-shadow></code-file></section><section class="about">.about {
   background-color: var(--alt-bg);
   max-width: 80%;
   margin: auto;
@@ -443,449 +321,17 @@ code-snippet {
     width: 100%;
     font-size: 90%;
   }
-}</style><h1 id="what-is-fritz">What is Fritz?</h1><p><strong>Fritz</strong> is a UI library that allows you to define <em>components</em> that run inside of a <a href="https://www.w3.org/TR/workers/">Web Worker</a>. By running your application logic inside of a Worker, you can ensure that the main thread and scrolling are never blocked by expensive work you are doing. Fritz makes jank-free apps possible.</p><p>Fritz plays nicely with frameworks. Since it is built on web components you can use Fritz just by adding a tag. Use Fritz within your <a href="https://facebook.github.io/react/">React</a>, <a href="https://vuejs.org/">Vue.js</a>, <a href="https://angular.io/">Angular</a>, or any other framework. If you have an expensive component that operates on a large dataset, this is a good candidate to turn into a Fritz component. Although you can create your entire app using Fritz (this page is), you don't have to.</p><p>If you've heard of React's new version, <strong>Fiber</strong>, Fritz is in some ways an alternative. Fiber enables React to smartly schedule updates. Fritz allows for <em>parallel</em> updates. You're app can launch as many workers as you want and Fritz will use them all. The main thread only ever needs to apply changes. Due to this design, Fritz's scheduler is dead simple; it only needs to ensure that it applies only 16ms of work per frame. It can completely ignore the cost of user-code; that's free with Fritz.</p><h1>Getting Started</h1><h2>Installation</h2><p>Install Fritz with npm:</p><code-snippet lang="shell"code="
+}<h1 id="what-is-fritz">What is Fritz?</h1><p><strong>Fritz</strong> is a UI library that allows you to define <em>components</em> that run inside of a <a href="https://www.w3.org/TR/workers/">Web Worker</a>. By running your application logic inside of a Worker, you can ensure that the main thread and scrolling are never blocked by expensive work you are doing. Fritz makes jank-free apps possible.</p><p>Fritz plays nicely with frameworks. Since it is built on web components you can use Fritz just by adding a tag. Use Fritz within your <a href="https://facebook.github.io/react/">React</a>, <a href="https://vuejs.org/">Vue.js</a>, <a href="https://angular.io/">Angular</a>, or any other framework. If you have an expensive component that operates on a large dataset, this is a good candidate to turn into a Fritz component. Although you can create your entire app using Fritz (this page is), you don't have to.</p><p>If you've heard of React's new version, <strong>Fiber</strong>, Fritz is in some ways an alternative. Fiber enables React to smartly schedule updates. Fritz allows for <em>parallel</em> updates. You're app can launch as many workers as you want and Fritz will use them all. The main thread only ever needs to apply changes. Due to this design, Fritz's scheduler is dead simple; it only needs to ensure that it applies only 16ms of work per frame. It can completely ignore the cost of user-code; that's free with Fritz.</p><h1>Getting Started</h1><h2>Installation</h2><p>Install Fritz with npm:</p><code-snippet lang="shell"code="
 npm install fritz@next --save
-"><template><div><style>/*!
- * Agate by Taufik Nurrohman &lt;https://github.com/tovic&gt;
- * ----------------------------------------------------
- *
- * #ade5fc
- * #a2fca2
- * #c6b4f0
- * #d36363
- * #fcc28c
- * #fc9b9b
- * #ffa
- * #fff
- * #333
- * #62c8f3
- * #888
- *
- */
-
-.hljs {
-  display: block;
-  overflow-x: auto;
-  padding: 0.5em;
-  background: #333;
-  color: white;
-}
-
-.hljs-name,
-.hljs-strong {
-  font-weight: bold;
-}
-
-.hljs-code,
-.hljs-emphasis {
-  font-style: italic;
-}
-
-.hljs-tag {
-  color: #62c8f3;
-}
-
-.hljs-variable,
-.hljs-template-variable,
-.hljs-selector-id,
-.hljs-selector-class {
-  color: #ade5fc;
-}
-
-.hljs-string,
-.hljs-bullet {
-  color: #a2fca2;
-}
-
-.hljs-type,
-.hljs-title,
-.hljs-section,
-.hljs-attribute,
-.hljs-quote,
-.hljs-built_in,
-.hljs-builtin-name {
-  color: #ffa;
-}
-
-.hljs-number,
-.hljs-symbol,
-.hljs-bullet {
-  color: #d36363;
-}
-
-.hljs-keyword,
-.hljs-selector-tag,
-.hljs-literal {
-  color: #fcc28c;
-}
-
-.hljs-comment,
-.hljs-deletion,
-.hljs-code {
-  color: #888;
-}
-
-.hljs-regexp,
-.hljs-link {
-  color: #c6b4f0;
-}
-
-.hljs-meta {
-  color: #fc9b9b;
-}
-
-.hljs-deletion {
-  background-color: #fc9b9b;
-  color: #333;
-}
-
-.hljs-addition {
-  background-color: #a2fca2;
-  color: #333;
-}
-
-.hljs a {
-  color: inherit;
-}
-
-.hljs a:focus,
-.hljs a:hover {
-  color: inherit;
-  text-decoration: underline;
-}
-</style><pre><code class="hljs shell">npm install fritz@next --save</code></pre></div></template><f-shadow></f-shadow></code-snippet><p>Or with Yarn:</p><code-snippet lang="shell"code="
+"><template><div><style data-f="style-2"></style><pre><code class="hljs shell">npm install fritz@next --save</code></pre></div></template><f-shadow styles></f-shadow></code-snippet><p>Or with Yarn:</p><code-snippet lang="shell"code="
 yarn add fritz@next
-"><template><div><style>/*!
- * Agate by Taufik Nurrohman &lt;https://github.com/tovic&gt;
- * ----------------------------------------------------
- *
- * #ade5fc
- * #a2fca2
- * #c6b4f0
- * #d36363
- * #fcc28c
- * #fc9b9b
- * #ffa
- * #fff
- * #333
- * #62c8f3
- * #888
- *
- */
-
-.hljs {
-  display: block;
-  overflow-x: auto;
-  padding: 0.5em;
-  background: #333;
-  color: white;
-}
-
-.hljs-name,
-.hljs-strong {
-  font-weight: bold;
-}
-
-.hljs-code,
-.hljs-emphasis {
-  font-style: italic;
-}
-
-.hljs-tag {
-  color: #62c8f3;
-}
-
-.hljs-variable,
-.hljs-template-variable,
-.hljs-selector-id,
-.hljs-selector-class {
-  color: #ade5fc;
-}
-
-.hljs-string,
-.hljs-bullet {
-  color: #a2fca2;
-}
-
-.hljs-type,
-.hljs-title,
-.hljs-section,
-.hljs-attribute,
-.hljs-quote,
-.hljs-built_in,
-.hljs-builtin-name {
-  color: #ffa;
-}
-
-.hljs-number,
-.hljs-symbol,
-.hljs-bullet {
-  color: #d36363;
-}
-
-.hljs-keyword,
-.hljs-selector-tag,
-.hljs-literal {
-  color: #fcc28c;
-}
-
-.hljs-comment,
-.hljs-deletion,
-.hljs-code {
-  color: #888;
-}
-
-.hljs-regexp,
-.hljs-link {
-  color: #c6b4f0;
-}
-
-.hljs-meta {
-  color: #fc9b9b;
-}
-
-.hljs-deletion {
-  background-color: #fc9b9b;
-  color: #333;
-}
-
-.hljs-addition {
-  background-color: #a2fca2;
-  color: #333;
-}
-
-.hljs a {
-  color: inherit;
-}
-
-.hljs a:focus,
-.hljs a:hover {
-  color: inherit;
-  text-decoration: underline;
-}
-</style><pre><code class="hljs shell">yarn add fritz@next</code></pre></div></template><f-shadow></f-shadow></code-snippet><h2>Using Fritz</h2><p>Fritz lets you define <a href="https://www.webcomponents.org/introduction">web components</a> inside of a Web Worker. So, the first step to using Fritz is to create a Worker. Use <code>new Worker</code> to do so:</p><code-snippet code="const worker = new Worker('./app.js');"><template><div><style>/*!
- * Agate by Taufik Nurrohman &lt;https://github.com/tovic&gt;
- * ----------------------------------------------------
- *
- * #ade5fc
- * #a2fca2
- * #c6b4f0
- * #d36363
- * #fcc28c
- * #fc9b9b
- * #ffa
- * #fff
- * #333
- * #62c8f3
- * #888
- *
- */
-
-.hljs {
-  display: block;
-  overflow-x: auto;
-  padding: 0.5em;
-  background: #333;
-  color: white;
-}
-
-.hljs-name,
-.hljs-strong {
-  font-weight: bold;
-}
-
-.hljs-code,
-.hljs-emphasis {
-  font-style: italic;
-}
-
-.hljs-tag {
-  color: #62c8f3;
-}
-
-.hljs-variable,
-.hljs-template-variable,
-.hljs-selector-id,
-.hljs-selector-class {
-  color: #ade5fc;
-}
-
-.hljs-string,
-.hljs-bullet {
-  color: #a2fca2;
-}
-
-.hljs-type,
-.hljs-title,
-.hljs-section,
-.hljs-attribute,
-.hljs-quote,
-.hljs-built_in,
-.hljs-builtin-name {
-  color: #ffa;
-}
-
-.hljs-number,
-.hljs-symbol,
-.hljs-bullet {
-  color: #d36363;
-}
-
-.hljs-keyword,
-.hljs-selector-tag,
-.hljs-literal {
-  color: #fcc28c;
-}
-
-.hljs-comment,
-.hljs-deletion,
-.hljs-code {
-  color: #888;
-}
-
-.hljs-regexp,
-.hljs-link {
-  color: #c6b4f0;
-}
-
-.hljs-meta {
-  color: #fc9b9b;
-}
-
-.hljs-deletion {
-  background-color: #fc9b9b;
-  color: #333;
-}
-
-.hljs-addition {
-  background-color: #a2fca2;
-  color: #333;
-}
-
-.hljs a {
-  color: inherit;
-}
-
-.hljs a:focus,
-.hljs a:hover {
-  color: inherit;
-  text-decoration: underline;
-}
-</style><pre><code class="hljs js"><span class="hljs-keyword">const</span> worker = <span class="hljs-keyword">new</span> Worker(<span class="hljs-string">'./app.js'</span>);</code></pre></div></template><f-shadow></f-shadow></code-snippet><p>And then define a component inside of that worker. We'll assume you know how to configure your bundler tool and skip that part. But we should point out that you want to change your <a href="https://babeljs.io/">Babel</a> config so that it renders JSX to Fritz <code>h()</code> calls.</p><code-snippet lang="json"code="
+"><template><div><style data-f="style-2"></style><pre><code class="hljs shell">yarn add fritz@next</code></pre></div></template><f-shadow styles></f-shadow></code-snippet><h2>Using Fritz</h2><p>Fritz lets you define <a href="https://www.webcomponents.org/introduction">web components</a> inside of a Web Worker. So, the first step to using Fritz is to create a Worker. Use <code>new Worker</code> to do so:</p><code-snippet code="const worker = new Worker('./app.js');"><template><div><style data-f="style-2"></style><pre><code class="hljs js"><span class="hljs-keyword">const</span> worker = <span class="hljs-keyword">new</span> Worker(<span class="hljs-string">'./app.js'</span>);</code></pre></div></template><f-shadow styles></f-shadow></code-snippet><p>And then define a component inside of that worker. We'll assume you know how to configure your bundler tool and skip that part. But we should point out that you want to change your <a href="https://babeljs.io/">Babel</a> config so that it renders JSX to Fritz <code>h()</code> calls.</p><code-snippet lang="json"code="
 {
   &quot;plugins&quot;: [
     [&quot;transform-react-jsx&quot;, { &quot;pragma&quot;:&quot;h&quot; }]
   ]
 }
-"><template><div><style>/*!
- * Agate by Taufik Nurrohman &lt;https://github.com/tovic&gt;
- * ----------------------------------------------------
- *
- * #ade5fc
- * #a2fca2
- * #c6b4f0
- * #d36363
- * #fcc28c
- * #fc9b9b
- * #ffa
- * #fff
- * #333
- * #62c8f3
- * #888
- *
- */
-
-.hljs {
-  display: block;
-  overflow-x: auto;
-  padding: 0.5em;
-  background: #333;
-  color: white;
-}
-
-.hljs-name,
-.hljs-strong {
-  font-weight: bold;
-}
-
-.hljs-code,
-.hljs-emphasis {
-  font-style: italic;
-}
-
-.hljs-tag {
-  color: #62c8f3;
-}
-
-.hljs-variable,
-.hljs-template-variable,
-.hljs-selector-id,
-.hljs-selector-class {
-  color: #ade5fc;
-}
-
-.hljs-string,
-.hljs-bullet {
-  color: #a2fca2;
-}
-
-.hljs-type,
-.hljs-title,
-.hljs-section,
-.hljs-attribute,
-.hljs-quote,
-.hljs-built_in,
-.hljs-builtin-name {
-  color: #ffa;
-}
-
-.hljs-number,
-.hljs-symbol,
-.hljs-bullet {
-  color: #d36363;
-}
-
-.hljs-keyword,
-.hljs-selector-tag,
-.hljs-literal {
-  color: #fcc28c;
-}
-
-.hljs-comment,
-.hljs-deletion,
-.hljs-code {
-  color: #888;
-}
-
-.hljs-regexp,
-.hljs-link {
-  color: #c6b4f0;
-}
-
-.hljs-meta {
-  color: #fc9b9b;
-}
-
-.hljs-deletion {
-  background-color: #fc9b9b;
-  color: #333;
-}
-
-.hljs-addition {
-  background-color: #a2fca2;
-  color: #333;
-}
-
-.hljs a {
-  color: inherit;
-}
-
-.hljs a:focus,
-.hljs a:hover {
-  color: inherit;
-  text-decoration: underline;
-}
-</style><pre><code class="hljs json">{<br>  &quot;plugins&quot;: [<br>    [&quot;transform-react-jsx&quot;, { &quot;pragma&quot;:&quot;h&quot; }]<br>  ]<br>}</code></pre></div></template><f-shadow></f-shadow></code-snippet><p>Then import all of the needed things and create a basic component:</p><code-file name="app.js"code="
+"><template><div><style data-f="style-2"></style><pre><code class="hljs json">{<br>  &quot;plugins&quot;: [<br>    [&quot;transform-react-jsx&quot;, { &quot;pragma&quot;:&quot;h&quot; }]<br>  ]<br>}</code></pre></div></template><f-shadow styles></f-shadow></code-snippet><p>Then import all of the needed things and create a basic component:</p><code-file name="app.js"code="
 import fritz, { Component, h } from 'fritz';
 
 class Hello extends Component {
@@ -901,15 +347,7 @@ class Hello extends Component {
 }
 
 fritz.define('hello-message', Hello);
-"><template><div><style>.title {
-  text-align: center;
-  font-weight: 100;
-}
-
-code-snippet {
-  display: block;
-  box-shadow: var(--box-shadow, 3px 3px 12px 1px rgba(0,0,0,0.4));
-}</style><div class="title">app.js</div><code-snippet lang="undefined"code="
+"><template><div><style data-f="style-1"></style><div class="title">app.js</div><code-snippet lang="undefined"code="
 import fritz, { Component, h } from 'fritz';
 
 class Hello extends Component {
@@ -925,241 +363,17 @@ class Hello extends Component {
 }
 
 fritz.define('hello-message', Hello);
-"><template><div><style>/*!
- * Agate by Taufik Nurrohman &lt;https://github.com/tovic&gt;
- * ----------------------------------------------------
- *
- * #ade5fc
- * #a2fca2
- * #c6b4f0
- * #d36363
- * #fcc28c
- * #fc9b9b
- * #ffa
- * #fff
- * #333
- * #62c8f3
- * #888
- *
- */
-
-.hljs {
-  display: block;
-  overflow-x: auto;
-  padding: 0.5em;
-  background: #333;
-  color: white;
-}
-
-.hljs-name,
-.hljs-strong {
-  font-weight: bold;
-}
-
-.hljs-code,
-.hljs-emphasis {
-  font-style: italic;
-}
-
-.hljs-tag {
-  color: #62c8f3;
-}
-
-.hljs-variable,
-.hljs-template-variable,
-.hljs-selector-id,
-.hljs-selector-class {
-  color: #ade5fc;
-}
-
-.hljs-string,
-.hljs-bullet {
-  color: #a2fca2;
-}
-
-.hljs-type,
-.hljs-title,
-.hljs-section,
-.hljs-attribute,
-.hljs-quote,
-.hljs-built_in,
-.hljs-builtin-name {
-  color: #ffa;
-}
-
-.hljs-number,
-.hljs-symbol,
-.hljs-bullet {
-  color: #d36363;
-}
-
-.hljs-keyword,
-.hljs-selector-tag,
-.hljs-literal {
-  color: #fcc28c;
-}
-
-.hljs-comment,
-.hljs-deletion,
-.hljs-code {
-  color: #888;
-}
-
-.hljs-regexp,
-.hljs-link {
-  color: #c6b4f0;
-}
-
-.hljs-meta {
-  color: #fc9b9b;
-}
-
-.hljs-deletion {
-  background-color: #fc9b9b;
-  color: #333;
-}
-
-.hljs-addition {
-  background-color: #a2fca2;
-  color: #333;
-}
-
-.hljs a {
-  color: inherit;
-}
-
-.hljs a:focus,
-.hljs a:hover {
-  color: inherit;
-  text-decoration: underline;
-}
-</style><pre><code class="hljs js"><span class="hljs-keyword">import</span> fritz, { Component, h } <span class="hljs-keyword">from</span> <span class="hljs-string">'fritz'</span>;<br><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Hello</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Component</span> </span>{<br>  <span class="hljs-keyword">static</span> <span class="hljs-keyword">get</span> props() {<br>    <span class="hljs-keyword">return</span> {<br>      <span class="hljs-attr">name</span>: { <span class="hljs-attr">attribute</span>: <span class="hljs-literal">true</span> }<br>    };<br>  }<br><br>  render({name}) {<br>    <span class="hljs-keyword">return</span> <span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span>Hello {name}!<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></span><br>  }<br>}<br><br>fritz.define(<span class="hljs-string">'hello-message'</span>, Hello);</code></pre></div></template><f-shadow></f-shadow></code-snippet></div></template><f-shadow></f-shadow></code-file><p>Cool, now that we have created a component we need to actually use it. Create another bundle named main.js, this will be a script we add to our page which will sync up the DOM to our component:</p><code-file name="main.js"code="
+"><template><div><style data-f="style-2"></style><pre><code class="hljs js"><span class="hljs-keyword">import</span> fritz, { Component, h } <span class="hljs-keyword">from</span> <span class="hljs-string">'fritz'</span>;<br><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Hello</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Component</span> </span>{<br>  <span class="hljs-keyword">static</span> <span class="hljs-keyword">get</span> props() {<br>    <span class="hljs-keyword">return</span> {<br>      <span class="hljs-attr">name</span>: { <span class="hljs-attr">attribute</span>: <span class="hljs-literal">true</span> }<br>    };<br>  }<br><br>  render({name}) {<br>    <span class="hljs-keyword">return</span> <span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span>Hello {name}!<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></span><br>  }<br>}<br><br>fritz.define(<span class="hljs-string">'hello-message'</span>, Hello);</code></pre></div></template><f-shadow styles></f-shadow></code-snippet></div></template><f-shadow styles></f-shadow></code-file><p>Cool, now that we have created a component we need to actually use it. Create another bundle named main.js, this will be a script we add to our page which will sync up the DOM to our component:</p><code-file name="main.js"code="
 import fritz from 'fritz/window';
 
 const worker = new Worker('./app.js');
 fritz.use(worker);
-"><template><div><style>.title {
-  text-align: center;
-  font-weight: 100;
-}
-
-code-snippet {
-  display: block;
-  box-shadow: var(--box-shadow, 3px 3px 12px 1px rgba(0,0,0,0.4));
-}</style><div class="title">main.js</div><code-snippet lang="undefined"code="
+"><template><div><style data-f="style-1"></style><div class="title">main.js</div><code-snippet lang="undefined"code="
 import fritz from 'fritz/window';
 
 const worker = new Worker('./app.js');
 fritz.use(worker);
-"><template><div><style>/*!
- * Agate by Taufik Nurrohman &lt;https://github.com/tovic&gt;
- * ----------------------------------------------------
- *
- * #ade5fc
- * #a2fca2
- * #c6b4f0
- * #d36363
- * #fcc28c
- * #fc9b9b
- * #ffa
- * #fff
- * #333
- * #62c8f3
- * #888
- *
- */
-
-.hljs {
-  display: block;
-  overflow-x: auto;
-  padding: 0.5em;
-  background: #333;
-  color: white;
-}
-
-.hljs-name,
-.hljs-strong {
-  font-weight: bold;
-}
-
-.hljs-code,
-.hljs-emphasis {
-  font-style: italic;
-}
-
-.hljs-tag {
-  color: #62c8f3;
-}
-
-.hljs-variable,
-.hljs-template-variable,
-.hljs-selector-id,
-.hljs-selector-class {
-  color: #ade5fc;
-}
-
-.hljs-string,
-.hljs-bullet {
-  color: #a2fca2;
-}
-
-.hljs-type,
-.hljs-title,
-.hljs-section,
-.hljs-attribute,
-.hljs-quote,
-.hljs-built_in,
-.hljs-builtin-name {
-  color: #ffa;
-}
-
-.hljs-number,
-.hljs-symbol,
-.hljs-bullet {
-  color: #d36363;
-}
-
-.hljs-keyword,
-.hljs-selector-tag,
-.hljs-literal {
-  color: #fcc28c;
-}
-
-.hljs-comment,
-.hljs-deletion,
-.hljs-code {
-  color: #888;
-}
-
-.hljs-regexp,
-.hljs-link {
-  color: #c6b4f0;
-}
-
-.hljs-meta {
-  color: #fc9b9b;
-}
-
-.hljs-deletion {
-  background-color: #fc9b9b;
-  color: #333;
-}
-
-.hljs-addition {
-  background-color: #a2fca2;
-  color: #333;
-}
-
-.hljs a {
-  color: inherit;
-}
-
-.hljs a:focus,
-.hljs a:hover {
-  color: inherit;
-  text-decoration: underline;
-}
-</style><pre><code class="hljs js"><span class="hljs-keyword">import</span> fritz <span class="hljs-keyword">from</span> <span class="hljs-string">'fritz/window'</span>;<br><br><span class="hljs-keyword">const</span> worker = <span class="hljs-keyword">new</span> Worker(<span class="hljs-string">'./app.js'</span>);<br>fritz.use(worker);</code></pre></div></template><f-shadow></f-shadow></code-snippet></div></template><f-shadow></f-shadow></code-file><p>Now we just need to add this script to our page and use the component.</p><code-file name="index.html"code="
+"><template><div><style data-f="style-2"></style><pre><code class="hljs js"><span class="hljs-keyword">import</span> fritz <span class="hljs-keyword">from</span> <span class="hljs-string">'fritz/window'</span>;<br><br><span class="hljs-keyword">const</span> worker = <span class="hljs-keyword">new</span> Worker(<span class="hljs-string">'./app.js'</span>);<br>fritz.use(worker);</code></pre></div></template><f-shadow styles></f-shadow></code-snippet></div></template><f-shadow styles></f-shadow></code-file><p>Now we just need to add this script to our page and use the component.</p><code-file name="index.html"code="
 &lt;!doctype html&gt;
 &lt;html lang=&quot;en&quot;&gt;
 &lt;title&gt;Our app&lt;/title&gt;
@@ -1167,15 +381,7 @@ fritz.use(worker);
 &lt;hello-message name=&quot;World&quot;&gt;&lt;/hello-message&gt;
 
 &lt;script type=&quot;module&quot; src=&quot;./main.js&quot;&gt;&lt;/script&gt;
-"><template><div><style>.title {
-  text-align: center;
-  font-weight: 100;
-}
-
-code-snippet {
-  display: block;
-  box-shadow: var(--box-shadow, 3px 3px 12px 1px rgba(0,0,0,0.4));
-}</style><div class="title">index.html</div><code-snippet lang="undefined"code="
+"><template><div><style data-f="style-1"></style><div class="title">index.html</div><code-snippet lang="undefined"code="
 &lt;!doctype html&gt;
 &lt;html lang=&quot;en&quot;&gt;
 &lt;title&gt;Our app&lt;/title&gt;
@@ -1183,463 +389,23 @@ code-snippet {
 &lt;hello-message name=&quot;World&quot;&gt;&lt;/hello-message&gt;
 
 &lt;script type=&quot;module&quot; src=&quot;./main.js&quot;&gt;&lt;/script&gt;
-"><template><div><style>/*!
- * Agate by Taufik Nurrohman &lt;https://github.com/tovic&gt;
- * ----------------------------------------------------
- *
- * #ade5fc
- * #a2fca2
- * #c6b4f0
- * #d36363
- * #fcc28c
- * #fc9b9b
- * #ffa
- * #fff
- * #333
- * #62c8f3
- * #888
- *
- */
-
-.hljs {
-  display: block;
-  overflow-x: auto;
-  padding: 0.5em;
-  background: #333;
-  color: white;
-}
-
-.hljs-name,
-.hljs-strong {
-  font-weight: bold;
-}
-
-.hljs-code,
-.hljs-emphasis {
-  font-style: italic;
-}
-
-.hljs-tag {
-  color: #62c8f3;
-}
-
-.hljs-variable,
-.hljs-template-variable,
-.hljs-selector-id,
-.hljs-selector-class {
-  color: #ade5fc;
-}
-
-.hljs-string,
-.hljs-bullet {
-  color: #a2fca2;
-}
-
-.hljs-type,
-.hljs-title,
-.hljs-section,
-.hljs-attribute,
-.hljs-quote,
-.hljs-built_in,
-.hljs-builtin-name {
-  color: #ffa;
-}
-
-.hljs-number,
-.hljs-symbol,
-.hljs-bullet {
-  color: #d36363;
-}
-
-.hljs-keyword,
-.hljs-selector-tag,
-.hljs-literal {
-  color: #fcc28c;
-}
-
-.hljs-comment,
-.hljs-deletion,
-.hljs-code {
-  color: #888;
-}
-
-.hljs-regexp,
-.hljs-link {
-  color: #c6b4f0;
-}
-
-.hljs-meta {
-  color: #fc9b9b;
-}
-
-.hljs-deletion {
-  background-color: #fc9b9b;
-  color: #333;
-}
-
-.hljs-addition {
-  background-color: #a2fca2;
-  color: #333;
-}
-
-.hljs a {
-  color: inherit;
-}
-
-.hljs a:focus,
-.hljs a:hover {
-  color: inherit;
-  text-decoration: underline;
-}
-</style><pre><code class="hljs js">&lt;!doctype html&gt;<br><span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">html</span> <span class="hljs-attr">lang</span>=<span class="hljs-string">&quot;en&quot;</span>&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">title</span>&gt;</span>Our app<span class="hljs-tag">&lt;/<span class="hljs-name">title</span>&gt;</span><br><br><span class="hljs-tag">&lt;<span class="hljs-name">hello-message</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;World&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">hello-message</span>&gt;</span><br><br><span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;module&quot;</span> <span class="hljs-attr">src</span>=<span class="hljs-string">&quot;./main.js&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></span></code></pre></div></template><f-shadow></f-shadow></code-snippet></div></template><f-shadow></f-shadow></code-file><p>And that's it!</p><h2>In a React app</h2><p>Using Fritz components within a <a href="https://facebook.github.io/react/">React</a> application is simple. First step is to update your <code>.babelrc</code> to use h as the pragma:</p><code-snippet code="
+"><template><div><style data-f="style-2"></style><pre><code class="hljs js">&lt;!doctype html&gt;<br><span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">html</span> <span class="hljs-attr">lang</span>=<span class="hljs-string">&quot;en&quot;</span>&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">title</span>&gt;</span>Our app<span class="hljs-tag">&lt;/<span class="hljs-name">title</span>&gt;</span><br><br><span class="hljs-tag">&lt;<span class="hljs-name">hello-message</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;World&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">hello-message</span>&gt;</span><br><br><span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;module&quot;</span> <span class="hljs-attr">src</span>=<span class="hljs-string">&quot;./main.js&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></span></code></pre></div></template><f-shadow styles></f-shadow></code-snippet></div></template><f-shadow styles></f-shadow></code-file><p>And that's it!</p><h2>In a React app</h2><p>Using Fritz components within a <a href="https://facebook.github.io/react/">React</a> application is simple. First step is to update your <code>.babelrc</code> to use h as the pragma:</p><code-snippet code="
 {
   &quot;plugins&quot;: [
     [&quot;transform-react-jsx&quot;, { &quot;pragma&quot;:&quot;h&quot; }]
   ]
 }
-"><template><div><style>/*!
- * Agate by Taufik Nurrohman &lt;https://github.com/tovic&gt;
- * ----------------------------------------------------
- *
- * #ade5fc
- * #a2fca2
- * #c6b4f0
- * #d36363
- * #fcc28c
- * #fc9b9b
- * #ffa
- * #fff
- * #333
- * #62c8f3
- * #888
- *
- */
-
-.hljs {
-  display: block;
-  overflow-x: auto;
-  padding: 0.5em;
-  background: #333;
-  color: white;
-}
-
-.hljs-name,
-.hljs-strong {
-  font-weight: bold;
-}
-
-.hljs-code,
-.hljs-emphasis {
-  font-style: italic;
-}
-
-.hljs-tag {
-  color: #62c8f3;
-}
-
-.hljs-variable,
-.hljs-template-variable,
-.hljs-selector-id,
-.hljs-selector-class {
-  color: #ade5fc;
-}
-
-.hljs-string,
-.hljs-bullet {
-  color: #a2fca2;
-}
-
-.hljs-type,
-.hljs-title,
-.hljs-section,
-.hljs-attribute,
-.hljs-quote,
-.hljs-built_in,
-.hljs-builtin-name {
-  color: #ffa;
-}
-
-.hljs-number,
-.hljs-symbol,
-.hljs-bullet {
-  color: #d36363;
-}
-
-.hljs-keyword,
-.hljs-selector-tag,
-.hljs-literal {
-  color: #fcc28c;
-}
-
-.hljs-comment,
-.hljs-deletion,
-.hljs-code {
-  color: #888;
-}
-
-.hljs-regexp,
-.hljs-link {
-  color: #c6b4f0;
-}
-
-.hljs-meta {
-  color: #fc9b9b;
-}
-
-.hljs-deletion {
-  background-color: #fc9b9b;
-  color: #333;
-}
-
-.hljs-addition {
-  background-color: #a2fca2;
-  color: #333;
-}
-
-.hljs a {
-  color: inherit;
-}
-
-.hljs a:focus,
-.hljs a:hover {
-  color: inherit;
-  text-decoration: underline;
-}
-</style><pre><code class="hljs js">{<br>  <span class="hljs-string">&quot;plugins&quot;</span>: [<br>    [<span class="hljs-string">&quot;transform-react-jsx&quot;</span>, { <span class="hljs-string">&quot;pragma&quot;</span>:<span class="hljs-string">&quot;h&quot;</span> }]<br>  ]<br>}</code></pre></div></template><f-shadow></f-shadow></code-snippet><p>This will allow you to transform JSX both for the React and Fritz sides of your application. As before, we won't explain how to configure your bundler, but know that you will need to create a worker bundle (that contains Fritz code) and a bundle for your React code.</p><p>React doesn't properly handle passing data to web components, but luckily there is a helper library that fixes the issue for us. Install <a href="https://github.com/skatejs/val">skatejs/val</a> like so:</p><code-snippet lang="shell"code="npm install @skatejs/val"><template><div><style>/*!
- * Agate by Taufik Nurrohman &lt;https://github.com/tovic&gt;
- * ----------------------------------------------------
- *
- * #ade5fc
- * #a2fca2
- * #c6b4f0
- * #d36363
- * #fcc28c
- * #fc9b9b
- * #ffa
- * #fff
- * #333
- * #62c8f3
- * #888
- *
- */
-
-.hljs {
-  display: block;
-  overflow-x: auto;
-  padding: 0.5em;
-  background: #333;
-  color: white;
-}
-
-.hljs-name,
-.hljs-strong {
-  font-weight: bold;
-}
-
-.hljs-code,
-.hljs-emphasis {
-  font-style: italic;
-}
-
-.hljs-tag {
-  color: #62c8f3;
-}
-
-.hljs-variable,
-.hljs-template-variable,
-.hljs-selector-id,
-.hljs-selector-class {
-  color: #ade5fc;
-}
-
-.hljs-string,
-.hljs-bullet {
-  color: #a2fca2;
-}
-
-.hljs-type,
-.hljs-title,
-.hljs-section,
-.hljs-attribute,
-.hljs-quote,
-.hljs-built_in,
-.hljs-builtin-name {
-  color: #ffa;
-}
-
-.hljs-number,
-.hljs-symbol,
-.hljs-bullet {
-  color: #d36363;
-}
-
-.hljs-keyword,
-.hljs-selector-tag,
-.hljs-literal {
-  color: #fcc28c;
-}
-
-.hljs-comment,
-.hljs-deletion,
-.hljs-code {
-  color: #888;
-}
-
-.hljs-regexp,
-.hljs-link {
-  color: #c6b4f0;
-}
-
-.hljs-meta {
-  color: #fc9b9b;
-}
-
-.hljs-deletion {
-  background-color: #fc9b9b;
-  color: #333;
-}
-
-.hljs-addition {
-  background-color: #a2fca2;
-  color: #333;
-}
-
-.hljs a {
-  color: inherit;
-}
-
-.hljs a:focus,
-.hljs a:hover {
-  color: inherit;
-  text-decoration: underline;
-}
-</style><pre><code class="hljs shell">npm install @skatejs/val</code></pre></div></template><f-shadow></f-shadow></code-snippet><p>Then create the module that will act as our wrapper:</p><code-file name="val.js"code="
+"><template><div><style data-f="style-2"></style><pre><code class="hljs js">{<br>  <span class="hljs-string">&quot;plugins&quot;</span>: [<br>    [<span class="hljs-string">&quot;transform-react-jsx&quot;</span>, { <span class="hljs-string">&quot;pragma&quot;</span>:<span class="hljs-string">&quot;h&quot;</span> }]<br>  ]<br>}</code></pre></div></template><f-shadow styles></f-shadow></code-snippet><p>This will allow you to transform JSX both for the React and Fritz sides of your application. As before, we won't explain how to configure your bundler, but know that you will need to create a worker bundle (that contains Fritz code) and a bundle for your React code.</p><p>React doesn't properly handle passing data to web components, but luckily there is a helper library that fixes the issue for us. Install <a href="https://github.com/skatejs/val">skatejs/val</a> like so:</p><code-snippet lang="shell"code="npm install @skatejs/val"><template><div><style data-f="style-2"></style><pre><code class="hljs shell">npm install @skatejs/val</code></pre></div></template><f-shadow styles></f-shadow></code-snippet><p>Then create the module that will act as our wrapper:</p><code-file name="val.js"code="
 import React from 'react';
 import val from '@skatejs/val';
 
 export default val(React.createElement);
-"><template><div><style>.title {
-  text-align: center;
-  font-weight: 100;
-}
-
-code-snippet {
-  display: block;
-  box-shadow: var(--box-shadow, 3px 3px 12px 1px rgba(0,0,0,0.4));
-}</style><div class="title">val.js</div><code-snippet lang="undefined"code="
+"><template><div><style data-f="style-1"></style><div class="title">val.js</div><code-snippet lang="undefined"code="
 import React from 'react';
 import val from '@skatejs/val';
 
 export default val(React.createElement);
-"><template><div><style>/*!
- * Agate by Taufik Nurrohman &lt;https://github.com/tovic&gt;
- * ----------------------------------------------------
- *
- * #ade5fc
- * #a2fca2
- * #c6b4f0
- * #d36363
- * #fcc28c
- * #fc9b9b
- * #ffa
- * #fff
- * #333
- * #62c8f3
- * #888
- *
- */
-
-.hljs {
-  display: block;
-  overflow-x: auto;
-  padding: 0.5em;
-  background: #333;
-  color: white;
-}
-
-.hljs-name,
-.hljs-strong {
-  font-weight: bold;
-}
-
-.hljs-code,
-.hljs-emphasis {
-  font-style: italic;
-}
-
-.hljs-tag {
-  color: #62c8f3;
-}
-
-.hljs-variable,
-.hljs-template-variable,
-.hljs-selector-id,
-.hljs-selector-class {
-  color: #ade5fc;
-}
-
-.hljs-string,
-.hljs-bullet {
-  color: #a2fca2;
-}
-
-.hljs-type,
-.hljs-title,
-.hljs-section,
-.hljs-attribute,
-.hljs-quote,
-.hljs-built_in,
-.hljs-builtin-name {
-  color: #ffa;
-}
-
-.hljs-number,
-.hljs-symbol,
-.hljs-bullet {
-  color: #d36363;
-}
-
-.hljs-keyword,
-.hljs-selector-tag,
-.hljs-literal {
-  color: #fcc28c;
-}
-
-.hljs-comment,
-.hljs-deletion,
-.hljs-code {
-  color: #888;
-}
-
-.hljs-regexp,
-.hljs-link {
-  color: #c6b4f0;
-}
-
-.hljs-meta {
-  color: #fc9b9b;
-}
-
-.hljs-deletion {
-  background-color: #fc9b9b;
-  color: #333;
-}
-
-.hljs-addition {
-  background-color: #a2fca2;
-  color: #333;
-}
-
-.hljs a {
-  color: inherit;
-}
-
-.hljs a:focus,
-.hljs a:hover {
-  color: inherit;
-  text-decoration: underline;
-}
-</style><pre><code class="hljs js"><span class="hljs-keyword">import</span> React <span class="hljs-keyword">from</span> <span class="hljs-string">'react'</span>;<br><span class="hljs-keyword">import</span> val <span class="hljs-keyword">from</span> <span class="hljs-string">'@skatejs/val'</span>;<br><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> val(React.createElement);</code></pre></div></template><f-shadow></f-shadow></code-snippet></div></template><f-shadow></f-shadow></code-file><p>And within your React code, use it:</p><code-file name="app.js"lang="jsx"code="
+"><template><div><style data-f="style-2"></style><pre><code class="hljs js"><span class="hljs-keyword">import</span> React <span class="hljs-keyword">from</span> <span class="hljs-string">'react'</span>;<br><span class="hljs-keyword">import</span> val <span class="hljs-keyword">from</span> <span class="hljs-string">'@skatejs/val'</span>;<br><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> val(React.createElement);</code></pre></div></template><f-shadow styles></f-shadow></code-snippet></div></template><f-shadow styles></f-shadow></code-file><p>And within your React code, use it:</p><code-file name="app.js"lang="jsx"code="
 import React from 'react';
 import ReactDOM from 'react-dom';
 import fritz from 'fritz/window';
@@ -1660,15 +426,7 @@ class Home extends React.Component {
 
 const main = document.querySelector('main');
 ReactDOM.render(&lt;Home/&gt;, main);
-"><template><div><style>.title {
-  text-align: center;
-  font-weight: 100;
-}
-
-code-snippet {
-  display: block;
-  box-shadow: var(--box-shadow, 3px 3px 12px 1px rgba(0,0,0,0.4));
-}</style><div class="title">app.js</div><code-snippet lang="jsx"code="
+"><template><div><style data-f="style-1"></style><div class="title">app.js</div><code-snippet lang="jsx"code="
 import React from 'react';
 import ReactDOM from 'react-dom';
 import fritz from 'fritz/window';
@@ -1689,115 +447,7 @@ class Home extends React.Component {
 
 const main = document.querySelector('main');
 ReactDOM.render(&lt;Home/&gt;, main);
-"><template><div><style>/*!
- * Agate by Taufik Nurrohman &lt;https://github.com/tovic&gt;
- * ----------------------------------------------------
- *
- * #ade5fc
- * #a2fca2
- * #c6b4f0
- * #d36363
- * #fcc28c
- * #fc9b9b
- * #ffa
- * #fff
- * #333
- * #62c8f3
- * #888
- *
- */
-
-.hljs {
-  display: block;
-  overflow-x: auto;
-  padding: 0.5em;
-  background: #333;
-  color: white;
-}
-
-.hljs-name,
-.hljs-strong {
-  font-weight: bold;
-}
-
-.hljs-code,
-.hljs-emphasis {
-  font-style: italic;
-}
-
-.hljs-tag {
-  color: #62c8f3;
-}
-
-.hljs-variable,
-.hljs-template-variable,
-.hljs-selector-id,
-.hljs-selector-class {
-  color: #ade5fc;
-}
-
-.hljs-string,
-.hljs-bullet {
-  color: #a2fca2;
-}
-
-.hljs-type,
-.hljs-title,
-.hljs-section,
-.hljs-attribute,
-.hljs-quote,
-.hljs-built_in,
-.hljs-builtin-name {
-  color: #ffa;
-}
-
-.hljs-number,
-.hljs-symbol,
-.hljs-bullet {
-  color: #d36363;
-}
-
-.hljs-keyword,
-.hljs-selector-tag,
-.hljs-literal {
-  color: #fcc28c;
-}
-
-.hljs-comment,
-.hljs-deletion,
-.hljs-code {
-  color: #888;
-}
-
-.hljs-regexp,
-.hljs-link {
-  color: #c6b4f0;
-}
-
-.hljs-meta {
-  color: #fc9b9b;
-}
-
-.hljs-deletion {
-  background-color: #fc9b9b;
-  color: #333;
-}
-
-.hljs-addition {
-  background-color: #a2fca2;
-  color: #333;
-}
-
-.hljs a {
-  color: inherit;
-}
-
-.hljs a:focus,
-.hljs a:hover {
-  color: inherit;
-  text-decoration: underline;
-}
-</style><pre><code class="hljs jsx"><span class="hljs-keyword">import</span> React <span class="hljs-keyword">from</span> <span class="hljs-string">'react'</span>;<br><span class="hljs-keyword">import</span> ReactDOM <span class="hljs-keyword">from</span> <span class="hljs-string">'react-dom'</span>;<br><span class="hljs-keyword">import</span> fritz <span class="hljs-keyword">from</span> <span class="hljs-string">'fritz/window'</span>;<br><span class="hljs-keyword">import</span> h <span class="hljs-keyword">from</span> <span class="hljs-string">'./val.js'</span>;<br><br>fritz.use(<span class="hljs-keyword">new</span> Worker(<span class="hljs-string">'/worker.js'</span>));<br><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Home</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">React</span>.<span class="hljs-title">Component</span> </span>{<br>  render() {<br>    <span class="hljs-keyword">return</span> (<br>      <span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">span</span>&gt;</span>Hello world<span class="hljs-tag">&lt;/<span class="hljs-name">span</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">worker-component</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;Wilbur&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">worker-component</span>&gt;</span><br>      <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></span><br>    );<br>  }<br>}<br><br><span class="hljs-keyword">const</span> main = <span class="hljs-built_in">document</span>.querySelector(<span class="hljs-string">'main'</span>);<br>ReactDOM.render(<span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">Home</span>/&gt;</span></span>, main);</code></pre></div></template><f-shadow></f-shadow></code-snippet></div></template><f-shadow></f-shadow></code-file><p>Note that this imports our implementation of <code>h</code>, which is just a small wrapper around <code>React.createElement</code>. Since we are using h in both the React app and the worker, our babel config remains the same.</p><p>Now we just need to implement <code>&lt;worker-component&gt;</code>.</p><code-file name="app.js"code="
+"><template><div><style data-f="style-2"></style><pre><code class="hljs jsx"><span class="hljs-keyword">import</span> React <span class="hljs-keyword">from</span> <span class="hljs-string">'react'</span>;<br><span class="hljs-keyword">import</span> ReactDOM <span class="hljs-keyword">from</span> <span class="hljs-string">'react-dom'</span>;<br><span class="hljs-keyword">import</span> fritz <span class="hljs-keyword">from</span> <span class="hljs-string">'fritz/window'</span>;<br><span class="hljs-keyword">import</span> h <span class="hljs-keyword">from</span> <span class="hljs-string">'./val.js'</span>;<br><br>fritz.use(<span class="hljs-keyword">new</span> Worker(<span class="hljs-string">'/worker.js'</span>));<br><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Home</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">React</span>.<span class="hljs-title">Component</span> </span>{<br>  render() {<br>    <span class="hljs-keyword">return</span> (<br>      <span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">span</span>&gt;</span>Hello world<span class="hljs-tag">&lt;/<span class="hljs-name">span</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">worker-component</span> <span class="hljs-attr">name</span>=<span class="hljs-string">&quot;Wilbur&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">worker-component</span>&gt;</span><br>      <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></span><br>    );<br>  }<br>}<br><br><span class="hljs-keyword">const</span> main = <span class="hljs-built_in">document</span>.querySelector(<span class="hljs-string">'main'</span>);<br>ReactDOM.render(<span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">Home</span>/&gt;</span></span>, main);</code></pre></div></template><f-shadow styles></f-shadow></code-snippet></div></template><f-shadow styles></f-shadow></code-file><p>Note that this imports our implementation of <code>h</code>, which is just a small wrapper around <code>React.createElement</code>. Since we are using h in both the React app and the worker, our babel config remains the same.</p><p>Now we just need to implement <code>&lt;worker-component&gt;</code>.</p><code-file name="app.js"code="
 import fritz, { Component, h } from 'fritz';
 
 class MyWorkerComponent extends Component {
@@ -1828,15 +478,7 @@ class MyWorkerComponent extends Component {
 }
 
 fritz.define('worker-component', MyWorkerComponent);
-"><template><div><style>.title {
-  text-align: center;
-  font-weight: 100;
-}
-
-code-snippet {
-  display: block;
-  box-shadow: var(--box-shadow, 3px 3px 12px 1px rgba(0,0,0,0.4));
-}</style><div class="title">app.js</div><code-snippet lang="undefined"code="
+"><template><div><style data-f="style-1"></style><div class="title">app.js</div><code-snippet lang="undefined"code="
 import fritz, { Component, h } from 'fritz';
 
 class MyWorkerComponent extends Component {
@@ -1867,117 +509,9 @@ class MyWorkerComponent extends Component {
 }
 
 fritz.define('worker-component', MyWorkerComponent);
-"><template><div><style>/*!
- * Agate by Taufik Nurrohman &lt;https://github.com/tovic&gt;
- * ----------------------------------------------------
- *
- * #ade5fc
- * #a2fca2
- * #c6b4f0
- * #d36363
- * #fcc28c
- * #fc9b9b
- * #ffa
- * #fff
- * #333
- * #62c8f3
- * #888
- *
- */
+"><template><div><style data-f="style-2"></style><pre><code class="hljs js"><span class="hljs-keyword">import</span> fritz, { Component, h } <span class="hljs-keyword">from</span> <span class="hljs-string">'fritz'</span>;<br><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MyWorkerComponent</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Component</span> </span>{<br>  <span class="hljs-keyword">static</span> <span class="hljs-keyword">get</span> props() {<br>    <span class="hljs-keyword">return</span> {<br>      <span class="hljs-attr">name</span>: {}<br>    };<br>  }<br><br>  <span class="hljs-keyword">constructor</span>() {<br>    <span class="hljs-keyword">super</span>();<br>    <span class="hljs-keyword">this</span>.state = { <span class="hljs-attr">count</span>: <span class="hljs-number">0</span> };<br>  }<br><br>  add() {<br>    <span class="hljs-keyword">const</span> count = <span class="hljs-keyword">this</span>.state.count + <span class="hljs-number">1</span>;<br>    <span class="hljs-keyword">this</span>.setState({count});<br>  }<br><br>  render({name}, {count}) {<br>    <span class="hljs-keyword">return</span> (<br>      <span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">section</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span>Hi {name}. This has been clicked {count} times.<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">a</span> <span class="hljs-attr">href</span>=<span class="hljs-string">&quot;#&quot;</span> <span class="hljs-attr">onClick</span>=<span class="hljs-string">{this.add}</span>&gt;</span>Add<span class="hljs-tag">&lt;/<span class="hljs-name">a</span>&gt;</span><br>      <span class="hljs-tag">&lt;/<span class="hljs-name">section</span>&gt;</span></span><br>    );<br>  }<br>}<br><br>fritz.define(<span class="hljs-string">'worker-component'</span>, MyWorkerComponent);</code></pre></div></template><f-shadow styles></f-shadow></code-snippet></div></template><f-shadow styles></f-shadow></code-file><p>A few things worth noting here:</p><ul><li>We define <strong>props</strong> that we expect to receive with a static <code>props</code> getter (of course you can use class properties here if using the Babel plugin).</li><li><code>render</code> receives props and state as its arguments, so you can destruct.</li><li>Unlike in React and Preact, you can directly pass your class methods as event handlers. Fritz will know to call your component as the <code>this</code> value when calling that function.</li><li>As always, we finish out component by calling <code>fritz.define</code> to define the custom element tag name.</li></ul><p>And that's it! Now you can seemlessly use any Fritz components within your React application.</p></section><footer><p>Made with 🎃 by <a href="https://twitter.com/matthewcp">@matthewcp</a></p></footer></main></template><f-shadow styles></f-shadow></its-fritz-yall>
 
-.hljs {
-  display: block;
-  overflow-x: auto;
-  padding: 0.5em;
-  background: #333;
-  color: white;
-}
-
-.hljs-name,
-.hljs-strong {
-  font-weight: bold;
-}
-
-.hljs-code,
-.hljs-emphasis {
-  font-style: italic;
-}
-
-.hljs-tag {
-  color: #62c8f3;
-}
-
-.hljs-variable,
-.hljs-template-variable,
-.hljs-selector-id,
-.hljs-selector-class {
-  color: #ade5fc;
-}
-
-.hljs-string,
-.hljs-bullet {
-  color: #a2fca2;
-}
-
-.hljs-type,
-.hljs-title,
-.hljs-section,
-.hljs-attribute,
-.hljs-quote,
-.hljs-built_in,
-.hljs-builtin-name {
-  color: #ffa;
-}
-
-.hljs-number,
-.hljs-symbol,
-.hljs-bullet {
-  color: #d36363;
-}
-
-.hljs-keyword,
-.hljs-selector-tag,
-.hljs-literal {
-  color: #fcc28c;
-}
-
-.hljs-comment,
-.hljs-deletion,
-.hljs-code {
-  color: #888;
-}
-
-.hljs-regexp,
-.hljs-link {
-  color: #c6b4f0;
-}
-
-.hljs-meta {
-  color: #fc9b9b;
-}
-
-.hljs-deletion {
-  background-color: #fc9b9b;
-  color: #333;
-}
-
-.hljs-addition {
-  background-color: #a2fca2;
-  color: #333;
-}
-
-.hljs a {
-  color: inherit;
-}
-
-.hljs a:focus,
-.hljs a:hover {
-  color: inherit;
-  text-decoration: underline;
-}
-</style><pre><code class="hljs js"><span class="hljs-keyword">import</span> fritz, { Component, h } <span class="hljs-keyword">from</span> <span class="hljs-string">'fritz'</span>;<br><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MyWorkerComponent</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">Component</span> </span>{<br>  <span class="hljs-keyword">static</span> <span class="hljs-keyword">get</span> props() {<br>    <span class="hljs-keyword">return</span> {<br>      <span class="hljs-attr">name</span>: {}<br>    };<br>  }<br><br>  <span class="hljs-keyword">constructor</span>() {<br>    <span class="hljs-keyword">super</span>();<br>    <span class="hljs-keyword">this</span>.state = { <span class="hljs-attr">count</span>: <span class="hljs-number">0</span> };<br>  }<br><br>  add() {<br>    <span class="hljs-keyword">const</span> count = <span class="hljs-keyword">this</span>.state.count + <span class="hljs-number">1</span>;<br>    <span class="hljs-keyword">this</span>.setState({count});<br>  }<br><br>  render({name}, {count}) {<br>    <span class="hljs-keyword">return</span> (<br>      <span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">section</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span>Hi {name}. This has been clicked {count} times.<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">a</span> <span class="hljs-attr">href</span>=<span class="hljs-string">&quot;#&quot;</span> <span class="hljs-attr">onClick</span>=<span class="hljs-string">{this.add}</span>&gt;</span>Add<span class="hljs-tag">&lt;/<span class="hljs-name">a</span>&gt;</span><br>      <span class="hljs-tag">&lt;/<span class="hljs-name">section</span>&gt;</span></span><br>    );<br>  }<br>}<br><br>fritz.define(<span class="hljs-string">'worker-component'</span>, MyWorkerComponent);</code></pre></div></template><f-shadow></f-shadow></code-snippet></div></template><f-shadow></f-shadow></code-file><p>A few things worth noting here:</p><ul><li>We define <strong>props</strong> that we expect to receive with a static <code>props</code> getter (of course you can use class properties here if using the Babel plugin).</li><li><code>render</code> receives props and state as its arguments, so you can destruct.</li><li>Unlike in React and Preact, you can directly pass your class methods as event handlers. Fritz will know to call your component as the <code>this</code> value when calling that function.</li><li>As always, we finish out component by calling <code>fritz.define</code> to define the custom element tag name.</li></ul><p>And that's it! Now you can seemlessly use any Fritz components within your React application.</p></section><footer><p>Made with 🎃 by <a href="https://twitter.com/matthewcp">@matthewcp</a></p></footer></main></template><f-shadow></f-shadow></its-fritz-yall>
-
-    <script type="module" src="./main.js"></script>
+    <!--<script type="module" src="./main.js"></script>-->
     <script>
       // Check that service workers are supported
       if ('serviceWorker' in navigator && location.port != 1931) {
