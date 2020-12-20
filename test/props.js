@@ -1,7 +1,7 @@
 import fritz from '../window.js';
 import { waitForMount } from './helpers.js';
 
-fritz.use(new Worker('./props/app.js'));
+fritz.use(new Worker('./props/app.js', { type: 'module' }));
 let helloEl;
 
 QUnit.module('Properties', {

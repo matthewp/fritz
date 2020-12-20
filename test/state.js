@@ -5,7 +5,7 @@ let statefulEl;
 
 QUnit.module('fritz.state', {
   async before() {
-    fritz.use(new Worker('./state/app.js'));
+    fritz.use(new Worker('./state/app.js', { type: 'module' }));
     fritz.state = { name: 'Matthew' };
     statefulEl = document.createElement('stateful-el');
     document.body.append(statefulEl);

@@ -5,7 +5,7 @@ let app;
 
 QUnit.module('Basics', {
   async before() {
-    let worker = new Worker('./basics/app.js');
+    let worker = new Worker('./basics/app.js', { type: 'module' });
     fritz.use(worker);
     app = document.createElement('basic-app');
     document.body.append(app);

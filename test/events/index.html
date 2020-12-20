@@ -18,7 +18,7 @@
     }
   });
 
-  fritz.use(new Worker('./app.js'));
+  fritz.use(new Worker('./app.js', { type: 'module' }));
 </script>
 <event-element></event-element>
 <input-el></input-el>
