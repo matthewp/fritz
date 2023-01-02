@@ -1,6 +1,6 @@
 {
   "name": "fritz",
-  "version": "5.0.0-alpha.1",
+  "version": "5.0.0-alpha.2",
   "description": "Create web components that run in a Web Worker",
   "main": "worker.umd.js",
   "module": "worker.js",
