@@ -71,8 +71,13 @@ export function cleanup(fritz, msg) {
   let instance = getInstance(fritz, msg.id);
   let handles = instance._fritzHandles;
   msg.handles.forEach(function(id){
-    let handle = handles.get(id);
-    handle.del();
-    handles.delete(id);
+    // A handle might have been previously deleted by a destroy
+    // and then the same element re-connected. Those old handles
+    // can be ignored.
+    if(handles.has(id)) {
+      let handle = handles.get(id);
+      handle.del();
+      handles.delete(id);
+    }
   });
 };

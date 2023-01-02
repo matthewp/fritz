@@ -12,6 +12,8 @@ export function withWorkerRender(Base = HTMLElement) {
     }
 
     renderer() {
+      // Only send a render when connected
+      if(!this.isConnected) return;
       this._worker.postMessage({
         type: RENDER,
         tag: this.localName,
