@@ -41,6 +41,6 @@
     "incremental-dom": "^0.5.1",
     "node-qunit-puppeteer": "^2.0.3",
     "serve": "^11.3.2",
-    "workbox-cli": "^4.3.1"
+    "workbox-cli": "^6.5.4"
   }
 }
