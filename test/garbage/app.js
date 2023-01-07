@@ -1,4 +1,4 @@
-import fritz, { h, Component } from '../../src/worker/index.js';
+import fritz, { h, Component } from "../../worker.mjs";
 
 class App extends Component {
   constructor() {
@@ -7,33 +7,36 @@ class App extends Component {
   }
 
   componentDidMount() {
-    this.dispatch({ type: 'mount' });
+    this.dispatch({ type: "mount" });
   }
 
   decrement() {
-    let {count} = this.state;
-    this.setState({count: count - 1});
+    let { count } = this.state;
+    this.setState({ count: count - 1 });
   }
 
-  render({}, {count}) {
+  render({}, { count }) {
     var size = this._fritzHandles.size;
-    return (
-      h('div', [
-        h('button', {
-          id: 'increment',
-          onClick: () => this.setState({count: count + 1})
-        }, 'Increment'),
-        h('button', {
-          onClick: this.decrement
-        }, 'Decrement'),
-        h('div', ['Count: ' + count]),
-        h('div', [
-          'Handles: ',
-          h('span', {id:'handleSize'}, [size])
-        ])
-      ])
-    );
+    return h("div", [
+      h(
+        "button",
+        {
+          id: "increment",
+          onClick: () => this.setState({ count: count + 1 }),
+        },
+        "Increment"
+      ),
+      h(
+        "button",
+        {
+          onClick: this.decrement,
+        },
+        "Decrement"
+      ),
+      h("div", ["Count: " + count]),
+      h("div", ["Handles: ", h("span", { id: "handleSize" }, [size])]),
+    ]);
   }
 }
 
-fritz.define('gc-app', App);
+fritz.define("gc-app", App);
