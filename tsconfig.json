@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+      "module": "esnext",
+      "moduleResolution": "node",
+      "target": "ES2020",
+      "strict": true,
+      "declaration": true,
+      "emitDeclarationOnly": false,
+      "noEmit": true
+    },
+    "include": ["./src"]
+  }
+  

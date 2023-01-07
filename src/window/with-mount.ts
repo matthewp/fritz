@@ -1,5 +1,11 @@
 import { RENDERED } from '../message-types.js';
 
+interface MountBase extends HTMLElement {
+  new(): MountBase;
+  renderer?(): void;
+  _worker: Worker;
+}
+
 export let currentComponent;
 
 export function setComponent(component) {
@@ -19,8 +25,13 @@ function setComponentTo(component) {
  * 3. If no children, parent done after own render.
  */
 
-export function withMount(Base) {
+export function withMount(Base: MountBase) {
   return class extends Base {
+    public _resetComponent: any;
+    public _parentComponent: any;
+    public _renderCount: number;
+    public _hasChildComponents: boolean;
+    public _amMounted: boolean;
     constructor() {
       super();
       this._resetComponent = Function.prototype; // placeholder
@@ -31,6 +42,7 @@ export function withMount(Base) {
     }
 
     connectedCallback() {
+      // @ts-ignore
       if(super.connectedCallback) super.connectedCallback();
       if(this._parentComponent) {
         this._parentComponent._hasChildComponents = true;
@@ -38,6 +50,7 @@ export function withMount(Base) {
     }
 
     disconnectedCallback() {
+      // @ts-ignore
       if(super.disconnectedCallback) super.disconnectedCallback();
       this._amMounted = false;
     }
