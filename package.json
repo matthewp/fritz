@@ -21,10 +21,10 @@
   },
   "wireit": {
     "build:worker": {
-      "command": "microbundle -f modern --no-pkg-main -i src/worker/index.js -o window.mjs"
+      "command": "microbundle -f modern --no-pkg-main -i src/worker/index.js -o worker.mjs"
     },
     "build:window": {
-      "command": "microbundle -f modern --no-pkg-main -i src/window/index.js -o worker.mjs"
+      "command": "microbundle -f modern --no-pkg-main --define process.env.NODE_ENV=production -i src/window/index.js -o window.mjs"
     },
     "build": {
       "dependencies": [
