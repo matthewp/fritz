@@ -1,30 +1,51 @@
 {
   "name": "fritz",
+  "type": "module",
   "version": "5.0.0-alpha.2",
   "description": "Create web components that run in a Web Worker",
-  "main": "worker.umd.js",
-  "module": "worker.js",
+  "exports": {
+    ".": {
+      "default": "./worker.mjs"
+    },
+    "window": {
+      "default": "./window.mjs"
+    }
+  },
   "scripts": {
     "build:worker": "wireit",
     "build:window": "wireit",
     "build": "wireit",
-    "server": "serve -p 1931",
-    "test": "node-qunit-puppeteer http://localhost:1931/test/test.html 10000",
-    "test-pass": "echo 'Pass' && exit 0",
-    "prepublishOnly": "make all"
+    "server": "wireit",
+    "test": "wireit",
+    "test-pass": "echo 'Pass' && exit 0"
   },
   "wireit": {
     "build:worker": {
-      "command": "microbundle -f modern -i src/worker/index.js"
+      "command": "microbundle -f modern --no-pkg-main -i src/worker/index.js -o worker.mjs"
     },
     "build:window": {
-      "command": "microbundle -f modern -i src/window/index.js"
+      "command": "microbundle -f modern --no-pkg-main --define process.env.NODE_ENV=production -i src/window/index.js -o window.mjs"
     },
     "build": {
       "dependencies": [
         "build:worker",
         "build:window"
       ]
+    },
+    "test": {
+      "command": "node node_modules/@matthewp/node-qunit-puppeteer/cli.js http://localhost:1931/test/test.html",
+      "dependencies": [
+        "build",
+        "server"
+      ]
+    },
+    "server": {
+      "command": "serve -p 1931",
+      "service": {
+        "readyWhen": {
+          "lineMatches": "Accepting connections"
+        }
+      }
     }
   },
   "repository": {
@@ -50,15 +71,14 @@
     "web-worker"
   ],
   "devDependencies": {
-    "@matthewp/compile": "^2.1.0",
     "@matthewp/skatejs": "^5.1.1",
     "add": "^2.0.6",
     "highlight.js": "^10.4.1",
     "htm": "^2.1.1",
     "incremental-dom": "^0.5.1",
     "microbundle": "^0.15.1",
-    "node-qunit-puppeteer": "^2.0.3",
-    "serve": "^11.3.2",
+    "@matthewp/node-qunit-puppeteer": "^3.0.0",
+    "serve": "^14.1.2",
     "wireit": "^0.9.3",
     "workbox-cli": "^4.3.1"
   }
