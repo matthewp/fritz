@@ -15,8 +15,8 @@
     "build:worker": "wireit",
     "build:window": "wireit",
     "build": "wireit",
-    "server": "serve -p 1931",
-    "test": "node-qunit-puppeteer http://localhost:1931/test/test.html 10000",
+    "server": "wireit",
+    "test": "wireit",
     "test-pass": "echo 'Pass' && exit 0"
   },
   "wireit": {
@@ -31,6 +31,21 @@
         "build:worker",
         "build:window"
       ]
+    },
+    "test": {
+      "command": "node node_modules/@matthewp/node-qunit-puppeteer/cli.js http://localhost:1931/test/test.html",
+      "dependencies": [
+        "build",
+        "server"
+      ]
+    },
+    "server": {
+      "command": "serve -p 1931",
+      "service": {
+        "readyWhen": {
+          "lineMatches": "Accepting connections"
+        }
+      }
     }
   },
   "repository": {

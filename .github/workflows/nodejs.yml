@@ -9,7 +9,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [12.x, 14.x]
+        node-version: [18.x]
 
     steps:
     - uses: actions/checkout@v1
@@ -17,13 +17,11 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
-    - name: Puppeteer Container
-      uses: ianwalter/puppeteer@v2.0.0
+
     - name: npm install, build, and test
       run: |
         npm ci
-        make
-        npm run server &
-        npm test
+        npm run build
+        npm run test
       env:
         CI: true
