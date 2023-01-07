@@ -3,3 +3,6 @@ node_modules/
 window.umd.js
 /worker.js
 /worker.umd.js
+
+/worker.modern.mjs
+/worker.modern.mjs.map

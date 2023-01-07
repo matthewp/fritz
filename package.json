@@ -5,10 +5,27 @@
   "main": "worker.umd.js",
   "module": "worker.js",
   "scripts": {
+    "build:worker": "wireit",
+    "build:window": "wireit",
+    "build": "wireit",
     "server": "serve -p 1931",
     "test": "node-qunit-puppeteer http://localhost:1931/test/test.html 10000",
     "test-pass": "echo 'Pass' && exit 0",
     "prepublishOnly": "make all"
+  },
+  "wireit": {
+    "build:worker": {
+      "command": "microbundle -f modern -i src/worker/index.js"
+    },
+    "build:window": {
+      "command": "microbundle -f modern -i src/window/index.js"
+    },
+    "build": {
+      "dependencies": [
+        "build:worker",
+        "build:window"
+      ]
+    }
   },
   "repository": {
     "type": "git",
@@ -39,8 +56,10 @@
     "highlight.js": "^10.4.1",
     "htm": "^2.1.1",
     "incremental-dom": "^0.5.1",
+    "microbundle": "^0.15.1",
     "node-qunit-puppeteer": "^2.0.3",
     "serve": "^11.3.2",
+    "wireit": "^0.9.3",
     "workbox-cli": "^4.3.1"
   }
 }
