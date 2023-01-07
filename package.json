@@ -58,7 +58,7 @@
     "incremental-dom": "^0.5.1",
     "microbundle": "^0.15.1",
     "node-qunit-puppeteer": "^2.0.3",
-    "serve": "^11.3.2",
+    "serve": "^14.1.2",
     "wireit": "^0.9.3",
     "workbox-cli": "^4.3.1"
   }
