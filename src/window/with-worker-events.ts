@@ -1,28 +1,32 @@
+import type { MountBase } from './types';
+import type { EventMessage } from '../message-types';
+
 import { CLEANUP, EVENT } from '../message-types.js';
 
-function postEvent(event, inst, handle) {
+function postEvent(event: Event, inst: MountBase, handle?: number) {
   let worker = inst._worker;
   let id = inst._id;
-  worker.postMessage({
+  let msg: EventMessage = {
     type: EVENT,
     event: {
       type: event.type,
-      detail: event.detail,
-      value: event.target.value
+      detail: (event as any).detail,
+      value: (event as any).target.value
     },
     id: id,
     handle: handle
-  });
+  };
+  worker.postMessage(msg);
 }
 
-export function withWorkerEvents(Base = HTMLElement) {
+export function withWorkerEvents(Base: MountBase) {
   return class extends Base {
     constructor() {
       super();
       this._handlers = Object.create(null);
     }
 
-    addEventCallback(handleId, eventProp) {
+    addEventCallback(handleId: number) {
       let key = handleId;
       let fn;
       if(fn = this._handlers[key]) {
@@ -30,7 +34,7 @@ export function withWorkerEvents(Base = HTMLElement) {
       }
 
       // TODO optimize this so functions are reused if possible.
-      fn = ev => {
+      fn = (ev: Event) => {
         ev.preventDefault();
         postEvent(ev, this, handleId);
       };
@@ -38,14 +42,14 @@ export function withWorkerEvents(Base = HTMLElement) {
       return fn;
     }
 
-    addEventProperty(name) {
-      var evName = name.substr(2);
-      var priv = '_' + name;
-      var proto = Object.getPrototypeOf(this);
+    addEventProperty(name: string) {
+      let evName = name.slice(2);
+      let priv = '_' + name;
+      let proto = Object.getPrototypeOf(this);
       Object.defineProperty(proto, name, {
         get: function(){ return this[priv]; },
         set: function(val) {
-          var cur;
+          let cur;
           if(cur = this[priv]) {
             this.removeEventListener(evName, cur);
           }
@@ -55,7 +59,7 @@ export function withWorkerEvents(Base = HTMLElement) {
       });
     }
 
-    handleEvent(ev) {
+    handleEvent(ev: Event) {
       ev.preventDefault();
       postEvent(ev, this);
     }

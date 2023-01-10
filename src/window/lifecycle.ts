@@ -1,3 +1,5 @@
+import type { WorkerRenderMessage } from '../message-types';
+
 import { withComponent } from './component.js';
 import { withWorkerConnection } from './with-worker-connection.js';
 import { getInstance } from '../util.js';
@@ -17,7 +19,7 @@ export function define(fritz, msg) {
   customElements.define(tagName, Element);
 };
 
-export function render(fritz, msg) {
+export function render(fritz, msg: WorkerRenderMessage) {
   let instance = getInstance(fritz, msg.id);
   if(instance !== undefined) {
     instance.doRenderCallback(msg.tree);

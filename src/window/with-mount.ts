@@ -1,20 +1,15 @@
+import type { MountBase } from './types';
 import { RENDERED } from '../message-types.js';
 
-interface MountBase extends HTMLElement {
-  new(): MountBase;
-  renderer?(): void;
-  _worker: Worker;
-}
+let currentComponent: HTMLElement;
 
-export let currentComponent;
-
-export function setComponent(component) {
+export function setComponent(component: HTMLElement) {
   let previousComponent = currentComponent;
   setComponentTo(component);
   return setComponentTo.bind(null, previousComponent);
 };
 
-function setComponentTo(component) {
+function setComponentTo(component: HTMLElement) {
   currentComponent = component;
 }
 

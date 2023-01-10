@@ -14,6 +14,13 @@ export type Fritz = {
 };
 
 export type WindowFritz = Fritz & {
+  _id: number;
   _workers: Worker[];
   state?: any;
 };
+
+export type PropDefinition = {
+  attribute: boolean;
+};
+
+export type PropDefinitions = Record<string, PropDefinition>;
