@@ -7,6 +7,11 @@ import { TRIGGER } from '../message-types.js';
 import { enqueueRender } from './instance.js';
 
 interface Component<P extends Record<string, any> = Record<string, any>, S extends Record<string, any> = Record<string, any>> {
+  _fritzId: number;
+  _fritzHandles: Map<number, Handle>;
+  _dirty: boolean | undefined;
+  localName: string;
+
   componentWillReceiveProps(props: P): void;
   shouldComponentUpdate(props: P): boolean;
   componentDidMount(): void;
@@ -16,13 +21,6 @@ abstract class Component<P extends Record<string, any> = Record<string, any>, S 
   public static props?: PropDefinitions;
   public static events?: Array<string>;
 
-  // @ts-ignore
-  public _fritzId: number;
-  // @ts-ignore
-  public _fritzHandles: Map<number, Handle>;
-  public _dirty: boolean | undefined;
-  // @ts-ignore
-  public localName: string;
   public state: S;
   public props: P;
   constructor() {
