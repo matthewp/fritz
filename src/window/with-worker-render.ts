@@ -1,4 +1,4 @@
-import type { WindowRenderMessage } from '../message-types';
+import type { WindowRenderMessage, WorkerRenderMessage } from '../message-types';
 import type { MountBase } from './types';
 
 import { idomRender as render } from './idom-render.js';

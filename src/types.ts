@@ -24,3 +24,11 @@ export type PropDefinition = {
 };
 
 export type PropDefinitions = Record<string, PropDefinition>;
+
+export type RemoteEvent<D = any> = {
+  type: string;
+  detail?: D;
+  cancelable?: boolean;
+  composed?: boolean;
+  scoped?: boolean;
+};

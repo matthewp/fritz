@@ -12,7 +12,7 @@ export function delInstance(fritz: Fritz, id: number){
   fritz._instances.delete(id);
 };
 
-export function isFunction(val: unknown) {
+export function isFunction(val: unknown): val is Function {
   return typeof val === 'function';
 };
 

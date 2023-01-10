@@ -1,4 +1,4 @@
-import type { PropDefinitions } from './types';
+import type { PropDefinitions, RemoteEvent } from './types';
 
 export const DEFINE = 'define';
 export const TRIGGER = 'trigger';
@@ -31,10 +31,16 @@ export type EventMessage = {
 };
 
 export type WindowRenderMessage = {
-  type: typeof RENDER,
-  tag: string,
-  id: number,
+  type: typeof RENDER;
+  tag: string;
+  id: number;
   props: Record<string, any>;
+};
+
+export type TriggerMessage = {
+  type: typeof TRIGGER,
+  event: RemoteEvent,
+  id: number;
 };
 
 export type WorkerRenderMessage = {

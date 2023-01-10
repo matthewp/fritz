@@ -1,6 +1,7 @@
 import type { DefineMessage } from '../message-types';
 
 import Component from './component.js';
+
 import h, { Fragment } from './hyperscript.js';
 import relay from './relay.js';
 import { DEFINE } from '../message-types.js';
