@@ -5,6 +5,7 @@
     "fritz": "5.0.0-alpha.2"
   },
   "changesets": [
+    "hip-ads-drop",
     "seven-coins-relate"
   ]
 }
