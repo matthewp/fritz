@@ -1,13 +1,14 @@
 {
     "compilerOptions": {
-      "module": "esnext",
+      "module": "ESNext",
       "moduleResolution": "node",
-      "target": "ES2020",
+      "target": "ESNext",
       "strict": true,
       "declaration": true,
       "emitDeclarationOnly": false,
       "noEmit": true
     },
+    "files": ["./src/window/mods.d.ts"],
     "include": ["./src"]
   }
   

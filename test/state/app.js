@@ -1,4 +1,4 @@
-import fritz, { h, Component } from '../../src/worker/index.js';
+import fritz, { h, Component } from '../../worker.mjs';
 
 class Stateful extends Component {
   constructor() {

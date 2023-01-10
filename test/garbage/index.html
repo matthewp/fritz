@@ -3,6 +3,6 @@
 <title>Garbage collection</title>
 <gc-app></gc-app>
 <script type="module">
-  import fritz from '../../window.js';
+  import fritz from '../../window.mjs';
   fritz.use(new Worker('./app.js', { type: 'module' }));
 </script>

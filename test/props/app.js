@@ -1,4 +1,4 @@
-import fritz, { Component, h } from '../../src/worker/index.js';
+import fritz, { Component, h } from '../../worker.mjs';
 
 class Hello extends Component {
   static get props() {

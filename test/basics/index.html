@@ -4,7 +4,7 @@
 <body>
 <basic-app></basic-app>
 <script type="module">
-  import fritz from '../../window.js';
+  import fritz from '../../window.mjs';
 
   fritz.use(new Worker('./app.js', { type: 'module' }));
 </script>
