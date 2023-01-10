@@ -14,6 +14,7 @@
   "scripts": {
     "build:worker": "wireit",
     "build:window": "wireit",
+    "move:types": "wireit",
     "build": "wireit",
     "server": "wireit",
     "test": "wireit",
@@ -27,10 +28,18 @@
     "build:window": {
       "command": "microbundle -f modern --no-pkg-main --define process.env.NODE_ENV=production -i src/window/index.ts -o window.mjs"
     },
-    "build": {
+    "move:types": {
+      "command": "rm -rf types/ && mkdir -p types && mv *.d.ts types && mv worker window types",
       "dependencies": [
         "build:worker",
         "build:window"
+      ]
+    },
+    "build": {
+      "dependencies": [
+        "build:worker",
+        "build:window",
+        "move:types"
       ]
     },
     "test": {
