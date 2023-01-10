@@ -1,0 +1,5 @@
+---
+"fritz": patch
+---
+
+New build
