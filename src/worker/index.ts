@@ -1,7 +1,6 @@
 import type { DefineMessage } from '../message-types';
 
 import Component from './component.js';
-
 import h, { Fragment } from './hyperscript.js';
 import relay from './relay.js';
 import { DEFINE } from '../message-types.js';
@@ -22,7 +21,9 @@ function define(tag: string, constructor: typeof Component) {
   if(constructor.prototype === undefined ||
     constructor.prototype.render === undefined) {
     let render = constructor;
+    // @ts-ignore
     constructor = class extends Component{};
+    // @ts-ignore
     constructor.prototype.render = render;
   }
 

@@ -1,34 +1,33 @@
+import type { default as Component } from './worker/component';
+import type { MountBase } from './window/types';
 
-/*
-const fritz = Object.create(null);
-fritz.Component = Component;
-fritz.define = define;
-fritz.h = h;
-fritz._tags = new Map();
-fritz._instances = new Map();
-fritz.fritz = fritz;
-*/
-
-export type Fritz = {
-  _instances: Map<number, any>;
+export type Fritz<T extends Component<any, any> | MountBase = Component<any, any>> = {
+  _instances: Map<number, T>;
+  _type: T;
 };
 
-export type WindowFritz = Fritz & {
+export type WindowFritz = Fritz<MountBase> & {
   _id: number;
   _workers: Worker[];
   state?: any;
+};
+
+export type WorkerFritz = Fritz<Component<any, any>> & {
+  state?: any;
+  _tags: Map<string, any>;
 };
 
 export type PropDefinition = {
   attribute: boolean;
 };
 
-export type PropDefinitions = Record<string, PropDefinition>;
+export type PropDefinitions<K extends string = any> = {
+  [P in K]: PropDefinition;
+};
 
 export type RemoteEvent<D = any> = {
   type: string;
   detail?: D;
   cancelable?: boolean;
   composed?: boolean;
-  scoped?: boolean;
 };

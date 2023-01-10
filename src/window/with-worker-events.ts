@@ -64,7 +64,7 @@ export function withWorkerEvents(Base: MountBase) {
       postEvent(ev, this);
     }
 
-    handleOrphanedHandles(handles) {
+    handleOrphanedHandles(handles: number[]) {
       if(handles.length) {
         let worker = this._worker;
         worker.postMessage({

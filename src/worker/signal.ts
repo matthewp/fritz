@@ -4,7 +4,7 @@ import Handle from './handle.js';
 
 const eventAttrExp = /^on[A-Z]/;
 
-function signal(tagName, attrName, attrValue, attrs) {
+function signal(_tagName: string, attrName: string, attrValue: any, attrs: Record<string, any>) {
   if(eventAttrExp.test(attrName)) {
     if(!isWorker) {
       return [];
@@ -13,7 +13,7 @@ function signal(tagName, attrName, attrValue, attrs) {
     let eventName = attrName.toLowerCase();
     let handle = Handle.from(attrValue);
     handle.inUse = true;
-    currentInstance._fritzHandles.set(handle.id, handle);
+    currentInstance!._fritzHandles.set(handle.id, handle);
     return [1, eventName, handle.id];
   }
 }

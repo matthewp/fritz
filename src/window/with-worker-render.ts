@@ -1,11 +1,12 @@
 import type { WindowRenderMessage, WorkerRenderMessage } from '../message-types';
 import type { MountBase } from './types';
+import type { Tree } from '../worker/tree';
 
 import { idomRender as render } from './idom-render.js';
 import { withRenderer } from '@matthewp/skatejs/dist/esnext/with-renderer';
 import { RENDER } from '../message-types.js';
 
-export function withWorkerRender(Base: MountBase) {
+export function withWorkerRender(Base: MountBase): any {
   return class extends withRenderer(Base) {
     constructor() {
       super();
@@ -29,11 +30,11 @@ export function withWorkerRender(Base: MountBase) {
     beforeRender() {}
     afterRender() {}
 
-    doRenderCallback(tree) {
-      this.beforeRender();
+    doRenderCallback(this: MountBase, tree: Tree) {
+      (this as any).beforeRender();
       let shadowRoot = this.shadowRoot;
       let out = render(tree, shadowRoot, this);
-      this.afterRender();
+      (this as any).afterRender();
       this.handleOrphanedHandles(out);
     }
   }

@@ -1,14 +1,15 @@
-let Store, Handle;
-
-Store = class {
+class Store {
+  public handleMap: WeakMap<Function, number>;
+  public idMap: Map<number, Handle>;
+  public id: number;
+  
   constructor() {
     this.handleMap = new WeakMap();
     this.idMap = new Map();
     this.id = 0;
-    this.inUse = true;
   }
 
-  from(fn) {
+  from(fn: Function) {
     let handle;
     let id = this.handleMap.get(fn);
     if(id == null) {
@@ -19,15 +20,19 @@ Store = class {
     } else {
       handle = this.idMap.get(id);
     }
-    return handle;
+    return handle as Handle;
   }
 
-  get(id) {
+  get(id: number) {
     return this.idMap.get(id);
   }
 }
 
-Handle = class {
+class Handle {
+  public static _store: Store;
+  public id: number;
+  public fn: Function;
+  public inUse: boolean;
   static get store() {
     if(!this._store) {
       this._store = new Store();
@@ -35,17 +40,18 @@ Handle = class {
     return this._store;
   }
 
-  static from(fn) {
+  static from(fn: Function) {
     return this.store.from(fn);
   }
 
-  static get(id) {
+  static get(id: number) {
     return this.store.get(id);
   }
 
-  constructor(id, fn) {
+  constructor(id: number, fn: Function) {
     this.id = id;
     this.fn = fn;
+    this.inUse = true;
   }
 
   del() {

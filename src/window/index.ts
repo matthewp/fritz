@@ -1,3 +1,5 @@
+import type { MessageSentFromWorker } from '../message-types';
+
 import { define, render, trigger } from './lifecycle.js';
 import { DEFINE, RENDER, TRIGGER } from '../message-types.js';
 import { sendState } from './cmd.js';
@@ -9,7 +11,7 @@ fritz._instances = new Map();
 fritz._workers = [];
 fritz._work = [];
 
-function use(worker) {
+function use(worker: Worker) {
   fritz._workers.push(worker);
   worker.addEventListener('message', handleMessage);
   if(fritz.state) {
@@ -17,7 +19,7 @@ function use(worker) {
   }
 }
 
-function handleMessage(ev) {
+function handleMessage(this: Worker, ev: MessageEvent<MessageSentFromWorker>) {
   let msg = ev.data;
   switch(msg.type) {
     case DEFINE:

@@ -17,6 +17,7 @@
     "build": "wireit",
     "server": "wireit",
     "test": "wireit",
+    "check": "tsc",
     "test-pass": "echo 'Pass' && exit 0"
   },
   "wireit": {
@@ -79,6 +80,7 @@
     "incremental-dom": "^0.5.1",
     "microbundle": "^0.15.1",
     "serve": "^14.1.2",
+    "typescript": "^4.9.4",
     "wireit": "^0.9.3",
     "workbox-cli": "^4.3.1"
   }

@@ -1,8 +1,15 @@
+import type { default as Component } from './component';
+import type { Tree } from './tree';
+
 import { isFunction } from '../util.js';
 import signal from './signal.js';
 import { createTree, isTree } from './tree.js';
 
-function Fragment(attrs, children) {
+type Attrs = Record<string, any> | any[] | null;
+type FunctionComponent = (a: Attrs, children?: any) => Tree;
+type Children = Array<any>;
+
+function Fragment(_attrs: Attrs, children: Children) {
   let child;
   let tree = createTree();
   for(let i = 0; i < children.length; i++) {
@@ -12,7 +19,9 @@ function Fragment(attrs, children) {
   return tree;
 }
 
-function h(tag, attrs, children){
+
+
+function h(tag: string | typeof Component | FunctionComponent, attrs: Attrs, children?: Children): Tree {
   let argsLen = arguments.length;
   let childrenType = typeof children;
   if(argsLen === 2) {
@@ -27,28 +36,30 @@ function h(tag, attrs, children){
   let isFn = isFunction(tag);
 
   if(isFn) {
-    let localName = tag.prototype.localName;
+    let localName = (tag as typeof Component).prototype.localName;
     if(localName) {
       return h(localName, attrs, children);
     }
 
-    return tag(attrs || {}, children);
+    return (tag as FunctionComponent)(attrs || {}, children);
   }
 
   let tree = createTree();
-  let uniq, evs;
+  let uniq: any, evs: Array<ReturnType<typeof signal>> | undefined;
   if(attrs) {
     attrs = Object.keys(attrs).reduce(function(acc, key){
-      let value = attrs[key];
+      let value = (attrs as any)[key];
 
-      let eventInfo = signal(tag, key, value, attrs)
+      let eventInfo = signal(tag as any, key, value, attrs as any);
       if(eventInfo) {
         if(!evs) evs = [];
         evs.push(eventInfo);
       } else if(key === 'key') {
         uniq = value;
       } else {
+        // @ts-ignore
         acc.push(key);
+        // @ts-ignore
         acc.push(value);
       }
 
@@ -66,7 +77,7 @@ function h(tag, attrs, children){
   tree.push(open);
 
   if(children) {
-    children.forEach(function(child){
+    children.forEach(function(child: any){
       if(typeof child !== 'undefined' && !Array.isArray(child)) {
         tree.push([4, child + '']);
         return;
@@ -85,7 +96,7 @@ function h(tag, attrs, children){
 
 h.frag = Fragment;
 
-function isPrimitive(type) {
+function isPrimitive(type: string) {
   return type === 'string' || type === 'number' || type === 'boolean';
 }
 
