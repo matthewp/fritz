@@ -2,7 +2,7 @@
 <html lang="en">
 <title>Props</title>
 <script type="module">
-  import fritz from '../../window.js';
+  import fritz from '../../window.mjs';
   fritz.use(new Worker('./app.js', { type: 'module' }));
 </script>
 <x-hello name="world"></x-hello>

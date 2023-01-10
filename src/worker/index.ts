@@ -1,3 +1,5 @@
+import type { DefineMessage } from '../message-types';
+
 import Component from './component.js';
 import h, { Fragment } from './hyperscript.js';
 import relay from './relay.js';
@@ -12,14 +14,16 @@ fritz._tags = new Map();
 fritz._instances = new Map();
 fritz.fritz = fritz;
 
-function define(tag, constructor) {
+function define(tag: string, constructor: typeof Component) {
   if(constructor === undefined) {
     throw new Error('fritz.define expects 2 arguments');
   }
   if(constructor.prototype === undefined ||
     constructor.prototype.render === undefined) {
     let render = constructor;
+    // @ts-ignore
     constructor = class extends Component{};
+    // @ts-ignore
     constructor.prototype.render = render;
   }
 
@@ -32,7 +36,7 @@ function define(tag, constructor) {
 
   relay(fritz);
 
-  postMessage({
+  const msg: DefineMessage = {
     type: DEFINE,
     tag: tag,
     props: constructor.props,
@@ -40,10 +44,12 @@ function define(tag, constructor) {
     features: {
       mount: !!constructor.prototype.componentDidMount
     }
-  });
+  }
+
+  postMessage(msg);
 }
 
-let state;
+let state: any;
 Object.defineProperty(fritz, 'state', {
   set: function(val) { state = val; },
   get: function() { return state; }

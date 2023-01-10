@@ -1,5 +1,6 @@
 .wireit/
 node_modules/
+types/
 
 /worker.mjs
 /worker.mjs.map

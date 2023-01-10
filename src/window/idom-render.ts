@@ -1,3 +1,4 @@
+import type { MountBase } from './types';
 import {
   attributes,
   elementOpen,
@@ -9,13 +10,13 @@ import {
 import { isFunction } from '../util.js';
 
 var eventAttrExp = /^on[a-z]/;
-var orphanedHandles = null;
+var orphanedHandles: any[] | null = null;
 var FN_HANDLE = Symbol('fritz.handle');
 
 var attributesSet = attributes[symbols.default];
 attributes[symbols.default] = preferProps;
 
-function preferProps(element, name, value){
+function preferProps(element: any, name: string, value: any){
   if(name in element && !isSVG(element)) {
     if(isEventProperty(name, value)) {
       element[name] = setupEventHandler(element, name, value);
@@ -32,21 +33,21 @@ function preferProps(element, name, value){
     attributesSet(element, name, value);
 }
 
-function isEventProperty(name, value) {
+function isEventProperty(name: string, value: any) {
   return eventAttrExp.test(name) && Array.isArray(value) && isFunction(value[1]);
 }
 
-function isSVG(element) {
+function isSVG(element: Element) {
   return element.namespaceURI === 'http://www.w3.org/2000/svg';
 }
 
-function setupEventHandler(element, name, value) {
+function setupEventHandler(element: any, name: string, value: any) {
   var currentValue = element[name];
   var fn = value[1];
   if(currentValue) {
     if(currentValue !== fn) {
       fn[FN_HANDLE] = value[0];
-      orphanedHandles.push(currentValue[FN_HANDLE]);
+      orphanedHandles!.push(currentValue[FN_HANDLE]);
     }
   } else {
     fn[FN_HANDLE] = value[0];
@@ -59,7 +60,7 @@ const ID = 2;
 const ATTRS = 3;
 const EVENTS = 4;
 
-function render(bc, component){
+function render(bc: any, component: MountBase){
   var n;
   for(var i = 0, len = bc.length; i < len; i++) {
     n = bc[i];
@@ -76,7 +77,7 @@ function render(bc, component){
         }
 
         var openArgs = [n[TAG], n[ID], null].concat(n[ATTRS]);
-        elementOpen.apply(null, openArgs);
+        elementOpen.apply(null, openArgs as any);
         break;
       case 2:
         elementClose(n[1]);
@@ -88,7 +89,7 @@ function render(bc, component){
   }
 }
 
-function idomRender(vdom, root, component) {
+function idomRender(vdom: any, root: any, component: MountBase): number[] {
   orphanedHandles = [];
   patch(root, () => render(vdom, component));
   let out = orphanedHandles;
