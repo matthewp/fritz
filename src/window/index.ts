@@ -1,15 +1,14 @@
 import type { MessageSentFromWorker } from '../message-types';
+import type { WindowFritz } from '../types';
 
 import { define, render, trigger } from './lifecycle.js';
 import { DEFINE, RENDER, TRIGGER } from '../message-types.js';
 import { sendState } from './cmd.js';
 
-const fritz = Object.create(null);
-fritz.tags = Object.create(null);
+const fritz = Object.create(null) as WindowFritz;
 fritz._id = 1;
 fritz._instances = new Map();
 fritz._workers = [];
-fritz._work = [];
 
 function use(worker: Worker) {
   fritz._workers.push(worker);

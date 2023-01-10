@@ -1,4 +1,5 @@
 import type { DefineMessage } from '../message-types';
+import type { WorkerFritz } from '../types';
 
 import Component from './component.js';
 import h, { Fragment } from './hyperscript.js';
@@ -6,7 +7,7 @@ import relay from './relay.js';
 import { DEFINE } from '../message-types.js';
 import { postMessage } from './env.js';
 
-const fritz = Object.create(null);
+const fritz = Object.create(null) as WorkerFritz;
 fritz.Component = Component;
 fritz.define = define;
 fritz.h = h;
