@@ -5,6 +5,9 @@
     "fritz": "5.0.0-alpha.2"
   },
   "changesets": [
+    "fair-pigs-work",
+    "hip-ads-drop",
+    "neat-olives-melt",
     "seven-coins-relate"
   ]
 }
