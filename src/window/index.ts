@@ -4,6 +4,7 @@ import type { WindowFritz } from '../types';
 import { define, render, trigger } from './lifecycle.js';
 import { DEFINE, RENDER, TRIGGER } from '../message-types.js';
 import { sendState } from './cmd.js';
+import './types';
 
 const fritz = Object.create(null) as WindowFritz;
 fritz._id = 1;

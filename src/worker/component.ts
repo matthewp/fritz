@@ -18,9 +18,6 @@ interface Component<P extends Record<string, any> = Record<string, any>, S exten
 }
 
 abstract class Component<P extends Record<string, any> = Record<string, any>, S extends Record<string, any> = Record<string, any>> {
-  public static props?: PropDefinitions;
-  public static events?: Array<string>;
-
   public state: S;
   public props: P;
   constructor() {
@@ -51,6 +48,12 @@ abstract class Component<P extends Record<string, any> = Record<string, any>, S 
   componentWillUnmount(){}
 
   abstract render(props: P, state: S): Tree;
+}
+
+export interface ComponentConstructor {
+  props?: PropDefinitions;
+  events?: Array<string>;
+  new (...params: any[]): Component;
 }
 
 export default Component;

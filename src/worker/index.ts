@@ -1,11 +1,13 @@
 import type { DefineMessage } from '../message-types';
-import type { WorkerFritz } from '../types';
+import type { CustomElementTagName, WorkerFritz } from '../types';
+import type { ComponentConstructor } from './component';
 
 import Component from './component.js';
 import h, { Fragment } from './hyperscript.js';
 import relay from './relay.js';
 import { DEFINE } from '../message-types.js';
 import { postMessage } from './env.js';
+import '../types'; // This is needed to get the types to be built.
 
 const fritz = Object.create(null) as WorkerFritz;
 fritz.Component = Component;
@@ -15,7 +17,7 @@ fritz._tags = new Map();
 fritz._instances = new Map();
 fritz.fritz = fritz;
 
-function define(tag: string, constructor: typeof Component) {
+function define(tag: CustomElementTagName, constructor: ComponentConstructor) {
   if(constructor === undefined) {
     throw new Error('fritz.define expects 2 arguments');
   }
