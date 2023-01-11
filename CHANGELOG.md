@@ -1,5 +1,11 @@
 # fritz
 
+## 5.0.0-alpha.5
+
+### Patch Changes
+
+- 9b999db: Minor TS improvements
+
 ## 5.0.0-alpha.4
 
 ### Patch Changes
