@@ -16,7 +16,7 @@
   "typesVersions": {
     "*": {
       "*": [
-        "types/worker/index.d.ts"
+        "types/worker/ns.d.ts"
       ],
       "window": [
         "types/window/index.d.ts"
@@ -27,6 +27,7 @@
     "changeset": "changeset",
     "build:worker": "wireit",
     "build:window": "wireit",
+    "build:node": "wireit",
     "move:types": "wireit",
     "build": "wireit",
     "server": "wireit",
@@ -41,17 +42,22 @@
     "build:window": {
       "command": "microbundle -f modern --no-pkg-main --define process.env.NODE_ENV=production -i src/window/index.ts -o window.mjs"
     },
+    "build:node": {
+      "command": "microbundle -f modern --no-pkg-main -i src/node/index.ts --external ./worker.mjs --no-compress -o node.mjs"
+    },
     "move:types": {
-      "command": "rm -rf types/ && mkdir -p types && mv *.d.ts types && mv worker window types",
+      "command": "rm -rf types/ && mkdir -p types && mv worker window node types && mv *.d.ts types && cp src/worker/*.d.ts types/worker",
       "dependencies": [
         "build:worker",
-        "build:window"
+        "build:window",
+        "build:node"
       ]
     },
     "build": {
       "dependencies": [
         "build:worker",
         "build:window",
+        "build:node",
         "move:types"
       ]
     },
@@ -85,6 +91,8 @@
     "window.mjs.map",
     "worker.mjs",
     "worker.mjs.map",
+    "node.mjs",
+    "node.mjs.map",
     "types"
   ],
   "homepage": "https://fritz.work",

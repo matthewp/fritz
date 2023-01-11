@@ -1,4 +1,6 @@
 import type { default as Component } from './component';
+import type { WorkerRenderMessage } from '../message-types';
+import type { Tree } from './tree';
 
 import { RENDER } from '../message-types.js';
 import { defer } from '../util.js';
@@ -39,10 +41,12 @@ function render(instance: Component<any, any>, sentProps: Record<string, any> | 
     instance.componentWillUpdate();
     instance._dirty = false;
 
-    postMessage({
+    const msg: WorkerRenderMessage = {
       type: RENDER,
       id: instance._fritzId,
-      tree: renderInstance(instance)
-    });
+      tree: renderInstance(instance) as Tree
+    };
+
+    postMessage(msg);
   }
 }
