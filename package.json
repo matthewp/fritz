@@ -5,12 +5,16 @@
   "description": "Create web components that run in a Web Worker",
   "exports": {
     ".": {
-      "types": "./types/worker/index.d.ts",
+      "types": "./types/worker/ns.d.ts",
       "default": "./worker.mjs"
     },
     "./window": {
       "types": "./types/window/index.d.ts",
       "default": "./window.mjs"
+    },
+    "./node": {
+      "types": "./types/node/index.d.ts",
+      "default": "./node.mjs"
     }
   },
   "typesVersions": {
@@ -20,6 +24,9 @@
       ],
       "window": [
         "types/window/index.d.ts"
+      ],
+      "node": [
+        "types/node/index.d.ts"
       ]
     }
   },
