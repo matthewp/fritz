@@ -1,5 +1,6 @@
 import type { default as Component } from './component';
 import type { Tree } from './tree';
+import { JSXInternal } from './jsx';
 
 import { isFunction } from '../util.js';
 import signal from './signal.js';
@@ -18,8 +19,6 @@ function Fragment(_attrs: Attrs, children: Children) {
   }
   return tree;
 }
-
-
 
 function h(tag: string | typeof Component | FunctionComponent, attrs: Attrs, children?: Children): Tree {
   let argsLen = arguments.length;

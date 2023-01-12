@@ -1,0 +1,55 @@
+{
+  "name": "astro-fritz",
+  "version": "1.0.0",
+  "description": "An Astro integration for Fritz",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./dist/index.mjs"
+    },
+    "./server": {
+      "default": "./dist/server.mjs"
+    },
+    "./client": {
+      "default": "./dist/client.mjs"
+    }
+  },
+  "scripts": {
+    "build": "wireit",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "wireit": {
+    "build": {
+      "command": "tsc -p tsconfig.json"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/matthewp/fritz.git"
+  },
+  "keywords": [
+    "astro",
+    "fritz"
+  ],
+  "author": "Matthew Phillips",
+  "license": "BSD-2-Clause",
+  "bugs": {
+    "url": "https://github.com/matthewp/fritz/issues"
+  },
+  "homepage": "https://github.com/matthewp/fritz#readme",
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@babel/core": ">=7.0.0-0 <8.0.0",
+    "@babel/plugin-transform-react-jsx": "^7.17.12",
+    "fritz": "^5.0.0-alpha.5"
+  },
+  "devDependencies": {
+    "typescript": "^4.9.4",
+    "wireit": "^0.9.3"
+  },
+  "peerDependencies": {
+    "astro": "^2.0.0-beta.1"
+  }
+}

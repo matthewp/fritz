@@ -5,9 +5,10 @@
       "target": "ESNext",
       "strict": true,
       "declaration": true,
-      "noEmit": true
+      "noEmit": true,
+      "skipLibCheck": true
     },
-    "files": ["./src/window/mods.d.ts"],
-    "include": ["./src"]
+    "files": ["src/window/mods.d.ts"],
+    "include": ["src"]
   }
   

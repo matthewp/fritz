@@ -1,12 +1,13 @@
 import type { Tree } from './tree';
 import type { PropDefinitions, RemoteEvent } from '../types';
 import type { default as Handle } from './handle';
+import type { ComponentChild } from './component-extras';
 
 import { isFunction } from '../util.js';
 import { TRIGGER } from '../message-types.js';
 import { enqueueRender } from './instance.js';
 
-interface Component<P extends Record<string, any> = Record<string, any>, S extends Record<string, any> = Record<string, any>> {
+interface Component<P = {}, S = {}> {
   _fritzId: number;
   _fritzHandles: Map<number, Handle>;
   _dirty: boolean | undefined;
@@ -17,7 +18,7 @@ interface Component<P extends Record<string, any> = Record<string, any>, S exten
   componentDidMount(): void;
 }
 
-abstract class Component<P extends Record<string, any> = Record<string, any>, S extends Record<string, any> = Record<string, any>> {
+abstract class Component<P, S> {
   public state: S;
   public props: P;
   constructor() {
@@ -36,7 +37,7 @@ abstract class Component<P extends Record<string, any> = Record<string, any>, S 
 
   setState(state: S | ((state: S, props: P) => S)) {
     let s = this.state;
-    Object.assign(s, isFunction(state) ? state(s, this.props) : state);
+    Object.assign(s as any, isFunction(state) ? state(s, this.props) : state);
     enqueueRender(this);
   }
 
@@ -47,7 +48,13 @@ abstract class Component<P extends Record<string, any> = Record<string, any>, S 
   componentWillUpdate(){}
   componentWillUnmount(){}
 
-  abstract render(props: P, state: S): Tree;
+  abstract render(props: P, state: S): ComponentChild;
+}
+
+export interface ComponentConstructor<P = {}, S = {}> {
+  props?: PropDefinitions;
+  events?: Array<string>;
+  new (...params: any[]): Component<P, S>;
 }
 
 export interface ComponentConstructor {

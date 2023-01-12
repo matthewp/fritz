@@ -1,16 +1,16 @@
-import fritz from '../../worker';
+import fritz from './worker.mjs';
 
 const OPEN = 1;
 const CLOSE = 2;
 const TEXT = 4;
 
-const encodeEntities = s => String(s)
+const encodeEntities = (s: any) => String(s)
 	.replace(/&/g, '&amp;')
 	.replace(/</g, '&lt;')
 	.replace(/>/g, '&gt;')
 	.replace(/"/g, '&quot;');
 
-function* render(vnode) {
+function* render(vnode: any): Generator<string, void, unknown> {
   let position = 0, len = vnode.length;
   while(position < len) {
     let instr = vnode[position];
@@ -20,8 +20,8 @@ function* render(vnode) {
       case OPEN: {
         let tagName = instr[1];
         let Component = fritz._tags.get(tagName);
-        let props = Component ? {} : null;
-        let pushProps = props ? (name, value) => props[name] = value : Function.prototype;
+        let props: Record<string, any> | null = Component ? {} : null;
+        let pushProps = props ? (name: string, value: any) => props![name] = value : Function.prototype;
 
         yield '<' + tagName;
         let attrs = instr[3];
@@ -38,20 +38,21 @@ function* render(vnode) {
         }
         yield '>';
 
-        
         if(Component) {
-          yield '<template>';
+          yield '<template shadowroot="open">';
           let instance = new Component();
-          yield* render(instance.render(props, {}));
-          yield '</template><f-shadow></f-shadow>';
+          yield* render(instance.render(props as any, {}));
+          yield '</template>';
         }
 
         break;
       }
+
       case CLOSE: {
         yield '</' + instr[1] + '>';
         break;
       }
+
       case TEXT: {
         yield encodeEntities(instr[1]);
         break;
@@ -62,7 +63,7 @@ function* render(vnode) {
   }
 }
 
-function renderToString(vnode) {
+function renderToString(vnode: any) {
   let out = '';
   for(let part of render(vnode)) {
     out += part;

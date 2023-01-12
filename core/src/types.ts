@@ -22,7 +22,7 @@ export type WorkerFritz = Fritz<Component<any, any>> & {
   h: typeof h;
   Component: typeof Component;
   fritz: WorkerFritz;
-  _tags: Map<string, any>;
+  _tags: Map<string, ComponentConstructor>;
 };
 
 export type PropDefinition = {
