@@ -1,8 +1,9 @@
 {
-  "name": "fritz-template",
+  "name": "fritz-site",
   "version": "1.0.0",
   "description": "Template for creating apps with Fritz",
   "main": "src/app/app.js",
+  "private": true,
   "scripts": {
     "dev": "astro dev",
 
