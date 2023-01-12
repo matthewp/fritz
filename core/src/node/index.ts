@@ -39,10 +39,10 @@ function* render(vnode: any): Generator<string, void, unknown> {
         yield '>';
 
         if(Component) {
-          yield '<template>';
+          yield '<template shadowroot="open">';
           let instance = new Component();
           yield* render(instance.render(props as any, {}));
-          yield '</template><f-shadow></f-shadow>';
+          yield '</template>';
         }
 
         break;

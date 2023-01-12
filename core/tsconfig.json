@@ -7,7 +7,7 @@
       "declaration": true,
       "noEmit": true
     },
-    "files": ["./src/window/mods.d.ts"],
-    "include": ["./src"]
+    "files": ["src/window/mods.d.ts"],
+    "include": ["src"]
   }
   

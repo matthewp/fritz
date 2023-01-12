@@ -21,10 +21,10 @@ jobs:
       run: npm ci
 
     - name: Type checking
-      run: npm run check
+      run: npm run --workspace=core check
 
 
     - name: Testing
-      run: npm run test
+      run: npm run --workspace=core test
       env:
         CI: true
