@@ -34,7 +34,6 @@
     }
   },
   "scripts": {
-    "changeset": "changeset",
     "build:worker": "wireit",
     "build:window": "wireit",
     "build:node": "wireit",
@@ -115,7 +114,6 @@
     "web-worker"
   ],
   "devDependencies": {
-    "@changesets/cli": "^2.26.0",
     "@matthewp/node-qunit-puppeteer": "^3.0.0",
     "@matthewp/skatejs": "^5.1.1",
     "add": "^2.0.6",
