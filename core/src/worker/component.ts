@@ -57,4 +57,10 @@ export interface ComponentConstructor<P = {}, S = {}> {
   new (...params: any[]): Component<P, S>;
 }
 
+export interface ComponentConstructor {
+  props?: PropDefinitions;
+  events?: Array<string>;
+  new (...params: any[]): Component;
+}
+
 export default Component;
