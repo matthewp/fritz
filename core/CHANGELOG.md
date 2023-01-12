@@ -1,5 +1,11 @@
 # fritz
 
+## 5.0.0-alpha.6
+
+### Patch Changes
+
+- d1aa720: Bare minimum SSR support
+
 ## 5.0.0-alpha.5
 
 ### Patch Changes

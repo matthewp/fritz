@@ -1,12 +1,11 @@
 {
   "name": "fritz-site",
-  "version": "1.0.0",
+  "version": "1.0.1-alpha.0",
   "description": "Template for creating apps with Fritz",
   "main": "src/app/app.js",
   "private": true,
   "scripts": {
     "dev": "astro dev",
-
     "build-old": "npm run build:client && npm run build:server",
     "build:client": "fritz build --client",
     "build:server": "fritz build --server",
@@ -25,11 +24,11 @@
   "homepage": "https://github.com/matthewp/fritz-template#readme",
   "devDependencies": {
     "astro": "^2.0.0-beta.0",
-    "fritz": "^5.0.0-alpha.0",
+    "fritz": "^5.0.0-alpha.6",
     "lowlight": "^1.12.1",
     "rollup": "^1.16.6"
   },
   "dependencies": {
-    "astro-fritz": "^1.0.0"
+    "astro-fritz": "^2.0.0-alpha.0"
   }
 }
