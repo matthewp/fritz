@@ -9,6 +9,9 @@ import {
 	FritzDOMAttributes,
 	VNode
 } from './component-extras';
+import {
+	Tree
+} from './tree';
 
 type Defaultize<Props, Defaults> =
 	// Distribute over unions
@@ -35,7 +38,9 @@ export namespace JSXInternal {
 					: never;
 		  }[keyof IntrinsicElements]
 		| ComponentType<P>;
-	export interface Element extends VNode<any> {}
+	interface VNodeElement extends VNode<any> {}
+	export type Element = VNodeElement | Tree;
+	//export interface Element extends VNode<any> {}
 	export type ElementClass = Component<any, any>;
 
 	export interface ElementAttributesProperty {

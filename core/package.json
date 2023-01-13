@@ -39,6 +39,10 @@
     "build:node": "wireit",
     "build": "wireit",
     "server": "wireit",
+    "test:core": "wireit",
+    "test:types:core": "wireit",
+    "test:types:jsx-runtime": "wireit",
+    "test:types": "wireit",
     "test": "wireit",
     "check": "wireit",
     "test-pass": "echo 'Pass' && exit 0"
@@ -71,12 +75,30 @@
         "build:node"
       ]
     },
-    "test": {
+    "test:types:core": {
+      "command": "tsc -p test/typescript/core/tsconfig.json",
+      "dependencies": ["build:worker"],
+      "files": ["src/**/*", "test/typescript/core/**/*"],
+      "output": []
+    },
+    "test:types:jsx-runtime": {
+      "command": "tsc -p test/typescript/jsx-runtime/tsconfig.json",
+      "dependencies": ["build:worker"],
+      "files": ["src/**/*", "test/typescript/jsx-runtime/**/*"],
+      "output": []
+    },
+    "test:types": {
+      "dependencies": ["test:types:core", "test:types:jsx-runtime"]
+    },
+    "test:core": {
       "command": "node ../node_modules/@matthewp/node-qunit-puppeteer/cli.js http://localhost:1931/test/test.html",
       "dependencies": [
         "build",
         "server"
       ]
+    },
+    "test": {
+      "dependencies": ["test:core", "test:types"]
     },
     "server": {
       "command": "serve -p 1931",

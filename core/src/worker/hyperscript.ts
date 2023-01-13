@@ -95,6 +95,10 @@ function h(tag: string | typeof Component | FunctionComponent, attrs: Attrs, chi
 
 h.frag = Fragment;
 
+declare namespace h {
+  export import JSX = JSXInternal;
+}
+
 function isPrimitive(type: string) {
   return type === 'string' || type === 'number' || type === 'boolean';
 }

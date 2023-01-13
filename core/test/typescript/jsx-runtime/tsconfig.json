@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "fritz"
+  },
+  "extends": "../../../tsconfig.json",
+  "include": ["."]
+}
