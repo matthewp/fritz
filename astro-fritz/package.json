@@ -22,15 +22,15 @@
   "wireit": {
     "build": {
       "command": "tsc -p tsconfig.json",
-      "dependencies": [
-        "../core:build"
-      ]
+      "dependencies": ["../core:build"],
+      "files": ["src/*"],
+      "output": ["dist"]
     },
     "check": {
       "command": "tsc -p tsconfig.json --noEmit",
-      "dependencies": [
-        "../core:build"
-      ]
+      "dependencies": ["../core:build"],
+      "files": ["src/**/*"],
+      "output": []
     }
   },
   "repository": {

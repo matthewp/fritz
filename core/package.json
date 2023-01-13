@@ -37,37 +37,38 @@
     "build:worker": "wireit",
     "build:window": "wireit",
     "build:node": "wireit",
-    "move:types": "wireit",
     "build": "wireit",
     "server": "wireit",
     "test": "wireit",
-    "check": "tsc -p tsconfig.json",
+    "check": "wireit",
     "test-pass": "echo 'Pass' && exit 0"
   },
   "wireit": {
     "build:worker": {
-      "command": "microbundle -f modern --no-pkg-main -i src/worker/index.ts -o worker.mjs"
+      "command": "microbundle -f modern --no-pkg-main -i src/worker/index.ts -o worker.mjs && node scripts/move-types.mjs && cp src/worker/*.d.ts types/worker",
+      "files": ["src/*.ts", "src/worker/**/*"],
+      "output": ["worker.mjs", "worker.mjs.map", "types/*.d.ts", "types/worker"]
     },
     "build:window": {
-      "command": "microbundle -f modern --no-pkg-main --define process.env.NODE_ENV=production -i src/window/index.ts -o window.mjs"
+      "command": "microbundle -f modern --no-pkg-main --define process.env.NODE_ENV=production -i src/window/index.ts -o window.mjs  && node scripts/move-types.mjs",
+      "files": ["src/*.ts", "src/window/**/*"],
+      "output": ["window.mjs", "window.mjs.map", "types/*.d.ts", "types/window"]
     },
     "build:node": {
-      "command": "microbundle -f modern --no-pkg-main -i src/node/index.ts --external ./worker.mjs --no-compress -o node.mjs"
+      "command": "microbundle -f modern --no-pkg-main -i src/node/index.ts --external ./worker.mjs --no-compress -o node.mjs && node scripts/move-types.mjs",
+      "files": ["src/node/**/*"],
+      "output": ["node.mjs", "node.mjs.map", "types/node"]
     },
-    "move:types": {
-      "command": "rm -rf types/ && mkdir -p types && mv worker window node types && mv *.d.ts types && cp src/worker/*.d.ts types/worker",
-      "dependencies": [
-        "build:worker",
-        "build:window",
-        "build:node"
-      ]
+    "check": {
+      "command": "tsc -p tsconfig.json",
+      "files": ["src/**/*"],
+      "output": []
     },
     "build": {
       "dependencies": [
         "build:worker",
         "build:window",
-        "build:node",
-        "move:types"
+        "build:node"
       ]
     },
     "test": {
