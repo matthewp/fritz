@@ -1,5 +1,11 @@
 # fritz
 
+## 5.0.0-beta.9
+
+### Major Changes
+
+- 4527644: Beta release of Fritz 5
+
 ## 5.0.0-alpha.8
 
 ### Minor Changes
