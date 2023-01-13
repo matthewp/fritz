@@ -1,6 +1,6 @@
 {
   "name": "astro-fritz",
-  "version": "2.0.0-alpha.0",
+  "version": "2.0.0-alpha.1",
   "description": "An Astro integration for Fritz",
   "type": "module",
   "exports": {
@@ -22,11 +22,15 @@
   "wireit": {
     "build": {
       "command": "tsc -p tsconfig.json",
-      "dependencies": ["../core:build"]
+      "dependencies": [
+        "../core:build"
+      ]
     },
     "check": {
       "command": "tsc -p tsconfig.json --noEmit",
-      "dependencies": ["../core:build"]
+      "dependencies": [
+        "../core:build"
+      ]
     }
   },
   "repository": {
@@ -49,7 +53,7 @@
   "dependencies": {
     "@babel/core": ">=7.0.0-0 <8.0.0",
     "@babel/plugin-transform-react-jsx": "^7.17.12",
-    "fritz": "^5.0.0-alpha.6"
+    "fritz": "^5.0.0-alpha.7"
   },
   "devDependencies": {
     "typescript": "^4.9.4",

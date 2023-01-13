@@ -1,5 +1,11 @@
 # fritz
 
+## 5.0.0-alpha.7
+
+### Major Changes
+
+- e76dd50: Call the lifecycle callbacks during SSR
+
 ## 5.0.0-alpha.6
 
 ### Patch Changes
