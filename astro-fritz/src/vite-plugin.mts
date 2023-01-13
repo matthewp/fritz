@@ -1,20 +1,22 @@
 import type { Plugin as VitePlugin } from 'vite';
 
-export default function pluginFritz(): VitePlugin {
+export function pluginFritz(): VitePlugin {
   return {
     name: 'fritz:build',
-    transform(code, id, opts) {
-      if(id.endsWith('App.tsx') || id.endsWith('Another.tsx')) {
-        // TODO only transform Fritz components.
+    transform(_code, id, opts) {
+      if(/\.(t|j)sx$/.test(id)) {
         if(!opts?.ssr) {
           return `
 import fritz from 'fritz/window';
+import { Worker } from 'astro-fritz/client';
 
-const worker = new Worker(new URL('${id}?fritz-worker', import.meta.url), {
+let worker = new Worker(new URL('${id}', import.meta.url), {
   type: 'module'
 });
 
-fritz.use(worker);
+export default {
+  url: worker.url
+};
 `.trim();
         }
       }

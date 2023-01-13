@@ -1,14 +1,14 @@
 import type { PropDefinitions, RemoteEvent } from './types';
 import type { Tree } from './worker/tree';
 
-export const DEFINE = 'define';
-export const TRIGGER = 'trigger';
-export const RENDER = 'render';
-export const EVENT = 'event';
-export const STATE = 'state';
-export const DESTROY = 'destroy';
-export const RENDERED = 'rendered';
-export const CLEANUP = 'cleanup';
+export const DEFINE = 'fritz:define';
+export const TRIGGER = 'fritz:trigger';
+export const RENDER = 'fritz:render';
+export const EVENT = 'fritz:event';
+export const STATE = 'fritz:state';
+export const DESTROY = 'fritz:destroy';
+export const RENDERED = 'fritz:rendered';
+export const CLEANUP = 'fritz:cleanup';
 
 
 // Window defined

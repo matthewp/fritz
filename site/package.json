@@ -5,13 +5,29 @@
   "main": "src/app/app.js",
   "private": true,
   "scripts": {
-    "dev": "astro dev",
-    "build-site": "astro build",
+    "dev": "wireit",
+    "build": "wireit",
     "preview": "astro preview",
     "build-old": "npm run build:client && npm run build:server",
     "build:client": "fritz build --client",
     "build:server": "fritz build --server",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "wireit": {
+    "dev": {
+      "command": "astro dev",
+      "dependencies": ["../astro-fritz:build", "../core:build"],
+      "service": true,
+      "readyWhen": {
+        "lineMatches": "started in"
+      }
+    },
+    "build": {
+      "command": "astro build",
+      "dependencies": ["../astro-fritz:build", "../core:build"],
+      "files": ["src/**/*"],
+      "output": ["dist/**/*"]
+    }
   },
   "repository": {
     "type": "git",

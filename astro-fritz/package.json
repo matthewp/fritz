@@ -12,6 +12,9 @@
     },
     "./client": {
       "default": "./dist/client.mjs"
+    },
+    "./worker": {
+      "default": "./dist/worker.mjs"
     }
   },
   "scripts": {
