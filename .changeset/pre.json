@@ -1,6 +1,6 @@
 {
   "mode": "pre",
-  "tag": "beta",
+  "tag": "alpha",
   "initialVersions": {
     "fritz": "5.0.0-alpha.2",
     "astro-fritz": "1.0.0",
