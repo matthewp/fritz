@@ -20,6 +20,9 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
+    - name: Build packages
+      run: npm run build
+
     - name: Type checking
       run: npm run check
 
