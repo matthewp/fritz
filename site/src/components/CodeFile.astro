@@ -1,0 +1,20 @@
+---
+import CodeSnippet from './CodeSnippet.astro';
+
+const {code, lang, name, class: className}  = Astro.props;
+---
+<style>
+.title {
+  text-align: center;
+  font-weight: 100;
+}
+
+.code-snippet {
+  display: block;
+  box-shadow: var(--box-shadow, 3px 3px 12px 1px rgba(0,0,0,0.4));
+}
+</style>
+<div class={className}>
+  <div class="title">{name}</div>
+  <CodeSnippet class="code-snippet" lang={lang} code={code}></CodeSnippet>
+</div>

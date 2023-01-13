@@ -16,7 +16,10 @@
   "wireit": {
     "dev": {
       "command": "astro dev",
-      "dependencies": ["../astro-fritz:build", "../core:build"],
+      "dependencies": [
+        "../astro-fritz:build",
+        "../core:build"
+      ],
       "service": true,
       "readyWhen": {
         "lineMatches": "started in"
@@ -24,9 +27,16 @@
     },
     "build": {
       "command": "astro build",
-      "dependencies": ["../astro-fritz:build", "../core:build"],
-      "files": ["src/**/*"],
-      "output": ["dist/**/*"]
+      "dependencies": [
+        "../astro-fritz:build",
+        "../core:build"
+      ],
+      "files": [
+        "src/**/*"
+      ],
+      "output": [
+        "dist/**/*"
+      ]
     }
   },
   "repository": {
@@ -41,12 +51,11 @@
   },
   "homepage": "https://github.com/matthewp/fritz-template#readme",
   "devDependencies": {
-    "astro": "^2.0.0-beta.0",
+    "astro": "^2.0.0-beta.2",
+    "astro-fritz": "^2.0.0-alpha.0",
     "fritz": "^5.0.0-alpha.6",
+    "highlight.js": "^9.15.8",
     "lowlight": "^1.12.1",
     "rollup": "^1.16.6"
-  },
-  "dependencies": {
-    "astro-fritz": "^2.0.0-alpha.0"
   }
 }
