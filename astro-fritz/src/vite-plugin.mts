@@ -3,8 +3,8 @@ import type { Plugin as VitePlugin } from 'vite';
 export function pluginFritz(): VitePlugin {
   return {
     name: 'fritz:build',
-    transform(code, id, opts) {
-      if(id.endsWith('App.tsx') || id.endsWith('Another.tsx')) {
+    transform(_code, id, opts) {
+      if(/\.(t|j)sx$/.test(id)) {
         if(!opts?.ssr) {
           return `
 import fritz from 'fritz/window';
