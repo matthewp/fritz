@@ -6,6 +6,8 @@
   "private": true,
   "scripts": {
     "dev": "astro dev",
+    "build-site": "astro build",
+    "preview": "astro preview",
     "build-old": "npm run build:client && npm run build:server",
     "build:client": "fritz build --client",
     "build:server": "fritz build --server",

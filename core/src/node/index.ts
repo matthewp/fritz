@@ -41,7 +41,9 @@ function* render(vnode: any): Generator<string, void, unknown> {
         if(Component) {
           yield '<template shadowroot="open">';
           let instance = new Component();
-          yield* render(instance.render(props as any, {}));
+          instance.componentWillReceiveProps(props!);
+          instance.props = props!;
+          yield* render(instance.render(props!, {}));
           yield '</template>';
         }
 
