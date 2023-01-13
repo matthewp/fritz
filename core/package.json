@@ -50,7 +50,7 @@
       "output": ["worker.mjs", "worker.mjs.map", "types/*.d.ts", "types/worker"]
     },
     "build:window": {
-      "command": "microbundle -f modern --no-pkg-main --define process.env.NODE_ENV=production -i src/window/index.ts -o window.mjs  && node scripts/move-types.mjs",
+      "command": "microbundle -f modern --no-pkg-main --define process.env.NODE_ENV=production -i src/window/index.ts -o window.mjs && node scripts/move-types.mjs",
       "files": ["src/*.ts", "src/window/**/*"],
       "output": ["window.mjs", "window.mjs.map", "types/*.d.ts", "types/window"]
     },

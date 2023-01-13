@@ -1,0 +1,17 @@
+---
+import highlight from '../hlight.js';
+import '../styles/agate.css';
+
+let { code, lang = 'js', class: className } = Astro.props;
+let classes = `hljs ${lang}`;
+---
+<style>
+  pre {
+    display: grid;
+  }
+</style>
+<div class={className}>
+  <pre>
+    <code class={classes} set:html={highlight(code.trim(), lang)}></code>
+  </pre>
+</div>

@@ -1,9 +1,0 @@
-.title {
-  text-align: center;
-  font-weight: 100;
-}
-
-code-snippet {
-  display: block;
-  box-shadow: var(--box-shadow, 3px 3px 12px 1px rgba(0,0,0,0.4));
-}
