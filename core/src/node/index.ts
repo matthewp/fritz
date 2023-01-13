@@ -1,3 +1,4 @@
+import type { Tree } from '../worker/tree';
 import fritz from './worker.mjs';
 
 const OPEN = 1;
@@ -10,7 +11,7 @@ const encodeEntities = (s: any) => String(s)
 	.replace(/>/g, '&gt;')
 	.replace(/"/g, '&quot;');
 
-function* render(vnode: any): Generator<string, void, unknown> {
+function* render(vnode: Tree): Generator<string, void, unknown> {
   let position = 0, len = vnode.length;
   while(position < len) {
     let instr = vnode[position];
@@ -43,7 +44,7 @@ function* render(vnode: any): Generator<string, void, unknown> {
           let instance = new Component();
           instance.componentWillReceiveProps(props!);
           instance.props = props!;
-          yield* render(instance.render(props!, {}));
+          yield* render(instance.render(props!, {}) as Tree);
           yield '</template>';
         }
 
@@ -65,7 +66,7 @@ function* render(vnode: any): Generator<string, void, unknown> {
   }
 }
 
-function renderToString(vnode: any) {
+function renderToString(vnode: Tree) {
   let out = '';
   for(let part of render(vnode)) {
     out += part;
