@@ -1,10 +1,10 @@
 {
   "mode": "pre",
-  "tag": "alpha",
+  "tag": "beta",
   "initialVersions": {
-    "fritz": "5.0.0-alpha.2",
-    "astro-fritz": "1.0.0",
-    "fritz-site": "1.0.0"
+    "astro-fritz": "2.0.0-alpha.2",
+    "fritz": "5.0.0-alpha.8",
+    "fritz-site": "1.0.1-alpha.0"
   },
   "changesets": [
     "beige-garlics-kiss",
