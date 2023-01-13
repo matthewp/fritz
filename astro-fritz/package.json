@@ -21,10 +21,12 @@
   },
   "wireit": {
     "build": {
-      "command": "tsc -p tsconfig.json"
+      "command": "tsc -p tsconfig.json",
+      "dependencies": ["../core:build"]
     },
     "check": {
-      "command": "tsc -p tsconfig.json --noEmit"
+      "command": "tsc -p tsconfig.json --noEmit",
+      "dependencies": ["../core:build"]
     }
   },
   "repository": {
