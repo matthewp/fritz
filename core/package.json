@@ -1,7 +1,7 @@
 {
   "name": "fritz",
   "type": "module",
-  "version": "5.0.0-alpha.7",
+  "version": "5.0.0-alpha.8",
   "description": "Create web components that run in a Web Worker",
   "exports": {
     ".": {
@@ -50,22 +50,46 @@
   "wireit": {
     "build:worker": {
       "command": "microbundle -f modern --no-pkg-main -i src/worker/index.ts -o worker.mjs && node scripts/move-types.mjs && cp src/worker/*.d.ts types/worker",
-      "files": ["src/*.ts", "src/worker/**/*"],
-      "output": ["worker.mjs", "worker.mjs.map", "types/*.d.ts", "types/worker"]
+      "files": [
+        "src/*.ts",
+        "src/worker/**/*"
+      ],
+      "output": [
+        "worker.mjs",
+        "worker.mjs.map",
+        "types/*.d.ts",
+        "types/worker"
+      ]
     },
     "build:window": {
       "command": "microbundle -f modern --no-pkg-main --define process.env.NODE_ENV=production -i src/window/index.ts -o window.mjs && node scripts/move-types.mjs",
-      "files": ["src/*.ts", "src/window/**/*"],
-      "output": ["window.mjs", "window.mjs.map", "types/*.d.ts", "types/window"]
+      "files": [
+        "src/*.ts",
+        "src/window/**/*"
+      ],
+      "output": [
+        "window.mjs",
+        "window.mjs.map",
+        "types/*.d.ts",
+        "types/window"
+      ]
     },
     "build:node": {
       "command": "microbundle -f modern --no-pkg-main -i src/node/index.ts --external ./worker.mjs --no-compress -o node.mjs && node scripts/move-types.mjs",
-      "files": ["src/node/**/*"],
-      "output": ["node.mjs", "node.mjs.map", "types/node"]
+      "files": [
+        "src/node/**/*"
+      ],
+      "output": [
+        "node.mjs",
+        "node.mjs.map",
+        "types/node"
+      ]
     },
     "check": {
       "command": "tsc -p tsconfig.json",
-      "files": ["src/**/*"],
+      "files": [
+        "src/**/*"
+      ],
       "output": []
     },
     "build": {
@@ -77,18 +101,31 @@
     },
     "test:types:core": {
       "command": "tsc -p test/typescript/core/tsconfig.json",
-      "dependencies": ["build:worker"],
-      "files": ["src/**/*", "test/typescript/core/**/*"],
+      "dependencies": [
+        "build:worker"
+      ],
+      "files": [
+        "src/**/*",
+        "test/typescript/core/**/*"
+      ],
       "output": []
     },
     "test:types:jsx-runtime": {
       "command": "tsc -p test/typescript/jsx-runtime/tsconfig.json",
-      "dependencies": ["build:worker"],
-      "files": ["src/**/*", "test/typescript/jsx-runtime/**/*"],
+      "dependencies": [
+        "build:worker"
+      ],
+      "files": [
+        "src/**/*",
+        "test/typescript/jsx-runtime/**/*"
+      ],
       "output": []
     },
     "test:types": {
-      "dependencies": ["test:types:core", "test:types:jsx-runtime"]
+      "dependencies": [
+        "test:types:core",
+        "test:types:jsx-runtime"
+      ]
     },
     "test:core": {
       "command": "node ../node_modules/@matthewp/node-qunit-puppeteer/cli.js http://localhost:1931/test/test.html",
@@ -98,7 +135,10 @@
       ]
     },
     "test": {
-      "dependencies": ["test:core", "test:types"]
+      "dependencies": [
+        "test:core",
+        "test:types"
+      ]
     },
     "server": {
       "command": "serve -p 1931",

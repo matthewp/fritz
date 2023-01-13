@@ -1,5 +1,15 @@
 # fritz
 
+## 5.0.0-alpha.8
+
+### Minor Changes
+
+- cee8c95: Fixes integration between fritz and astro-fritz
+
+### Patch Changes
+
+- 2d76cb8: Fixes types in JSX usage and adds tests
+
 ## 5.0.0-alpha.7
 
 ### Major Changes
