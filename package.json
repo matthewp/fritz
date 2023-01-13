@@ -5,6 +5,7 @@
   "description": "A library for rendering custom elements in a web worker.",
   "scripts": {
     "build": "wireit",
+    "build:site": "wireit",
     "check": "wireit",
     "changeset": "changeset"
   },
@@ -19,6 +20,11 @@
       "dependencies": [
         "./astro-fritz:check",
         "./core:check"
+      ]
+    },
+    "build:site": {
+      "dependencies": [
+        "./site:build"
       ]
     }
   },
