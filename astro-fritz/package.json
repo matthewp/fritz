@@ -16,11 +16,17 @@
   },
   "scripts": {
     "build": "wireit",
+    "check": "wireit",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "wireit": {
     "build": {
-      "command": "tsc -p tsconfig.json"
+      "command": "tsc -p tsconfig.json",
+      "dependencies": ["../core:build"]
+    },
+    "check": {
+      "command": "tsc -p tsconfig.json --noEmit",
+      "dependencies": ["../core:build"]
     }
   },
   "repository": {

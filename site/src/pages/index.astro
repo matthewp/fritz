@@ -1,5 +1,6 @@
 ---
 import App from '../components/App';
+import Another from '../components/Another';
 ---
 <html lang="en">
 <head>
@@ -7,6 +8,7 @@ import App from '../components/App';
 </head>
 <body>
   <h1>Testing</h1>
-  <App />
+  <App count={5} client:load />
+  <Another client:load />
 </body>
 </html>

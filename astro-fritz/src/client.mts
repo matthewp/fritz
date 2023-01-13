@@ -1,1 +1,1 @@
-console.log("HEllo world");
+export default {};

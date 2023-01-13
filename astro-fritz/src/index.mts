@@ -1,4 +1,5 @@
 import type { AstroIntegration } from 'astro';
+import pluginFritz from './vite-plugin.mjs';
 
 export default function(): AstroIntegration {
   return {
@@ -18,6 +19,12 @@ export default function(): AstroIntegration {
             return {
               plugins: [jsx({}, { runtime: 'automatic', importSource: 'fritz' })]
             }
+          }
+        });
+
+        updateConfig({
+          vite: {
+            plugins: [pluginFritz()]
           }
         });
       }

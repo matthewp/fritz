@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "description": "A library for rendering custom elements in a web worker.",
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run --workspace=core --workspace=astro-fritz build",
+    "check": "npm run --workspace=core --workspace=astro-fritz check",
     "changeset": "changeset"
   },
   "repository": {
