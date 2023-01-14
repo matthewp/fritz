@@ -1,16 +1,13 @@
 {
   "name": "fritz-site",
   "version": "1.0.1-alpha.0",
-  "description": "Template for creating apps with Fritz",
+  "description": "Fritz site and documentation",
   "main": "src/app/app.js",
   "private": true,
   "scripts": {
     "dev": "wireit",
     "build": "wireit",
-    "preview": "astro preview",
-    "build-old": "npm run build:client && npm run build:server",
-    "build:client": "fritz build --client",
-    "build:server": "fritz build --server",
+    "preview": "wireit",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "wireit": {
@@ -37,6 +34,14 @@
       "output": [
         "dist/**/*"
       ]
+    },
+    "preview": {
+      "command": "astro preview",
+      "dependencies": ["build"],
+      "service": true,
+      "readyWhen": {
+        "lineMatches": "started in"
+      }
     }
   },
   "repository": {
