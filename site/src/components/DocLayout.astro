@@ -1,0 +1,36 @@
+---
+import '../styles/global.css';
+import StylesCommon from './StylesCommon.astro';
+import MadeWith from '../components/MadeWith';
+import TitleCard from '../components/TitleCard.astro';
+import HeadCommon from './HeadCommon.astro';
+---
+<!doctype html>
+<html lang="en">
+<HeadCommon />
+<StylesCommon />
+<style>
+  body {
+    background-color: var(--cadet-blue);
+  }
+</style>
+<header class="title">
+  <TitleCard />
+</header>
+<main>
+  <aside>
+    
+  </aside>
+
+  <slot></slot>
+</main>
+
+<footer>
+  <MadeWith />
+</footer>
+
+<noscript>
+  <h1>Oops!</h1>
+  <p>It looks like you have JavaScript turned off. Since this is a website about a JavaScript library there's no reason to have it off.</p>
+</noscript>
+</html>

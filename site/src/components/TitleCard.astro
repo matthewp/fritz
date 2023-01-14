@@ -1,6 +1,12 @@
 ---
 import Flame from './Flame.astro';
 import Slant from './effects/Slant.astro';
+
+export type Props = {
+  size?: 'small' | 'large';
+}
+
+const { size = 'small' } = Astro.props as Props;
 ---
 <style>
 .wrapper {
@@ -10,6 +16,6 @@ import Slant from './effects/Slant.astro';
 }
 </style>
 <div class="wrapper">
-  <Slant text="fritz" tag="h1" size="large" />
-  <Flame size="large" />
+  <Slant text="fritz" tag="h1" size={size} />
+  <Flame size={size} />
 </div>
