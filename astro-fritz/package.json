@@ -1,6 +1,6 @@
 {
   "name": "astro-fritz",
-  "version": "2.0.0-beta.0",
+  "version": "2.0.0-beta.1",
   "description": "An Astro integration for Fritz",
   "type": "module",
   "exports": {
@@ -66,7 +66,7 @@
   "dependencies": {
     "@babel/core": ">=7.0.0-0 <8.0.0",
     "@babel/plugin-transform-react-jsx": "^7.17.12",
-    "fritz": "^5.0.0-alpha.8"
+    "fritz": "^5.0.0-beta.1"
   },
   "devDependencies": {
     "typescript": "^4.9.4",
