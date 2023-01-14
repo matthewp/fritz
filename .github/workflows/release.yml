@@ -1,6 +1,12 @@
 name: Release
 
-on: [push]
+on:
+  push:
+    branches:
+    - main
+    paths:
+    - 'core/**'
+    - 'astro-fritz/**'
 
 jobs:
   changelog:
