@@ -1,0 +1,59 @@
+---
+export type Props = {
+  text: string;
+};
+const { text } = Astro.props as Props;
+---
+<style>
+div {
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+
+  background: #36364c;
+  color: white;
+
+  --font-size: 95px;
+}
+
+aside {
+  --start: hsl(343 100% 50%);
+  --end: hsl(23 100% 50%);
+
+  background: repeating-linear-gradient(
+    35deg,
+    var(--start) 0px 2px,
+    var(--end) 0px 4px
+  );
+  mix-blend-mode: multiply;
+  animation: none 40000ms infinite linear;
+}
+@keyframes move {
+  100% {
+    transform: translate(41px, 0px);
+  }
+}
+div > * {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+p {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size);
+  font-weight: 900;
+}
+
+* {
+  margin: 0;
+  box-sizing: border-box;
+}
+
+</style>
+<div>
+  <p>{text}</p>
+  <aside></aside>
+</div>

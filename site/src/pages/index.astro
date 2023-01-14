@@ -2,9 +2,7 @@
 import About from '../components/About.astro';
 import CodeFile from '../components/CodeFile.astro';
 import MadeWith from '../components/MadeWith';
-
-import fPng from '../images/frankenstein-fritz-flame.png';
-import fWebp from '../images/frankenstein-fritz-flame.webp';
+import TitleCard from '../components/TitleCard.astro';
 
 const jsCode = `
 class HelloMessage extends Component {
@@ -43,11 +41,12 @@ const htmlCode = `
 <link rel="shortcut icon" href="/favicon.ico">
 <style>
   :root {
-    --gray: #BAC1B8;
-    --cadetblue: #58A4B0;
-    --jet: #303030;
-    --cyan: #0C7C59;
-    --vermilion: #D64933; 
+    --jet: #2D2D2A;
+    --davys-grey: #4C4C47;
+    --cadet-blue: #58A4B0;
+    --bittersweet-shimmer: #C14953;
+    --bone: #E5DCC5;
+    --maize-crayola: #EEC643;
   }
   * {
     box-sizing: border-box;
@@ -55,17 +54,17 @@ const htmlCode = `
   body {
     font-family: 'Open Sans', sans-serif;
     font-weight: 100;
-    background-color: var(--gray);
+    background-color: var(--davys-grey);
     margin: 0;
   }
 </style>
 <style>
 html {
-  --main-bg: var(--cadetblue);
-  --alt-bg: var(--gray);
+  --main-bg: var(--cadet-blue);
+  --alt-bg: var(--davys-grey);
 
   --main-color: var(--jet);
-  --alt-color: #fff;
+  --alt-color: var(--bone);
 }
 
 a, a:visited {
@@ -92,12 +91,6 @@ a, a:visited {
   font-size: 2.2em;
 }
 
-.fritz-flame {
-  width: 14rem;
-  border-radius: 0.8rem;
-  min-height: 134px;
-}
-
 .github {
   display: inline-block;
   text-align: center;
@@ -110,7 +103,7 @@ a, a:visited {
 
 .github, .github:visited {
   color: #fff;
-  background-color: var(--vermilion);
+  background-color: var(--bittersweet-shimmer);
   text-decoration: none;
 }
 
@@ -144,17 +137,11 @@ color: #fff;
 font-size: 120%;
 }
 </style>
-
 <main>  
 
   <section class="intro shadow-section">
     <header class="title">
-      <h1 class="primary-title">Fritz</h1>
-      <picture>
-        <source srcset={fWebp} type="image/webp"/>
-        <source srcset={fPng} type="image/jpeg"/>
-        <img src={fPng} class="fritz-flame" title="Fritz, with a flame"/>
-      </picture>
+      <TitleCard />
       <h2>Take your UI off the main thread.</h2>
     </header>
 

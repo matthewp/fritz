@@ -1,0 +1,17 @@
+---
+import Flame from './Flame.astro';
+import Slant from './effects/Slant.astro';
+import StrongA from './effects/StrongA.astro';
+import Butter from './effects/Butter.astro';
+---
+<style>
+.wrapper {
+  display: flex;
+  justify-content: center;
+  gap: 2.4rem;
+}
+</style>
+<div class="wrapper">
+  <Slant text="fritz" tag="h1" />
+  <Flame />
+</div>

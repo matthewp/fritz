@@ -1,0 +1,16 @@
+---
+import fPng from '../images/frankenstein-fritz-flame.png';
+import fWebp from '../images/frankenstein-fritz-flame.webp';
+---
+<style>
+  .fritz-flame {
+    width: 14rem;
+    border-radius: 0.8rem;
+    min-height: 134px;
+  }
+</style>
+<picture>
+  <source srcset={fWebp} type="image/webp"/>
+  <source srcset={fPng} type="image/jpeg"/>
+  <img src={fPng} class="fritz-flame" title="Fritz, with a flame"/>
+</picture>

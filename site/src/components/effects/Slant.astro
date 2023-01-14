@@ -1,0 +1,82 @@
+---
+const { text, tag: Tag } = Astro.props;
+---
+<style>
+.outer {
+  position: relative;
+  width: 14rem;
+  height: 135px;
+
+  --font-size: 75px;
+  --base-color-default: #fff;
+  --base-color: var(--jet);
+  --slant-color-default: #5E17EB;
+  --slant-color: var(--bittersweet-shimmer);
+}
+
+.center{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: prespective(1000px) translate(-50%,-50%);
+  transform: skewY(0deg);
+  transition:0.5s;
+}
+
+.center:hover{
+  transform: prespective(1000px) translate(-50%,-50%);
+  transform: skewY(15deg);
+}
+
+.center h1 span{
+  position:absolute;
+  top:0;
+  left:0;
+  transform:translate(-50%,-50%);
+  margin:0;
+  padding:0;
+  text-transform:uppercase;
+  font-size: var(--font-size);
+  color: var(--base-color);
+  transform-style:preserve-3d;
+  transition:0.8s;
+}
+.center h1 span:nth-child(1) {
+  clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+}
+
+.center h1 span:nth-child(2) {
+  clip-path: polygon(0 45%, 100% 45%, 100% 55%, 0 55%);
+}
+
+.center h1 span:nth-child(3){
+  clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
+}
+
+.center:hover h1 span:nth-child(2) {
+  color: var(--slant-color);
+  transform: translate(-50%,-50%) skewX(-60deg);
+  left:-38px;
+}
+
+.center:hover h1 span:nth-child(3){
+  transform:translate(-50%,-50%) skewY(0deg);
+  left:-76px;
+}
+
+.center h1 span:nth-child(2), 
+.center h1 span:nth-child(3){
+  transform:translate(-50%,-50%) skewX(0deg);
+  left:0;
+  color:var(--base-color);
+}
+</style>
+<div class="outer">
+  <div class="center">
+    <Tag>
+      <span>{text}</span>
+      <span aria-hidden="true">{text}</span>
+      <span aria-hidden="true">{text}</span>
+    </Tag>
+  </div>
+</div>

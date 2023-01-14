@@ -9,6 +9,15 @@ let classes = `hljs ${lang}`;
   pre {
     display: grid;
   }
+
+  code {
+    background: var(--rough-fill);
+    border: var(--rough-stroke-width) dashed var(--rough-stroke);
+    --rough-fill: var(--jet);
+    --rough-stroke: var(--bittersweet-shimmer);
+    --rough-stroke-width: 2px;
+    --rough-roughness: 2;
+  }
 </style>
 <div class={className}>
   <pre>
