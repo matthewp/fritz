@@ -1,5 +1,16 @@
 # astro-fritz
 
+## 2.0.0-beta.1
+
+### Major Changes
+
+- 4039953: Fritz 5 Beta
+
+### Patch Changes
+
+- Updated dependencies [4039953]
+  - fritz@5.0.0-beta.1
+
 ## 2.0.0-alpha.2
 
 ### Minor Changes
