@@ -1,5 +1,5 @@
 ---
-const { text, tag: Tag } = Astro.props;
+const { text, tag: Tag, size = 'small' } = Astro.props;
 ---
 <style>
 .outer {
@@ -14,7 +14,13 @@ const { text, tag: Tag } = Astro.props;
   --slant-color: var(--bittersweet-shimmer);
 }
 
-.center{
+.outer.large {
+  width: 31rem;
+  height: 210px;
+  --font-size: 140px;
+}
+
+.center {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -71,7 +77,7 @@ const { text, tag: Tag } = Astro.props;
   color:var(--base-color);
 }
 </style>
-<div class="outer">
+<div class:list={["outer", size]}>
   <div class="center">
     <Tag>
       <span>{text}</span>

@@ -1,6 +1,8 @@
 ---
 import fPng from '../images/frankenstein-fritz-flame.png';
 import fWebp from '../images/frankenstein-fritz-flame.webp';
+
+const { size = 'small' } = Astro.props;
 ---
 <style>
   .fritz-flame {
@@ -8,9 +10,13 @@ import fWebp from '../images/frankenstein-fritz-flame.webp';
     border-radius: 0.8rem;
     min-height: 134px;
   }
+
+  .fritz-flame.large {
+    width: 22rem;
+  }
 </style>
 <picture>
   <source srcset={fWebp} type="image/webp"/>
   <source srcset={fPng} type="image/jpeg"/>
-  <img src={fPng} class="fritz-flame" title="Fritz, with a flame"/>
+  <img src={fPng} class:list={['fritz-flame', size]} title="Fritz, with a flame"/>
 </picture>

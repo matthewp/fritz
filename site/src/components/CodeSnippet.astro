@@ -3,7 +3,7 @@ import highlight from '../hlight.js';
 import '../styles/agate.css';
 
 let { code, lang = 'js', class: className } = Astro.props;
-let classes = `hljs ${lang}`;
+let html = highlight(code.trim(), lang);
 ---
 <style>
   pre {
@@ -11,16 +11,11 @@ let classes = `hljs ${lang}`;
   }
 
   code {
-    background: var(--rough-fill);
-    border: var(--rough-stroke-width) dashed var(--rough-stroke);
-    --rough-fill: var(--jet);
-    --rough-stroke: var(--bittersweet-shimmer);
-    --rough-stroke-width: 2px;
-    --rough-roughness: 2;
+    font-size: var(--code-snippet-font-size, 100%);
   }
 </style>
 <div class={className}>
   <pre>
-    <code class={classes} set:html={highlight(code.trim(), lang)}></code>
+    <code class:list={['hljs', lang]} set:html={html}></code>
   </pre>
 </div>
