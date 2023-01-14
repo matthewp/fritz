@@ -29,6 +29,7 @@
         "../core:build"
       ],
       "files": [
+        "astro.config.mjs",
         "src/**/*"
       ],
       "output": [
