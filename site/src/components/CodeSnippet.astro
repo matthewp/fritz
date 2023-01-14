@@ -8,13 +8,18 @@ let html = highlight(code.trim(), lang);
 <style>
   pre {
     display: grid;
+    height: var(--code-snippet-pre-height, initial);
   }
 
   code {
     font-size: var(--code-snippet-font-size, 100%);
   }
+
+  .snippet {
+    height: var(--code-snippet-height, initial);
+  }
 </style>
-<div class={className}>
+<div class:list={[className, 'snippet']}>
   <pre>
     <code class:list={['hljs', lang]} set:html={html}></code>
   </pre>

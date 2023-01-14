@@ -75,7 +75,6 @@ a, a:visited {
 }
 
 .shadow-section {
-  box-shadow: 0px 1px 10px 1px rgba(0,0,0,0.3);
   margin-bottom: 12px;
 }
 
@@ -96,14 +95,21 @@ a, a:visited {
 
 .intro .code-file {
   display: block;
-  width: 60%;
-  margin: auto;
   text-align: initial;
   font-size: 130%;
+  height: 100%;
+  width: 80%;
+  grid-gap: 1rem;
 }
 
-.code-file:nth-of-type(1) {
-  margin-top: 4rem;
+.intro .code-file:nth-of-type(1) {
+  justify-self: end;
+  margin-right: 1rem;
+}
+
+.intro .code-file:nth-of-type(2) {
+  justify-self: baseline;
+  margin-left: 1rem;
 }
 
 header {
@@ -121,26 +127,41 @@ header h2 {
   font-size: 3rem;
 }
 
-@media only screen and (max-width: 768px) {
-.intro .code-file {
-  width: 100%;
-  font-size: 90%;
+.side-by-side {
+  margin-top: 4rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items:baseline;
+  justify-items: center;
+  --code-snippet-height: 100%;
+  --code-snippet-pre-height: calc(100% - 24px);
 }
+
+@media only screen and (max-width: 768px) {
+  .intro .code-file {
+    width: 100%;
+    font-size: 90%;
+  }
 }
 /* end intro */
 
+main {
+  min-height: 100vh;
+  display: grid;
+}
+
 footer {
-background-color: var(--main-bg);
-height: 7rem;
-display: flex;
-align-items: center;
-justify-content: center;
-color: #fff;
-font-size: 120%;
+  background-color: var(--main-bg);
+  height: 7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: end;
+  color: #fff;
+  font-size: 120%;
 }
 </style>
 <main>  
-
   <section class="intro shadow-section">
     <header class="title">
       <TitleCard />
@@ -157,13 +178,11 @@ font-size: 120%;
       </nav>
     </header>
 
-    
-
-    <CodeFile name="worker.js" lang="js" code={jsCode} class="code-file" />
-    <CodeFile name="index.html" lang="html" code={htmlCode} class="code-file" />
+    <div class="side-by-side">
+      <CodeFile name="worker.js" lang="js" code={jsCode} class="code-file" />
+      <CodeFile name="index.html" lang="html" code={htmlCode} class="code-file" />
+    </div>
   </section>
-
-  <About class="about" />
 
   <footer>
     <MadeWith />
