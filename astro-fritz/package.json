@@ -1,6 +1,6 @@
 {
   "name": "astro-fritz",
-  "version": "2.0.0-alpha.2",
+  "version": "2.0.0-beta.0",
   "description": "An Astro integration for Fritz",
   "type": "module",
   "exports": {

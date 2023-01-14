@@ -1,7 +1,7 @@
 {
   "name": "fritz",
   "type": "module",
-  "version": "5.0.0-alpha.8",
+  "version": "5.0.0-beta.0",
   "description": "Create web components that run in a Web Worker",
   "exports": {
     ".": {
