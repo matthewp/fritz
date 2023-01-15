@@ -1,0 +1,45 @@
+---
+import { getCollection } from 'astro:content';
+
+const { docId } = Astro.props;
+const collection = await getCollection('docs');
+---
+<style>
+  aside {
+    background: var(--bone);
+    padding: .5rem 2rem;
+    margin-right: 2rem;
+  }
+
+  ul {
+    list-style-type: none;
+  }
+  ul, li {
+    margin: 0;
+    padding: 0;
+  }
+
+  li.selected {
+    font-weight: 600;
+  }
+
+  a, a:visited {
+    color: var(--jet);
+  }
+</style>
+<aside class={Astro.props['class'] || 'sidebar'}>
+  <ul>
+    {collection.map(item => {
+      const className = item.id === docId ? 'selected' : '';
+
+      return (
+        <li class={className}>
+          <a href={`/fritz/docs/${item.slug}/`}>{item.data.title}</a>
+        </li>
+      )
+    })}
+  </ul>
+  <p>more</p>
+  <p>stuff</p>
+  <p>here</p>
+</aside>

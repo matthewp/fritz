@@ -13,3 +13,14 @@
   background-color: var(--bittersweet-shimmer);
   text-decoration: none;
 }
+
+footer {
+  background-color: var(--main-bg);
+  height: 7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: end;
+  color: #fff;
+  font-size: 120%;
+}

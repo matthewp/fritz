@@ -4,33 +4,54 @@ import StylesCommon from './StylesCommon.astro';
 import MadeWith from '../components/MadeWith';
 import TitleCard from '../components/TitleCard.astro';
 import HeadCommon from './HeadCommon.astro';
+import DocSidebar from './DocSidebar.astro';
+
+const { docId } = Astro.props;
 ---
 <!doctype html>
 <html lang="en">
-<HeadCommon />
-<StylesCommon />
-<style>
-  body {
-    background-color: var(--cadet-blue);
-  }
-</style>
-<header class="title">
-  <TitleCard />
-</header>
-<main>
-  <aside>
-    
-  </aside>
+<head>
+  <HeadCommon />
+  <StylesCommon />
+  <style>
+    body {
+      background-color: var(--cadet-blue);
+    }
 
-  <slot></slot>
-</main>
+    header {
+      margin-top: 2rem; 
+    }
 
-<footer>
-  <MadeWith />
-</footer>
+    main {
+      margin: 4rem 20rem;
+      display: flex;
+    }
 
-<noscript>
-  <h1>Oops!</h1>
-  <p>It looks like you have JavaScript turned off. Since this is a website about a JavaScript library there's no reason to have it off.</p>
-</noscript>
+    .sidebar {
+
+    }
+    .content {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <TitleCard />
+  </header>
+  <main>
+    <DocSidebar class="sidebar" docId={docId}></DocSidebar>
+    <div class="content">
+      <slot></slot>
+    </div>
+  </main>
+  
+  <footer>
+    <MadeWith />
+  </footer>
+  <noscript>
+    <h1>Oops!</h1>
+    <p>It looks like you have JavaScript turned off. Since this is a website about a JavaScript library there's no reason to have it off.</p>
+  </noscript>
+</body>
 </html>
