@@ -40,6 +40,7 @@
     "build": "wireit",
     "server": "wireit",
     "test:core": "wireit",
+    "test:node": "wireit",
     "test:types:core": "wireit",
     "test:types:jsx-runtime": "wireit",
     "test:types": "wireit",
@@ -134,10 +135,19 @@
         "server"
       ]
     },
+    "test:node": {
+      "command": "node --test test/node/",
+      "dependencies": [
+        "build",
+        "build:worker",
+        "build:node"
+      ]
+    },
     "test": {
       "dependencies": [
+        "test:types",
         "test:core",
-        "test:types"
+        "test:node"
       ]
     },
     "server": {

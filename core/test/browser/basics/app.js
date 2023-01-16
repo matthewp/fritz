@@ -1,4 +1,4 @@
-import fritz, { h, Component } from '../../worker.mjs';
+import fritz, { h, Component } from '../../../worker.mjs';
 
 fritz.define('loading-indicator', () => (
   h('svg', {
