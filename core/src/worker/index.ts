@@ -14,7 +14,7 @@ fritz.define = define;
 fritz.h = h;
 fritz._tags = new Map();
 fritz._instances = new Map();
-fritz._port = self as any;
+fritz._port = globalThis as any;
 fritz.fritz = fritz;
 
 function define(tag: CustomElementTagName, constructor: ComponentConstructor) {
@@ -55,7 +55,7 @@ function define(tag: CustomElementTagName, constructor: ComponentConstructor) {
     }
   }
 
-  fritz._port.postMessage(msg);
+  fritz._port.postMessage?.(msg);
 }
 
 let state: any;

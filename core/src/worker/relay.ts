@@ -10,7 +10,7 @@ export default function relay(fritz: WorkerFritz) {
   if(!hasListened) {
     hasListened = true;
 
-    fritz._port.addEventListener('message', function(ev: MessageEvent<MessageSentFromWindow>){
+    fritz._port.addEventListener?.('message', function(ev: MessageEvent<MessageSentFromWindow>){
       let msg = ev.data;
       switch(msg.type) {
         case RENDER:
