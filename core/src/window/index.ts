@@ -10,6 +10,7 @@ const fritz = Object.create(null) as WindowFritz;
 fritz._id = 1;
 fritz._instances = new Map();
 fritz._workers = [];
+fritz._sheets = []
 
 function use(worker: Worker) {
   fritz._workers.push(worker);
@@ -43,6 +44,13 @@ Object.defineProperty(fritz, 'state', {
   get: function(){
     return this._state;
   }
-})
+});
+
+function adopt(element: HTMLStyleElement | HTMLLinkElement) {
+  if(element.sheet)
+    fritz._sheets.push(element.sheet);
+}
+
+fritz.adopt = adopt;
 
 export default fritz;

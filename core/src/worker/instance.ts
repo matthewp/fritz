@@ -47,6 +47,6 @@ function render(instance: Component<any, any>, sentProps: Record<string, any> | 
       tree: renderInstance(instance) as Tree
     };
 
-    postMessage(msg);
+    instance._fritzPort.postMessage(msg);
   }
 }

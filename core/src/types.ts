@@ -12,8 +12,10 @@ export type Fritz<T extends Component<any, any> | MountBase = Component<any, any
 export type WindowFritz = Fritz<MountBase> & {
   _id: number;
   _workers: Worker[];
+  _sheets: CSSStyleSheet[];
   state?: any;
   use(worker: Worker): void;
+  adopt(element: HTMLStyleElement | HTMLLIElement): void;
 };
 
 export type WorkerFritz = Fritz<Component<any, any>> & {
@@ -23,6 +25,7 @@ export type WorkerFritz = Fritz<Component<any, any>> & {
   Component: typeof Component;
   fritz: WorkerFritz;
   _tags: Map<string, ComponentConstructor>;
+  _port: MessagePort;
 };
 
 export type PropDefinition = {

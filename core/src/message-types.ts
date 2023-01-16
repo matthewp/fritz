@@ -59,6 +59,7 @@ export type DefineMessage = {
   tag: string;
   props: PropDefinitions | undefined;
   events: Array<string> | undefined;
+  adopt: Array<string> | undefined;
   features: {
     mount: boolean;
   };

@@ -1,3 +1,4 @@
+import windowFritz from '../../window.mjs';
 
 export function waitForMount(...els) {
   let remaining = els.length;
@@ -10,6 +11,19 @@ export function waitForMount(...els) {
         }
       }, { once: true });
     }
+  });
+}
+
+export function waitForRender(fritzElement) {
+  let id = fritzElement._id;
+  let worker = fritzElement._worker;
+  return new Promise(resolve => {
+    worker.addEventListener('message', function onMessage(ev) {
+      if(ev.data?.type === 'fritz:render' && ev.data.id === id) {
+        worker.removeEventListener('message', onMessage);
+        resolve();
+      }
+    });
   });
 }
 

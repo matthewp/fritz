@@ -1,20 +1,36 @@
 import type { MountBase } from './types';
+import type { WindowFritz } from '../types';
+import type { DefineMessage } from '../message-types';
 
 import { withUpdate } from '@matthewp/skatejs/dist/esnext/with-update';
 import { withMount } from './with-mount.js';
 import { withWorkerEvents } from './with-worker-events.js';
 import { withWorkerRender } from './with-worker-render.js';
+import { withWorkerConnection } from './with-worker-connection.js';
+import { withAdopt } from './with-adopt';
 
-export function withComponent({ mount }: { mount: boolean; }) {
-  let Base = withWorkerEvents(
-    withWorkerRender(
-      withUpdate(HTMLElement)
-    )
-  );
+const Base = withWorkerEvents(
+  withWorkerRender(
+    withUpdate(HTMLElement)
+  )
+);
 
+export function withComponent(
+  fritz: WindowFritz,
+  worker: Worker,
+  msg: DefineMessage
+) {
+  let {
+    props = {},
+    events = [],
+    features: { mount }
+  } = msg;
+  let ComponentElement = Base;
   if(mount) {
-    Base = withMount(Base) as any;
+    ComponentElement = withMount(ComponentElement) as any;
   }
-
-  return Base as MountBase;
+  if(true) {
+    ComponentElement = withAdopt(fritz, msg.adopt, ComponentElement) as any;
+  }
+  return withWorkerConnection(fritz, events, props, worker, ComponentElement) as MountBase;
 };

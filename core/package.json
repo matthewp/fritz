@@ -46,7 +46,7 @@
     "test:types": "wireit",
     "test": "wireit",
     "check": "wireit",
-    "test-pass": "echo 'Pass' && exit 0"
+    "build-and-server": "wireit"
   },
   "wireit": {
     "build:worker": {
@@ -157,6 +157,12 @@
           "lineMatches": "Accepting connections"
         }
       }
+    },
+    "build-and-server": {
+      "dependencies": [
+        "build",
+        "server"
+      ]
     }
   },
   "repository": {
@@ -191,7 +197,6 @@
     "@matthewp/skatejs": "^5.1.1",
     "add": "^2.0.6",
     "highlight.js": "^10.4.1",
-    "htm": "^2.1.1",
     "incremental-dom": "^0.6.0",
     "microbundle": "^0.15.1",
     "serve": "^14.1.2",
