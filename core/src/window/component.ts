@@ -29,6 +29,6 @@ export function withComponent(
   if(mount) {
     ComponentElement = withMount(ComponentElement) as any;
   }
-  ComponentElement = withStyles(fritz, msg.adopt, ComponentElement) as any;
+  ComponentElement = withStyles(fritz, msg.styles, ComponentElement) as any;
   return withWorkerConnection(fritz, events, props, worker, ComponentElement) as MountBase;
 };

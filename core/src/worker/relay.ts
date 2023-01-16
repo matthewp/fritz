@@ -4,11 +4,9 @@ import type { MessageSentFromWindow } from '../message-types';
 import { render, trigger, destroy, rendered, cleanup } from './lifecycle.js';
 import { RENDER, EVENT, STATE, DESTROY, RENDERED, CLEANUP } from '../message-types.js';
 
-let hasListened = false;
-
 export default function relay(fritz: WorkerFritz) {
-  if(!hasListened) {
-    hasListened = true;
+  if(!fritz._listening) {
+    fritz._listening = true;
 
     fritz._port.addEventListener?.('message', function(ev: MessageEvent<MessageSentFromWindow>){
       let msg = ev.data;

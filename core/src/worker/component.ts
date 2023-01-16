@@ -1,5 +1,4 @@
-import type { Tree } from './tree';
-import type { PropDefinitions, RemoteEvent } from '../types';
+import type { PropDefinitions, RemoteEvent, RemoteElement } from '../types';
 import type { default as Handle } from './handle';
 import type { ComponentChild } from './component-extras';
 
@@ -56,6 +55,7 @@ export interface ComponentConstructor<P = {}, S = {}> {
   props?: PropDefinitions;
   events?: Array<string>;
   adopt?: Array<string>;
+  styles?: string | Array<RemoteElement | string>;
   new (...params: any[]): Component<P, S>;
 }
 

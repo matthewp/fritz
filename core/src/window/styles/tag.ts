@@ -2,15 +2,17 @@ import { InjectorBase } from './base.js';
 
 export class Taggable extends InjectorBase {
   private adoptables: DocumentFragment | null = null;
-  add(sheets: CSSStyleSheet[]) {
+  add(sheet: CSSStyleSheet | string) {
     if(this.adoptables == null) this.adoptables = document.createDocumentFragment();
-    for(let sheet of sheets) {
-      let adoptable = document.createElement('style');
+    let adoptable = document.createElement('style');
+    if(typeof sheet === 'string') {
+      adoptable.textContent = sheet;
+    } else {
       for(let rule of sheet.cssRules) {
         adoptable.textContent += rule.cssText;
       }
-      this.adoptables.append(adoptable);
     }
+    this.adoptables.append(adoptable);
   }
   f(shadowRoot: ShadowRoot) {
     if(this.adoptables) {

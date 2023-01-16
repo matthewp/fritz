@@ -1,4 +1,4 @@
-import type { PropDefinitions, RemoteEvent } from './types';
+import type { PropDefinitions, RemoteEvent, Sheet, RemoteElement } from './types';
 import type { Tree } from './worker/tree';
 
 export const DEFINE = 'fritz:define';
@@ -59,7 +59,7 @@ export type DefineMessage = {
   tag: string;
   props: PropDefinitions | undefined;
   events: Array<string> | undefined;
-  adopt: Array<string> | undefined;
+  styles: Array<RemoteElement | Sheet> | undefined;
   features: {
     mount: boolean;
   };

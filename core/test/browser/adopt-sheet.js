@@ -1,31 +1,17 @@
 import fritzWindow from "../../window.mjs";
-import fritzWorker, { Component, h } from "../../worker.mjs";
-import { waitForRender } from "./helpers.js";
+import { Component, h, adopt } from "../../worker.mjs";
+import { waitForRender, hooks } from "./helpers.js";
 
-let channel;
-
-QUnit.module('Adoptable sheets', {
-  before() {
-    this.previousPort = fritzWorker._port;
-    channel = new MessageChannel();
-    channel.port1.start();
-    channel.port2.start();
-    fritzWorker._port = channel.port2;
-    fritzWindow.use(channel.port1);
-  },
-  after() {
-    document.querySelector('#qunit-fixture').innerHTML = '';
-    fritzWorker._port = this.previousPort;
-  }
-});
+QUnit.module('Adoptable sheets', hooks);
 
 QUnit.test('can use a <style> element', async assert => {
+  let { fritzWorker } = assert.test.testEnvironment;
   let style = document.createElement('style');
   style.id = 'adopted-one';
   style.textContent = `.adopted-one { color: red; }`;
   document.head.append(style);
   fritzWorker.define('adopt-style', class extends Component {
-    static adopt = ['#adopted-one'];
+    static styles = [adopt('#adopted-one')];
     render() {
       return h('div', { class: 'adopted-one' }, 'worked!');
     }
@@ -41,6 +27,7 @@ QUnit.test('can use a <style> element', async assert => {
 });
 
 QUnit.test('can use a <link> element', async assert => {
+  let { fritzWorker } = assert.test.testEnvironment;
   let url = URL.createObjectURL(new Blob([`.adopted-two { color: blue; }`], { type: 'text/css' }));
   let link = document.createElement('link');
   link.setAttribute('rel', 'stylesheet');
@@ -52,7 +39,7 @@ QUnit.test('can use a <link> element', async assert => {
   });
 
   fritzWorker.define('adopt-style-2', class extends Component {
-    static adopt = ['#adopted-two'];
+    static styles = [adopt('#adopted-two')];
     render() {
       return h('div', { class: 'adopted-two' }, 'worked!');
     }
@@ -68,6 +55,7 @@ QUnit.test('can use a <link> element', async assert => {
 });
 
 QUnit.test('can be globally defined', async assert => {
+  let { fritzWorker } = assert.test.testEnvironment;
   let style = document.createElement('style');
   style.id = 'adopted-three';
   style.textContent = `.adopted-three { color: yellow; }`;
