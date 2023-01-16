@@ -1,4 +1,4 @@
-import fritz from "../window.mjs";
+import fritz from "../../window.mjs";
 import { waitForMount, waitFor } from "./helpers.js";
 
 customElements.define(

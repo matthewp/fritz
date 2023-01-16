@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en">
-<title>Garbage collection</title>
-<gc-app></gc-app>
+<title>Props</title>
 <script type="module">
-  import fritz from '../../window.mjs';
+  import fritz from '../../../window.mjs';
   fritz.use(new Worker('./app.js', { type: 'module' }));
 </script>
+<x-hello name="world"></x-hello>
