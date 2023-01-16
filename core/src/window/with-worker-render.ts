@@ -32,8 +32,8 @@ export function withWorkerRender(Base: MountBase): any {
 
     doRenderCallback(this: MountBase, tree: Tree) {
       (this as any).beforeRender();
-      let shadowRoot = this.shadowRoot;
-      let out = render(tree, shadowRoot, this);
+      let root = this._root;
+      let out = render(tree, root, this);
       (this as any).afterRender();
       this.handleOrphanedHandles(out);
     }

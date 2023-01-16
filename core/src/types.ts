@@ -12,17 +12,22 @@ export type Fritz<T extends Component<any, any> | MountBase = Component<any, any
 export type WindowFritz = Fritz<MountBase> & {
   _id: number;
   _workers: Worker[];
+  _sheets: CSSStyleSheet[];
   state?: any;
   use(worker: Worker): void;
+  adopt(element: HTMLStyleElement | HTMLLIElement): void;
 };
 
 export type WorkerFritz = Fritz<Component<any, any>> & {
   state?: any;
+  _define(tag: CustomElementTagName, constructor: ComponentConstructor): void;
   define(tag: CustomElementTagName, constructor: ComponentConstructor): void;
   h: typeof h;
   Component: typeof Component;
   fritz: WorkerFritz;
   _tags: Map<string, ComponentConstructor>;
+  _port: MessagePort;
+  _listening: boolean;
 };
 
 export type PropDefinition = {
@@ -38,4 +43,12 @@ export type RemoteEvent<D = any> = {
   detail?: D;
   cancelable?: boolean;
   composed?: boolean;
+};
+
+export type Sheet = {
+  text: string;
+};
+
+export type RemoteElement = {
+  selector: string;
 };
