@@ -1,4 +1,4 @@
-import fritz, { h, Component } from "../../worker.mjs";
+import fritz, { h, Component } from "../../../worker.mjs";
 
 class App extends Component {
   constructor() {

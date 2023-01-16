@@ -1,4 +1,4 @@
-import fritz from "../window.mjs";
+import fritz from "../../window.mjs";
 import { waitForMount } from "./helpers.js";
 
 fritz.use(new Worker("./props/app.js", { type: "module" }));

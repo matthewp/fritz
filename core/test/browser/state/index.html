@@ -2,7 +2,7 @@
 <html lang="en">
 <title>State</title>
 <script type="module">
-  import fritz from '../../window.mjs';
+  import fritz from '../../../window.mjs';
   fritz.use(new Worker('./app.js', { type: 'module' }));
   fritz.state = { name: 'Matthew' };
 </script>
