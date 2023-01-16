@@ -1,5 +1,4 @@
-import type { Tree } from './tree';
-import type { PropDefinitions, RemoteEvent } from '../types';
+import type { PropDefinitions, RemoteEvent, RemoteElement } from '../types';
 import type { default as Handle } from './handle';
 import type { ComponentChild } from './component-extras';
 
@@ -10,6 +9,7 @@ import { enqueueRender } from './instance.js';
 interface Component<P = {}, S = {}> {
   _fritzId: number;
   _fritzHandles: Map<number, Handle>;
+  _fritzPort: MessagePort;
   _dirty: boolean | undefined;
   localName: string;
 
@@ -28,7 +28,7 @@ abstract class Component<P, S> {
 
   dispatch(ev: RemoteEvent) {
     let id = this._fritzId;
-    postMessage({
+    this._fritzPort.postMessage({
       type: TRIGGER,
       event: ev,
       id: id
@@ -54,6 +54,8 @@ abstract class Component<P, S> {
 export interface ComponentConstructor<P = {}, S = {}> {
   props?: PropDefinitions;
   events?: Array<string>;
+  adopt?: Array<string>;
+  styles?: string | Array<RemoteElement | string>;
   new (...params: any[]): Component<P, S>;
 }
 

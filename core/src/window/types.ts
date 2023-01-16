@@ -14,4 +14,5 @@ export interface MountBase extends HTMLElement {
   _worker: Worker;
   _id: number;
   _handlers: Record<string, any>;
+  _root: DocumentFragment;
 }

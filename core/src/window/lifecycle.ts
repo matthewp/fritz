@@ -2,21 +2,13 @@ import type { WorkerRenderMessage, DefineMessage, TriggerMessage } from '../mess
 import type { WindowFritz } from '../types';
 
 import { withComponent } from './component.js';
-import { withWorkerConnection } from './with-worker-connection.js';
 import { getInstance } from '../util.js';
 
 export function define(this: Worker, fritz: WindowFritz, msg: DefineMessage) {
   let worker = this;
   let tagName = msg.tag;
-  let props = msg.props || {};
-  let events = msg.events || [];
-  let features = msg.features;
 
-  let Element = withWorkerConnection(
-    fritz, events, props, worker,
-    withComponent(features)
-  );
-
+  let Element = withComponent(fritz, worker, msg);
   customElements.define(tagName, Element);
 };
 

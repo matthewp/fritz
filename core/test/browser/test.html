@@ -8,11 +8,14 @@
 
 <script src="https://code.jquery.com/qunit/qunit-2.9.2.js"></script>
 <script>QUnit.config.autostart = false;</script>
+<script>QUnit.config.testTimeout = 3000;</script>
 <script type="module" src="./basics.js"></script>
 <script type="module" src="./events.js"></script>
 <script type="module" src="./props.js"></script>
 <script type="module" src="./state.js"></script>
 <script type="module" src="./garbage.js"></script>
+<script type="module" src="./styles.js"></script>
+<script type="module" src="./adopt-sheet.js"></script>
 <script type="module">
   QUnit.start();
 </script>
