@@ -7,7 +7,7 @@ import { withMount } from './with-mount.js';
 import { withWorkerEvents } from './with-worker-events.js';
 import { withWorkerRender } from './with-worker-render.js';
 import { withWorkerConnection } from './with-worker-connection.js';
-import { withAdopt } from './with-adopt';
+import { withStyles } from './with-styles.js';
 
 const Base = withWorkerEvents(
   withWorkerRender(
@@ -29,8 +29,6 @@ export function withComponent(
   if(mount) {
     ComponentElement = withMount(ComponentElement) as any;
   }
-  if(true) {
-    ComponentElement = withAdopt(fritz, msg.adopt, ComponentElement) as any;
-  }
+  ComponentElement = withStyles(fritz, msg.adopt, ComponentElement) as any;
   return withWorkerConnection(fritz, events, props, worker, ComponentElement) as MountBase;
 };

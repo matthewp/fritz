@@ -35,7 +35,7 @@ QUnit.test('can use a <style> element', async assert => {
   document.querySelector('#qunit-fixture').append(el);
   await waitForRender(el);
 
-  let styles = getComputedStyle(el.shadowRoot.firstElementChild);
+  let styles = getComputedStyle(el.shadowRoot.querySelector('div'));
   assert.equal(styles.color, 'rgb(255, 0, 0)');
   style.remove();
 });
@@ -62,7 +62,7 @@ QUnit.test('can use a <link> element', async assert => {
   document.querySelector('#qunit-fixture').append(el);
   await waitForRender(el);
 
-  let styles = getComputedStyle(el.shadowRoot.firstElementChild);
+  let styles = getComputedStyle(el.shadowRoot.querySelector('div'));
   assert.equal(styles.color, 'rgb(0, 0, 255)');
   link.remove();
 });
@@ -83,7 +83,7 @@ QUnit.test('can be globally defined', async assert => {
   document.querySelector('#qunit-fixture').append(el);
   await waitForRender(el);
 
-  let styles = getComputedStyle(el.shadowRoot.firstElementChild);
+  let styles = getComputedStyle(el.shadowRoot.querySelector('div'));
   assert.equal(styles.color, 'rgb(255, 255, 0)');
   style.remove();
 })
