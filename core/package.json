@@ -129,7 +129,7 @@
       ]
     },
     "test:core": {
-      "command": "node ../node_modules/@matthewp/node-qunit-puppeteer/cli.js http://localhost:1931/test/test.html",
+      "command": "node ../node_modules/@matthewp/node-qunit-puppeteer/cli.js http://localhost:1931/test/browser/test.html",
       "dependencies": [
         "build",
         "server"
