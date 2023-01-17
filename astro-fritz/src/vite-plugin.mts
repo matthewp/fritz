@@ -1,6 +1,10 @@
 import type { Plugin as VitePlugin } from 'vite';
 
-export function pluginFritz(): VitePlugin {
+export type Options = {
+  tailwind: boolean;
+};
+
+export function pluginFritz(options: Options): VitePlugin {
   return {
     name: 'fritz:build',
     transform(_code, id, opts) {
@@ -9,6 +13,7 @@ export function pluginFritz(): VitePlugin {
           return `
 import fritz from 'fritz/window';
 import { Worker } from 'astro-fritz/client';
+${options.tailwind ? `import 'astro-fritz/tailwind';` : ''}
 
 let worker = new Worker(new URL('${id}', import.meta.url), {
   type: 'module'

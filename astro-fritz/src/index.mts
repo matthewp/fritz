@@ -1,7 +1,11 @@
 import type { AstroIntegration } from 'astro';
 import { pluginFritz } from './vite-plugin.mjs';
 
-export default function(): AstroIntegration {
+export type Options = {
+  tailwind?: boolean;
+};
+
+export default function(options?: Options): AstroIntegration {
   return {
     name: 'astro-fritz',
     hooks: {
@@ -24,7 +28,10 @@ export default function(): AstroIntegration {
 
         updateConfig({
           vite: {
-            plugins: [pluginFritz()],
+            plugins: [pluginFritz({ tailwind: options?.tailwind || false })],
+            optimizeDeps: {
+              include: ['astro-fritz/client', ...(options?.tailwind ? ['astro-fritz/tailwind'] : [])]
+            },
             worker: {
               format: 'es',
               rollupOptions: {

@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import fritz, { h } from '../../worker.mjs';
 import { renderToString } from '../../node.mjs';
 
-test('functional components', t => {
+test('functional components', () => {
   function HelloWorld() {
     return h('div', null, 'Hello world')
   }

@@ -11,6 +11,28 @@ const encodeEntities = (s: any) => String(s)
 	.replace(/>/g, '&gt;')
 	.replace(/"/g, '&quot;');
 
+function renderStyle(text: string) {
+  return `<style data-fritz-s>${text}</style>`;
+}
+
+type FritzTagMap = typeof fritz._tags;
+type ComponentConstructor = FritzTagMap extends Map<any, infer I> ? I : never;
+type ComponentStyles = NonNullable<ComponentConstructor['styles']>;
+
+function * renderStyles(styles: ComponentStyles): Generator<string, void, unknown> {
+  if(typeof styles === 'string') {
+    yield renderStyle(styles);
+  } else {
+    for(let defn of styles) {
+      if(typeof defn === 'string') {
+        yield renderStyle(defn);
+      } else {
+        // TODO
+      }
+    }
+  }
+} 
+
 function* render(vnode: Tree): Generator<string, void, unknown> {
   let position = 0, len = vnode.length;
   while(position < len) {
@@ -41,6 +63,9 @@ function* render(vnode: Tree): Generator<string, void, unknown> {
 
         if(Component) {
           yield '<template shadowroot="open">';
+          if(Component.styles) {
+            yield * renderStyles(Component.styles);
+          }
           let instance = new Component();
           instance.componentWillReceiveProps(props!);
           instance.props = props!;

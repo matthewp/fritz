@@ -13,6 +13,9 @@
     "./client": {
       "default": "./dist/client.mjs"
     },
+    "./tailwind": {
+      "default": "./dist/client-tailwind.mjs"
+    },
     "./worker": {
       "default": "./dist/worker.mjs"
     }
