@@ -15,7 +15,8 @@ const {code, lang, name, class: className}  = Astro.props;
 }
 
 .code-snippet {
-  display: block;
+  display: flex;
+  flex-direction: column;
   flex: 1;
   --code-snippet-pre-height: 100%;
 }
