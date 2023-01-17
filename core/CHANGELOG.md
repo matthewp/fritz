@@ -1,5 +1,12 @@
 # fritz
 
+## 5.0.0-beta.2
+
+### Minor Changes
+
+- 5c0ce55: Add the styles API
+- b6de1cf: Partial Tailwind support
+
 ## 5.0.0-beta.1
 
 ### Major Changes
