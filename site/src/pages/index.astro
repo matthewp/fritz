@@ -1,11 +1,12 @@
 ---
-import About from '../components/About.astro';
+import StylesCommon from '../components/StylesCommon.astro';
+import HeadCommon from '../components/HeadCommon.astro';
 import CodeFile from '../components/CodeFile.astro';
 import MadeWith from '../components/MadeWith';
 import TitleCard from '../components/TitleCard.astro';
 import '../styles/global.css';
 
-const jsCode = `
+const workerJsCode = `
 class HelloMessage extends Component {
   static props = {
     name: { attribute: true }
@@ -21,44 +22,23 @@ class HelloMessage extends Component {
 fritz.define('hello-message', HelloMessage);
 `;
 
+const mainJsCode = `
+import fritz from 'fritz/window';
+
+fritz.use(new Worker('./worker.js'));
+`;
+
 const htmlCode = `
+<script type="module" src="./main.js"></script>
+
 <hello-message name="World"></hello-message>
-
-<script type="module">
-  import fritz from 'https://unpkg.com/fritz@next/window.js';
-
-  fritz.use(new Worker('./worker.js'));
-</script>
 `;
 ---
 
 <!doctype html>
 <html lang="en">
-<meta charset="utf-8">
-<title>Fritz - Take your UI off the main thread</title>
-<link rel="manifest" href="./manifest.json">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
-<meta name="theme-color" content="#58A4B0"/>
-<link rel="shortcut icon" href="/fritz/favicon.ico">
-<style>
-  :root {
-    --jet: #2D2D2A;
-    --davys-grey: #4C4C47;
-    --cadet-blue: #58A4B0;
-    --bittersweet-shimmer: #C14953;
-    --bone: #E5DCC5;
-    --maize-crayola: #EEC643;
-  }
-  * {
-    box-sizing: border-box;
-  }
-  body {
-    font-family: 'Open Sans', sans-serif;
-    font-weight: 100;
-    background-color: var(--davys-grey);
-    margin: 0;
-  }
-</style>
+<StylesCommon />
+<HeadCommon />
 <style>
 html {
   --main-bg: var(--cadet-blue);
@@ -94,22 +74,11 @@ a, a:visited {
 }
 
 .intro .code-file {
-  display: block;
   text-align: initial;
   font-size: 130%;
-  height: 100%;
   width: 80%;
   grid-gap: 1rem;
-}
-
-.intro .code-file:nth-of-type(1) {
-  justify-self: end;
-  margin-right: 1rem;
-}
-
-.intro .code-file:nth-of-type(2) {
-  justify-self: baseline;
-  margin-left: 1rem;
+  --margin-width: .25rem;
 }
 
 header {
@@ -130,11 +99,37 @@ header h2 {
 .side-by-side {
   margin-top: 4rem;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items:baseline;
+  align-items: baseline;
   justify-items: center;
-  --code-snippet-height: 100%;
-  --code-snippet-pre-height: calc(100% - 24px);
+}
+
+@media only screen and (min-width: 1880px) {
+  .side-by-side {
+    grid-template-areas:
+      "w m"
+      "w h";
+    grid-template-columns: 1fr 1fr;
+  }
+  
+
+  .intro .code-file:nth-of-type(1) {
+    justify-self: end;
+    margin-right: var(--margin-width);
+    grid-area: w;
+  }
+
+  .intro .code-file:nth-of-type(2) {
+    justify-self: baseline;
+    margin-left: var(--margin-width);
+
+    grid-area: m;
+  }
+
+  .intro .code-file:nth-of-type(3) {
+    justify-self: baseline;
+    margin-left: var(--margin-width);
+    grid-area: h;
+  }
 }
 
 @media only screen and (max-width: 768px) {
@@ -149,22 +144,11 @@ main {
   min-height: 100vh;
   display: grid;
 }
-
-footer {
-  background-color: var(--main-bg);
-  height: 7rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  align-self: end;
-  color: #fff;
-  font-size: 120%;
-}
 </style>
 <main>  
   <section class="intro shadow-section">
     <header class="title">
-      <TitleCard />
+      <TitleCard size="large" />
       <h2>Take your UI off the main thread.</h2>
       <nav>
         <ul>
@@ -179,7 +163,8 @@ footer {
     </header>
 
     <div class="side-by-side">
-      <CodeFile name="worker.js" lang="js" code={jsCode} class="code-file" />
+      <CodeFile name="worker.js" lang="js" code={workerJsCode} class="code-file" />
+      <CodeFile name="main.js" lang="js" code={mainJsCode} class="code-file" />
       <CodeFile name="index.html" lang="html" code={htmlCode} class="code-file" />
     </div>
   </section>

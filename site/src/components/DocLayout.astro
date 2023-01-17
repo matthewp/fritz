@@ -1,0 +1,57 @@
+---
+import '../styles/global.css';
+import StylesCommon from './StylesCommon.astro';
+import MadeWith from '../components/MadeWith';
+import TitleCard from '../components/TitleCard.astro';
+import HeadCommon from './HeadCommon.astro';
+import DocSidebar from './DocSidebar.astro';
+
+const { docId } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <HeadCommon />
+  <StylesCommon />
+  <style>
+    body {
+      background-color: var(--cadet-blue);
+    }
+
+    header {
+      margin-top: 2rem; 
+    }
+
+    main {
+      margin: 4rem 20rem;
+      display: flex;
+    }
+
+    .sidebar {
+
+    }
+    .content {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <TitleCard />
+  </header>
+  <main>
+    <DocSidebar class="sidebar" docId={docId}></DocSidebar>
+    <div class="content">
+      <slot></slot>
+    </div>
+  </main>
+  
+  <footer>
+    <MadeWith />
+  </footer>
+  <noscript>
+    <h1>Oops!</h1>
+    <p>It looks like you have JavaScript turned off. Since this is a website about a JavaScript library there's no reason to have it off.</p>
+  </noscript>
+</body>
+</html>

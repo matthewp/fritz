@@ -54,7 +54,6 @@ abstract class Component<P, S> {
 export interface ComponentConstructor<P = {}, S = {}> {
   props?: PropDefinitions;
   events?: Array<string>;
-  adopt?: Array<string>;
   styles?: string | Array<RemoteElement | string>;
   new (...params: any[]): Component<P, S>;
 }

@@ -141,7 +141,12 @@
         "build",
         "build:worker",
         "build:node"
-      ]
+      ],
+      "files": [
+        "src/**/*",
+        "test/node/**"
+      ],
+      "output": []
     },
     "test": {
       "dependencies": [

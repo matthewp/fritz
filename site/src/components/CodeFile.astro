@@ -4,6 +4,11 @@ import CodeSnippet from './CodeSnippet.astro';
 const {code, lang, name, class: className}  = Astro.props;
 ---
 <style>
+.code-file {
+  display: flex;
+  flex-direction: column;
+}
+
 .title {
   text-align: center;
   font-weight: 100;
@@ -11,9 +16,11 @@ const {code, lang, name, class: className}  = Astro.props;
 
 .code-snippet {
   display: block;
+  flex: 1;
+  --code-snippet-pre-height: 100%;
 }
 </style>
-<div class={className}>
+<div class:list={[className, 'code-file']}>
   <div class="title">{name}</div>
   <CodeSnippet class="code-snippet" lang={lang} code={code}></CodeSnippet>
 </div>
