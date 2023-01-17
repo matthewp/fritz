@@ -74,10 +74,8 @@ a, a:visited {
 }
 
 .intro .code-file {
-  display: block;
   text-align: initial;
   font-size: 130%;
-  height: 100%;
   width: 80%;
   grid-gap: 1rem;
   --margin-width: .25rem;
@@ -101,32 +99,36 @@ header h2 {
 .side-by-side {
   margin-top: 4rem;
   display: grid;
-  align-items:baseline;
+  align-items: baseline;
   justify-items: center;
-  --code-snippet-height: 100%;
-  --code-snippet-pre-height: calc(100% - 24px);
 }
 
 @media only screen and (min-width: 1880px) {
   .side-by-side {
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-areas:
+      "w m"
+      "w h";
+    grid-template-columns: 1fr 1fr;
   }
   
 
   .intro .code-file:nth-of-type(1) {
     justify-self: end;
     margin-right: var(--margin-width);
+    grid-area: w;
   }
 
   .intro .code-file:nth-of-type(2) {
-    justify-self: center;
+    justify-self: baseline;
     margin-left: var(--margin-width);
-    margin-right: var(--margin-width);
+
+    grid-area: m;
   }
 
   .intro .code-file:nth-of-type(3) {
     justify-self: baseline;
     margin-left: var(--margin-width);
+    grid-area: h;
   }
 }
 
