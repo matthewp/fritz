@@ -1,5 +1,17 @@
 # astro-fritz
 
+## 2.0.0-beta.2
+
+### Minor Changes
+
+- b6de1cf: Partial Tailwind support
+
+### Patch Changes
+
+- Updated dependencies [5c0ce55]
+- Updated dependencies [b6de1cf]
+  - fritz@5.0.0-beta.2
+
 ## 2.0.0-beta.1
 
 ### Major Changes
