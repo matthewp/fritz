@@ -3,19 +3,48 @@ import { getCollection } from 'astro:content';
 
 const { docId } = Astro.props;
 const collection = await getCollection('docs');
+
+const sortPreferences = ['Introduction', 'Components'];
+
+
+type CollectionItem = typeof collection[number];
+const byCategory = Array.from(collection.reduce(((acc, item) => {
+  if(!acc.has(item.data.category)) {
+    acc.set(item.data.category, []);
+  }
+  acc.get(item.data.category)!.push(item);
+  return acc;
+}), new Map<string, CollectionItem[]>())).sort((a, b) => {
+  if(sortPreferences.indexOf(a[0]) > sortPreferences.indexOf(b[0])) return 1;
+  else return -1;
+})
 ---
 <style>
   aside {
-    background: var(--bone);
-    padding: .5rem 2rem;
+    background: var(--davys-grey);
+    border-radius: 7px;
+    padding: 1rem 2rem;
     margin-right: 2rem;
+    min-width: 13em;
   }
 
-  ul {
+  detail {
+    display: block;
+    margin: 1.4rem 0;
+  }
+
+  summary {
+    color: #fff;
+    font-weight: 400;
+    text-transform: uppercase;
+  }
+
+  ol {
     list-style-type: none;
   }
-  ul, li {
-    margin: 0;
+
+  ol, li {
+    margin: .8rem 0;
     padding: 0;
   }
 
@@ -24,22 +53,22 @@ const collection = await getCollection('docs');
   }
 
   a, a:visited {
-    color: var(--jet);
+    color: var(--bone);
   }
 </style>
 <aside class={Astro.props['class'] || 'sidebar'}>
-  <ul>
-    {collection.map(item => {
-      const className = item.id === docId ? 'selected' : '';
+  {byCategory.map(([categoryName, items]) => (
+    <detail open>
+      <summary>{categoryName}</summary>
+      <ol>
+        {items.map(item => (
+          <li class:list={[item.id === docId && 'selected']}>
+            <a href={`/fritz/docs/${item.slug}/`}>{item.data.title}</a>
+          </li>
+        ))}
+      </ol>
+    </detail>
+  ))}
 
-      return (
-        <li class={className}>
-          <a href={`/fritz/docs/${item.slug}/`}>{item.data.title}</a>
-        </li>
-      )
-    })}
-  </ul>
-  <p>more</p>
-  <p>stuff</p>
-  <p>here</p>
+
 </aside>

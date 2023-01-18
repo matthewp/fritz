@@ -1,9 +1,12 @@
 ---
-import DocLayout from '../../components/DocLayout.astro';
+const redirectTo = new URL('./getting-started/', Astro.url);
 ---
-
-<DocLayout>
-  <h1>Documentation</h1>
-
-  <p>Introduction to Fritz.</p>
-</DocLayout>
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Docs</title>
+  <meta http-equiv="refresh" content={`0;url=${redirectTo.pathname}`}>
+</head>
+<body>
+</body>
+</html>
