@@ -12,12 +12,17 @@ const byCategory = Array.from(collection.reduce(((acc, item) => {
   if(!acc.has(item.data.category)) {
     acc.set(item.data.category, []);
   }
-  acc.get(item.data.category)!.push(item);
+  let items = acc.get(item.data.category)!;
+  if(item.data.sort != null) {
+    items.splice(item.data.sort, 0, item);
+  } else {
+    items.push(item);
+  }
   return acc;
 }), new Map<string, CollectionItem[]>())).sort((a, b) => {
   if(sortPreferences.indexOf(a[0]) > sortPreferences.indexOf(b[0])) return 1;
   else return -1;
-})
+});
 ---
 <style>
   aside {

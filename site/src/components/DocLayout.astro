@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import '../styles/prism-duotone.css';
 import StylesCommon from './StylesCommon.astro';
 import MadeWith from '../components/MadeWith';
 import TitleCard from '../components/TitleCard.astro';
@@ -23,19 +24,20 @@ const { docId } = Astro.props;
     }
 
     main {
-      margin: 4rem 19rem;
+      margin: 4rem 10rem;
       display: flex;
     }
 
-    .sidebar {
-
-    }
     .content {
       flex: 1;
     }
+
+    .filler {
+      min-width: 13em;
+    }
   </style>
 </head>
-<body>
+<body id="docs-page">
   <header>
     <TitleCard />
   </header>
@@ -44,6 +46,7 @@ const { docId } = Astro.props;
     <div class="content">
       <slot></slot>
     </div>
+    <div class="filler"></div>
   </main>
   
   <footer>

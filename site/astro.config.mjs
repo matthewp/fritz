@@ -5,5 +5,8 @@ export default defineConfig({
   base: '/fritz/',
   integrations: [
     fritz()
-  ]
+  ],
+  markdown: {
+    syntaxHighlight: 'prism'
+  }
 });

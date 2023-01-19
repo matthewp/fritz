@@ -3,6 +3,8 @@ title: Installation
 category: Introduction
 ---
 
-# Installation
+Fritz is available on npm with the `fritz` package.
 
-How to install.
+```shell
+npm install fritz
+```

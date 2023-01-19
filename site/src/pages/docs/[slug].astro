@@ -18,6 +18,33 @@ interface Props {
 const { entry } = Astro.props;
 const { Content } = await entry.render();
 ---
+<style is:global>
+  #docs-page .content {
+    font-size: 1.2em;
+    padding-inline: 1.8rem;
+    color: var(--jet);
+  }
+
+  #docs-page h1 {
+    font-size: 2.7rem;
+    font-weight: 400;
+    margin: 0;
+    text-decoration: underline;
+    text-decoration-color: var(--bittersweet-shimmer);
+    text-decoration-thickness: 3px;
+    text-underline-offset: .4rem;
+  }
+
+  #docs-page p {
+    line-height: 1.6em;
+  }
+
+  #docs-page .content a, #docs-page a:visited {
+    color: var(--bone);
+    font-weight: 500;
+  }
+</style>
 <DocLayout docId={entry.id}>
+  <h1>{entry.data.title}</h1>
   <Content />
 </DocLayout>
