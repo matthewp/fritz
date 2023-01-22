@@ -4,6 +4,7 @@ const { text, tag: Tag, size = 'small' } = Astro.props;
 <style>
 .outer {
   position: relative;
+  font-family: var(--font-open-sans);
   width: 14rem;
   height: 135px;
 
@@ -29,12 +30,12 @@ const { text, tag: Tag, size = 'small' } = Astro.props;
   transition:0.5s;
 }
 
-.center:hover{
+.center:hover {
   transform: prespective(1000px) translate(-50%,-50%);
   transform: skewY(15deg);
 }
 
-.center h1 span{
+.center h1 span {
   position:absolute;
   top:0;
   left:0;

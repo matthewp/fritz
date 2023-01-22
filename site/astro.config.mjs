@@ -1,5 +1,6 @@
 import { defineConfig } from 'astro/config';
 import fritz from 'astro-fritz';
+import rehypeHighlight from 'rehype-highlight';
 
 export default defineConfig({
   base: '/fritz/',
@@ -7,6 +8,7 @@ export default defineConfig({
     fritz()
   ],
   markdown: {
-    syntaxHighlight: 'prism'
+    syntaxHighlight: false,
+    rehypePlugins: [rehypeHighlight]
   }
 });
