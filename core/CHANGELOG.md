@@ -1,5 +1,11 @@
 # fritz
 
+## 5.0.0-beta.3
+
+### Patch Changes
+
+- 512d20b: Improved JSX for custom elements
+
 ## 5.0.0-beta.2
 
 ### Minor Changes
