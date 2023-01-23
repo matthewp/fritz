@@ -35,7 +35,7 @@ abstract class Component<P, S> {
     });
   }
 
-  setState(state: S | ((state: S, props: P) => S)) {
+  setState<K extends keyof S>(state: Record<K, S[K]> | ((state: S, props: P) => S)) {
     let s = this.state;
     Object.assign(s as any, isFunction(state) ? state(s, this.props) : state);
     enqueueRender(this);

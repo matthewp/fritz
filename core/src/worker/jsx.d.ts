@@ -671,6 +671,7 @@ export namespace JSXInternal {
 		crossOrigin?: string;
 		data?: string;
 		dateTime?: string;
+		datetime?: string;
 		default?: boolean;
 		defaultChecked?: boolean;
 		defaultValue?: string;
@@ -786,6 +787,7 @@ export namespace JSXInternal {
 		style?: string | CSSProperties;
 		summary?: string;
 		tabIndex?: number;
+		tabindex?: string;
 		target?: string;
 		title?: string;
 		type?: string;
@@ -852,7 +854,13 @@ export namespace JSXInternal {
 		width?: number | string;
 	}
 
-	export interface IntrinsicElements {
+	type CustomElementAttributes = HTMLAttributes<HTMLElement> & { [k: string]: unknown; };
+
+  export interface BaseIntrinsicElements {
+    [k: string]: CustomElementAttributes | HTMLAttributes<HTMLElement> | SVGAttributes<SVGElement>;
+  }
+
+	export interface IntrinsicElements extends BaseIntrinsicElements {
 		// HTML
 		a: HTMLAttributes<HTMLAnchorElement>;
 		abbr: HTMLAttributes<HTMLElement>;
