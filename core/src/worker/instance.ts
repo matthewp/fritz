@@ -14,9 +14,9 @@ export function renderInstance(instance: Component) {
   return tree;
 };
 
-let queue: Array<[Component<any, any>, Record<string, any> | undefined]> = [];
+let queue: Array<[Component<any, any, any>, Record<string, any> | undefined]> = [];
 
-export function enqueueRender(instance: Component<any, any>, sentProps?: Record<string, any>) {
+export function enqueueRender(instance: Component<any, any, any>, sentProps?: Record<string, any>) {
   if(!instance._dirty && (instance._dirty = true) && queue.push([instance, sentProps])==1) {
     defer(rerender);
   }
@@ -30,15 +30,16 @@ function rerender() {
 	}
 }
 
-function render(instance: Component<any, any>, sentProps: Record<string, any> | undefined) {
+function render(instance: Component<any, any, any>, sentProps: Record<string, any> | undefined) {
+  let prevProps = instance.props;
+  let prevState = instance.state;
   if(sentProps) {
     var nextProps = Object.assign({}, instance.props, sentProps);
-    instance.componentWillReceiveProps(nextProps);
     instance.props = nextProps;
   }
 
   if(instance.shouldComponentUpdate(nextProps) !== false) {
-    instance.componentWillUpdate();
+    let snapshot = instance.getSnapshotBeforeUpdate(prevProps, prevState)
     instance._dirty = false;
 
     const msg: WorkerRenderMessage = {
@@ -48,5 +49,6 @@ function render(instance: Component<any, any>, sentProps: Record<string, any> | 
     };
 
     instance._fritzPort.postMessage(msg);
+    instance.componentDidUpdate(prevProps, prevState, snapshot);
   }
 }
