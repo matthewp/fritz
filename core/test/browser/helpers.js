@@ -55,4 +55,9 @@ export const hooks = {
   }
 };
 
+export function setupTest(_hooks) {
+  _hooks.before(hooks.before);
+  _hooks.after(hooks.after);
+}
+
 export const fixture = () => document.querySelector('#qunit-fixture');
