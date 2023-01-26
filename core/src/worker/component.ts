@@ -17,7 +17,6 @@ interface Component<P = {}, S = {}, SS = {}> {
   componentDidMount(): void;
   getSnapshotBeforeUpdate(prevProps: P, prevState: S): SS | null;
   componentDidUpdate(prevProps: P, prevState: S, snapshot: SS | null): void;
-
 }
 
 abstract class Component<P, S extends {}, SS> {
