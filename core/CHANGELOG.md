@@ -1,5 +1,17 @@
 # fritz
 
+## 5.0.0-beta.4
+
+### Major Changes
+
+- 36ce3ba: Add new lifecycle methods
+
+  This change adds new lifecycle methods, `getSnapshotBeforeUpdate` and `componentDidUpdate`.
+
+  It also removes `componentWillReceiveProps` and `componentWillUpdate`.
+
+  The latter two are deprecated in both React and Preact. There is no reason for us to keep them.
+
 ## 5.0.0-beta.3
 
 ### Patch Changes
