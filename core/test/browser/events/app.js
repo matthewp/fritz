@@ -46,19 +46,8 @@ class EventEl extends Component {
 fritz.define('event-element', EventEl);
 
 class ChildEl extends Component {
-  constructor() {
-    super();
-    this.hasDispatched = false;
-  }
-
-  componentWillUpdate() {
-    if(!this.hasDispatched) {
-      // EWWWWW, how would you really do something like this?
-      setTimeout(_ => {
-        this.hasDispatched = true;
-        this.dispatch({ type: 'thing', detail: 'hello' });
-      });
-    }
+  componentDidMount() {
+    this.dispatch({ type: 'thing', detail: 'hello' });
   }
 
   render() {

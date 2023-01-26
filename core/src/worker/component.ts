@@ -20,12 +20,12 @@ interface Component<P = {}, S = {}, SS = {}> {
 
 }
 
-abstract class Component<P, S, SS> {
+abstract class Component<P, S extends {}, SS> {
   public state: S;
   public props: P;
   constructor() {
-    this.state = {} as any;
-    this.props = {} as any;
+    this.state = {} as S;
+    this.props = {} as P;
   }
 
   dispatch(ev: RemoteEvent) {
@@ -39,8 +39,8 @@ abstract class Component<P, S, SS> {
 
   setState<K extends keyof S>(state: Record<K, S[K]> | ((state: S, props: P) => S)) {
     let s = this.state;
-    Object.assign(s as any, isFunction(state) ? state(s, this.props) : state);
-    enqueueRender(this);
+    Object.assign(s as S, isFunction(state) ? state(s, this.props) : state);
+    enqueueRender(this, undefined, false);
   }
 
   shouldComponentUpdate() { return true; }
@@ -51,7 +51,7 @@ abstract class Component<P, S, SS> {
   abstract render(props: P, state: S): ComponentChild;
 }
 
-export interface ComponentConstructor<P = {}, S = {}, SS = {}> {
+export interface ComponentConstructor<P = {}, S extends {} = {}, SS = {}> {
   props?: PropDefinitions;
   events?: Array<string>;
   styles?: string | Array<RemoteElement | string>;
