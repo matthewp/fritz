@@ -67,7 +67,6 @@ function* render(vnode: Tree): Generator<string, void, unknown> {
             yield * renderStyles(Component.styles);
           }
           let instance = new Component();
-          instance.componentWillReceiveProps(props!);
           instance.props = props!;
           yield* render(instance.render(props!, {}) as Tree);
           yield '</template>';
