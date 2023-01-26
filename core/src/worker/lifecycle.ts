@@ -16,7 +16,8 @@ export function render(fritz: WorkerFritz, msg: WindowRenderMessage) {
   let props = msg.props || {};
 
   let instance = getInstance(fritz, id);
-  if(!instance) {
+  let isNew = !instance;
+  if(isNew) {
     let constructor = fritz._tags.get(msg.tag)!;
     instance = new constructor();
     Object.defineProperties(instance, {
@@ -33,7 +34,7 @@ export function render(fritz: WorkerFritz, msg: WindowRenderMessage) {
     setInstance(fritz, id, instance);
   }
 
-  enqueueRender(instance as any, props);
+  enqueueRender(instance as any, props, isNew);
 };
 
 export function trigger(fritz: WorkerFritz, msg: EventMessage) {
@@ -52,7 +53,7 @@ export function trigger(fritz: WorkerFritz, msg: EventMessage) {
     let event = msg.event;
     method.call(inst, event);
 
-    enqueueRender(inst);
+    enqueueRender(inst, undefined, false);
   } else {
     // TODO warn?
   }
