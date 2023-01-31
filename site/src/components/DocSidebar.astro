@@ -68,7 +68,7 @@ const byCategory = Array.from(collection.reduce(((acc, item) => {
       <ol>
         {items.map(item => (
           <li class:list={[item.id === docId && 'selected']}>
-            <a href={`/fritz/docs/${item.slug}/`}>{item.data.title}</a>
+            <a href={`/docs/${item.slug}/`}>{item.data.title}</a>
           </li>
         ))}
       </ol>
