@@ -2,7 +2,7 @@
   "name": "fritz-site",
   "version": "1.0.1-alpha.0",
   "description": "Fritz site and documentation",
-  "main": "src/app/app.js",
+  "main": "dist/index.html",
   "private": true,
   "scripts": {
     "dev": "wireit",
