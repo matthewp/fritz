@@ -15,6 +15,8 @@ const { docId } = Astro.props;
   <HeadCommon />
   <StylesCommon />
   <style>
+    @import "../styles/common.pcss";
+
     body {
       background-color: var(--cadet-blue);
     }
@@ -34,6 +36,18 @@ const { docId } = Astro.props;
 
     .filler {
       min-width: 13em;
+    }
+
+    @media (--small-viewport) {
+      main {
+        display: block;
+        margin-inline: 0;
+        margin-block: 2rem;
+      }
+
+      header {
+        padding: 2.7777777777777777rem 2.2222222222222223rem 1.6666666666666667rem 2.2222222222222223rem;
+      }
     }
   </style>
 </head>

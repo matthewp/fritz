@@ -5,14 +5,23 @@ import fWebp from '../images/frankenstein-fritz-flame.webp';
 const { size = 'small' } = Astro.props;
 ---
 <style>
+  @import "../styles/common.pcss";
+
   .fritz-flame {
     width: 14rem;
     border-radius: 0.8rem;
     min-height: 134px;
+    max-width: 100%;
   }
 
   .fritz-flame.large {
     width: 22rem;
+  }
+
+  @media (--small-viewport) {
+    .fritz-flame {
+      width: 22rem;
+    }
   }
 </style>
 <picture>

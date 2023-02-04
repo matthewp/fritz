@@ -1,5 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
+import Collapsible from './Collapsible.jsx';
 
 const { docId } = Astro.props;
 const collection = await getCollection('docs');
@@ -25,6 +26,8 @@ const byCategory = Array.from(collection.reduce(((acc, item) => {
 });
 ---
 <style>
+  @import "../styles/common.pcss";
+
   aside {
     background: var(--davys-grey);
     border-radius: 7px;
@@ -60,20 +63,28 @@ const byCategory = Array.from(collection.reduce(((acc, item) => {
   a, a:visited {
     color: var(--bone);
   }
+
+  @media (--small-viewport) {
+    aside {
+      margin-inline: 1.5rem;
+      margin-bottom: 2rem;
+    }
+  }
 </style>
-<aside class={Astro.props['class'] || 'sidebar'}>
-  {byCategory.map(([categoryName, items]) => (
-    <detail open>
-      <summary>{categoryName}</summary>
-      <ol>
-        {items.map(item => (
-          <li class:list={[item.id === docId && 'selected']}>
-            <a href={`/docs/${item.slug}/`}>{item.data.title}</a>
-          </li>
-        ))}
-      </ol>
-    </detail>
-  ))}
 
-
-</aside>
+<Collapsible>
+  <aside class={Astro.props['class'] || 'sidebar'}>
+    {byCategory.map(([categoryName, items]) => (
+      <detail open>
+        <summary>{categoryName}</summary>
+        <ol>
+          {items.map(item => (
+            <li class:list={[item.id === docId && 'selected']}>
+              <a href={`/docs/${item.slug}/`}>{item.data.title}</a>
+            </li>
+          ))}
+        </ol>
+      </detail>
+    ))}
+  </aside>
+</Collapsible>

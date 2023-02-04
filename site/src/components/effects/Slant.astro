@@ -2,6 +2,8 @@
 const { text, tag: Tag, size = 'small' } = Astro.props;
 ---
 <style>
+@import "../../styles/common.pcss";
+
 .outer {
   position: relative;
   font-family: var(--font-open-sans);
@@ -13,12 +15,21 @@ const { text, tag: Tag, size = 'small' } = Astro.props;
   --base-color: var(--jet);
   --slant-color-default: #5E17EB;
   --slant-color: var(--bittersweet-shimmer);
+
+  --large-height: 210px;
 }
 
 .outer.large {
   width: 31rem;
-  height: 210px;
+  height: var(--large-height);
   --font-size: 140px;
+}
+
+@media (--small-viewport) {
+  .outer.large, .outer:not(.large) {
+    width: 100%;
+    --font-size: 100px;
+  }
 }
 
 .center {
