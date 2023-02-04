@@ -40,6 +40,8 @@ const htmlCode = `
 <StylesCommon />
 <HeadCommon />
 <style>
+@import "../styles/common.pcss";
+
 html {
   --main-bg: var(--cadet-blue);
   --alt-bg: var(--davys-grey);
@@ -143,6 +145,16 @@ header h2 {
 main {
   min-height: 100vh;
   display: grid;
+}
+
+@media (--small-viewport) {
+  main {
+    display: block;
+  }
+
+  header {
+    margin-top: unset;
+  }
 }
 </style>
 <main>  

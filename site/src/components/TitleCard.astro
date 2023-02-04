@@ -9,10 +9,18 @@ export type Props = {
 const { size = 'small' } = Astro.props as Props;
 ---
 <style>
+@import "../styles/common.pcss";
+
 .wrapper {
   display: flex;
   justify-content: center;
   gap: 2.4rem;
+}
+
+@media (--small-viewport) {
+  .wrapper {
+    display: block;
+  }
 }
 </style>
 <div class="wrapper">

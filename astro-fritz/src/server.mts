@@ -5,7 +5,13 @@ function check(Component: any) {
   return FritzComponent.isPrototypeOf(Component);
 }
 
-function renderToStaticMarkup(Component: any, props: Record<string, any>) {
+type AstroChildren = { default?: string; }
+
+function renderToStaticMarkup(Component: any, props: Record<string, any>, children: AstroChildren) {
+  if(children.default) {
+    props.children = children.default;
+  }
+
   let tree = h(Component, props);
   let html = renderToString(tree);
   return {

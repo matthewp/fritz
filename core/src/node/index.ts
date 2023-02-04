@@ -56,7 +56,9 @@ function* render(vnode: Tree): Generator<string, void, unknown> {
           let attrName = attrs[i];
           let attrValue = attrs[i + 1];
           pushProps(attrName, attrValue);
-          yield attrName + '="' + encodeEntities(attrValue) + '"';
+          if(attrName !== 'children') {
+            yield attrName + '="' + encodeEntities(attrValue) + '"';
+          }
           i += 2;
         }
         yield '>';
@@ -70,6 +72,10 @@ function* render(vnode: Tree): Generator<string, void, unknown> {
           instance.props = props!;
           yield* render(instance.render(props!, {}) as Tree);
           yield '</template>';
+
+          if(props!.children) {
+            yield props!.children.toString();
+          }
         }
 
         break;

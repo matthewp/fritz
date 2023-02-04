@@ -64,6 +64,7 @@
     "fritz": "^5.0.0-alpha.6",
     "highlight.js": "^9.15.8",
     "lowlight": "^1.12.1",
+    "postcss-preset-env": "^8.0.1",
     "rehype-highlight": "^6.0.0",
     "rollup": "^1.16.6"
   }
