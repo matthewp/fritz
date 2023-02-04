@@ -1,18 +1,4 @@
-.button {
-  display: inline-block;
-  text-align: center;
-  width: 11rem;
-  padding: 0.5rem 0;
-  margin: 0.5rem 1rem;
-  font-size: 150%;
-  font-weight: 100;
-}
-
-.button, .button:visited {
-  color: #fff;
-  background-color: var(--bittersweet-shimmer);
-  text-decoration: none;
-}
+@import "./button.css";
 
 footer {
   background-color: var(--main-bg);
