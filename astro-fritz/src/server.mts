@@ -8,11 +8,12 @@ function check(Component: any) {
 type AstroChildren = { default?: string; }
 
 function renderToStaticMarkup(Component: any, props: Record<string, any>, children: AstroChildren) {
+  let _props = Object.assign({}, props);
   if(children.default) {
-    props.children = children.default;
+    _props.children = children.default;
   }
 
-  let tree = h(Component, props);
+  let tree = h(Component, _props);
   let html = renderToString(tree);
   return {
     html

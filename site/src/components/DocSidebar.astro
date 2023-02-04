@@ -71,8 +71,16 @@ const byCategory = Array.from(collection.reduce(((acc, item) => {
     }
   }
 </style>
+<script>
+  const query = window.matchMedia("(max-width: 420px)");
+  query.addEventListener('change', ev => {
+    for(const el of document.querySelectorAll('x-collapse')) {
+      (el as any).queryMatches = query.matches;
+    }
+  })
+</script>
 
-<Collapsible>
+<Collapsible client:media="(max-width: 420px)">
   <aside class={Astro.props['class'] || 'sidebar'}>
     {byCategory.map(([categoryName, items]) => (
       <detail open>
