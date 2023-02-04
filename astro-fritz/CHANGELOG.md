@@ -1,5 +1,14 @@
 # astro-fritz
 
+## 2.0.0-beta.3
+
+### Patch Changes
+
+- 049e40f: Don't include children in island props
+- 8296b45: Support props.children in server rendering
+- Updated dependencies [8296b45]
+  - fritz@5.0.0-beta.5
+
 ## 2.0.0-beta.2
 
 ### Minor Changes

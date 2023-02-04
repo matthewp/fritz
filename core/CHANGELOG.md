@@ -1,5 +1,11 @@
 # fritz
 
+## 5.0.0-beta.5
+
+### Patch Changes
+
+- 8296b45: Support props.children in server rendering
+
 ## 5.0.0-beta.4
 
 ### Major Changes
