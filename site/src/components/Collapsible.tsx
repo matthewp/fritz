@@ -21,13 +21,13 @@ export default class Collapsible extends Component<any, State> {
     }
 
     .selector {
-      display: grid;
-      justify-content: center;
+      display: flex;
       margin-bottom: 1rem;
     }
 
     button {
       --button-font-size: 110%;
+      flex: 1;
     }
 
     @media (max-width: 420px) {
