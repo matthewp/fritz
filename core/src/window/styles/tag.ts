@@ -1,5 +1,6 @@
 import { InjectorBase } from './base.js';
 
+// TODO remove when adoptedStylesheets has good browser support.
 export class Taggable extends InjectorBase {
   private adoptables: DocumentFragment | null = null;
   add(sheet: CSSStyleSheet | string) {
